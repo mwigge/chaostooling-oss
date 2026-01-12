@@ -1,0 +1,107 @@
+{
+  "version": "1.0",
+  "title": "MySQL Query Saturation Test",
+  "description": "Test database query handling capacity by saturating it with a high volume of concurrent queries to measure performance degradation and identify bottlenecks.",
+  "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "mysql-query-saturation-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
+    "mysql_host": {
+      "type": "env",
+      "key": "MYSQL_HOST",
+      "default": "mysql-primary"
+    },
+    "mysql_port": {
+      "type": "env",
+      "key": "MYSQL_PORT",
+      "default": "3306"
+    },
+    "mysql_db": {
+      "type": "env",
+      "key": "MYSQL_DB",
+      "default": "testdb"
+    },
+    "mysql_user": {
+      "type": "env",
+      "key": "MYSQL_USER",
+      "default": "root"
+    },
+    "mysql_password": {
+      "type": "env",
+      "key": "MYSQL_PASSWORD",
+      "default": "mysql"
+    }
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-mysql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mysql.mysql_connectivity",
+          "func": "probe_mysql_connectivity",
+          "arguments": {
+            "host": "${mysql_host}",
+            "port": "${mysql_port}",
+            "database": "${mysql_db}",
+            "user": "${mysql_user}",
+            "password": "${mysql_password}"
+          }
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mysql.mysql_query_saturation",
+        "func": "inject_query_saturation",
+        "arguments": {
+          "host": "${mysql_host}",
+          "port": "${mysql_port}",
+          "database": "${mysql_db}",
+          "user": "${mysql_user}",
+          "password": "${mysql_password}",
+          "num_threads": 20,
+          "queries_per_thread": 1000,
+          "duration_seconds": 60,
+          "slow_query_threshold_ms": 1000
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mysql.mysql_query_saturation",
+        "func": "stop_query_saturation"
+      }
+    }
+  ]
+}
+

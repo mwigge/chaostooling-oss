@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "title": "Kafka Connection Exhaustion Test",
+  "description": "Test messaging system resilience under connection exhaustion by attempting to open and hold a large number of connections.",
+  "configuration": {
+    "otelservicename": "kafka-connection-exhaustion-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Messaging system is accessible",
+    "probes": [
+      {
+        "name": "probe-kafka",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.kafka.kafka_connectivity",
+          "func": "probe_kafka_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-connection-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.kafka.kafka_connection_exhaustion",
+        "func": "inject_connection_exhaustion",
+        "arguments": {
+          "num_connections": 100,
+          "hold_duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-connection-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.kafka.kafka_connection_exhaustion",
+        "func": "stop_connection_exhaustion"
+      }
+    }
+  ]
+}
+

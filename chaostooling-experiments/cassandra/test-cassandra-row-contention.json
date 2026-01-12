@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "title": "Cassandra Row Contention Test",
+  "description": "Test database resilience under row contention by creating concurrent operations on the same rows.",
+  "configuration": {
+    "otelservicename": "cassandra-row-contention-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-cassandra",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.cassandra.cassandra_connectivity",
+          "func": "probe_cassandra_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-row-contention",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.cassandra.cassandra_row_contention",
+        "func": "inject_row_contention",
+        "arguments": {
+          "num_threads": 10,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-row-contention",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.cassandra.cassandra_row_contention",
+        "func": "stop_row_contention"
+      }
+    }
+  ]
+}
+

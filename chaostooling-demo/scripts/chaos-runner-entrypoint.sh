@@ -1,0 +1,18 @@
+#!/bin/bash
+# Entrypoint script for chaos-runner to ensure logs are written to the correct location
+
+# Ensure log directory exists and is writable
+mkdir -p /var/log/chaostoolkit
+chmod 777 /var/log/chaostoolkit
+
+# Change to log directory so Chaos Toolkit writes logs there
+cd /var/log/chaostoolkit
+
+# Run setup-extensions.sh first (from original entrypoint)
+if [ -f /setup-extensions.sh ]; then
+    /setup-extensions.sh
+fi
+
+# Execute the original command (chaos run, bash, etc.)
+exec "$@"
+

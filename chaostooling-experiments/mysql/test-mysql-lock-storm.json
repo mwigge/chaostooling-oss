@@ -1,0 +1,106 @@
+{
+  "version": "1.0",
+  "title": "MySQL Lock Storm Test",
+  "description": "Test database resilience under lock contention by creating concurrent transactions that lock the same rows, causing deadlocks and contention.",
+  "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "mysql-lock-storm-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
+    "mysql_host": {
+      "type": "env",
+      "key": "MYSQL_HOST",
+      "default": "mysql-primary"
+    },
+    "mysql_port": {
+      "type": "env",
+      "key": "MYSQL_PORT",
+      "default": "3306"
+    },
+    "mysql_db": {
+      "type": "env",
+      "key": "MYSQL_DB",
+      "default": "testdb"
+    },
+    "mysql_user": {
+      "type": "env",
+      "key": "MYSQL_USER",
+      "default": "root"
+    },
+    "mysql_password": {
+      "type": "env",
+      "key": "MYSQL_PASSWORD",
+      "default": "mysql"
+    }
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-mysql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mysql.mysql_connectivity",
+          "func": "probe_mysql_connectivity",
+          "arguments": {
+            "host": "${mysql_host}",
+            "port": "${mysql_port}",
+            "database": "${mysql_db}",
+            "user": "${mysql_user}",
+            "password": "${mysql_password}"
+          }
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-lock-storm",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mysql.mysql_lock_storm",
+        "func": "inject_lock_storm",
+        "arguments": {
+          "host": "${mysql_host}",
+          "port": "${mysql_port}",
+          "database": "${mysql_db}",
+          "user": "${mysql_user}",
+          "password": "${mysql_password}",
+          "num_threads": 10,
+          "duration_seconds": 60,
+          "table_name": "chaos_test_table"
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-lock-storm",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mysql.mysql_lock_storm",
+        "func": "stop_lock_storm"
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "title": "Kafka Topic Saturation Test",
+  "description": "Test messaging system resilience under topic saturation by flooding Kafka topics with high message volume.",
+  "configuration": {
+    "otelservicename": "kafka-topic-saturation-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Messaging system is accessible",
+    "probes": [
+      {
+        "name": "probe-kafka",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.kafka.kafka_connectivity",
+          "func": "probe_kafka_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-topic-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.kafka.kafka_topic_saturation",
+        "func": "inject_topic_saturation",
+        "arguments": {
+          "num_producers": 20,
+          "messages_per_producer": 1000,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-topic-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.kafka.kafka_topic_saturation",
+        "func": "stop_topic_saturation"
+      }
+    }
+  ]
+}
+

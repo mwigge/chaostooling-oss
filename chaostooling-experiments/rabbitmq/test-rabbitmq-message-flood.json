@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "title": "RabbitMQ Message Flood Test",
+  "description": "Test messaging system resilience under message flood by flooding RabbitMQ queues with high volume of messages.",
+  "configuration": {
+    "otelservicename": "rabbitmq-message-flood-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Messaging system is accessible",
+    "probes": [
+      {
+        "name": "probe-rabbitmq",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
+          "func": "probe_rabbitmq_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-message-flood",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_message_flood",
+        "func": "inject_message_flood",
+        "arguments": {
+          "num_producers": 10,
+          "messages_per_producer": 1000,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-message-flood",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_message_flood",
+        "func": "stop_message_flood"
+      }
+    }
+  ]
+}
+

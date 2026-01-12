@@ -1,0 +1,81 @@
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9096
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"
+
+ingester:
+  trace_idle_period: 10s
+  max_block_bytes: 1_000_000
+  max_block_duration: 5m
+
+compactor:
+  compaction:
+    compaction_window: 1h
+    max_block_bytes: 100_000_000
+    block_retention: 48h
+    compacted_block_retention: 1h
+
+# Metrics generator for service graphs and span metrics
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+      cluster: chaos-lab
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+  traces_storage:
+    path: /var/tempo/generator/traces
+  processor:
+    service_graphs:
+      dimensions:
+        - service.namespace
+        - http.method
+        - http.status_code
+      enable_client_server_prefix: true
+      peer_attributes:
+        - service.name
+        - db.name
+        - db.system
+    span_metrics:
+      dimensions:
+        - service.name
+        - service.namespace
+        - http.method
+        - http.status_code
+        - db.system
+        - db.name
+      enable_target_info: true
+      filter_policies:
+        - include:
+            match_type: regex
+            attributes:
+              - key: span.kind
+                value: ".*"
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics, local-blocks]
+      generate_native_histograms: both
+    # Search is enabled by default in recent versions, but explicit config is fine
+    # query_frontend configuration is often not strictly required for basic setups 
+    # unless you are doing backend splitting.

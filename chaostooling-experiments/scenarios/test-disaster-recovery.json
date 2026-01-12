@@ -1,0 +1,107 @@
+{
+  "version": "1.0",
+  "title": "Comprehensive Disaster Recovery Test",
+  "description": "Comprehensive disaster recovery test combining multiple failure scenarios: process kills, connection pool exhaustion, and slow transactions to test overall system resilience and recovery capabilities.",
+  "configuration": {
+    "otelservicename": "disaster-recovery-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "All systems are accessible",
+    "probes": [
+      {
+        "name": "probe-postgres",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "phase1-connection-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "inject_connection_pool_exhaustion",
+        "arguments": {
+          "num_connections": 50,
+          "hold_duration_seconds": 30,
+          "leak_connections": false
+        }
+      }
+    },
+    {
+      "name": "phase2-slow-transactions",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_slow_transactions",
+        "func": "inject_slow_transactions",
+        "arguments": {
+          "num_threads": 5,
+          "duration_seconds": 30,
+          "transaction_delay_ms": 3000
+        }
+      }
+    },
+    {
+      "name": "phase3-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_query_saturation",
+        "func": "inject_query_saturation",
+        "arguments": {
+          "num_threads": 15,
+          "queries_per_thread": 500,
+          "duration_seconds": 30,
+          "slow_query_threshold_ms": 1000
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "stop_pool_exhaustion"
+      }
+    },
+    {
+      "name": "stop-slow-transactions",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_slow_transactions",
+        "func": "stop_slow_transactions"
+      }
+    },
+    {
+      "name": "stop-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_query_saturation",
+        "func": "stop_query_saturation"
+      }
+    }
+  ]
+}
+

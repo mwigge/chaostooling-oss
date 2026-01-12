@@ -1,0 +1,101 @@
+{
+    "version": "1.0.0",
+    "title": "Postgres Vacuum Delay Experiment",
+    "description": "Generate dead tuples to simulate vacuum starvation",
+    "tags": [
+        "postgres",
+        "vacuum",
+        "maintenance"
+    ],
+    "controls": [
+        {
+            "name": "chaosotel",
+            "provider": {
+                "type": "python",
+                "module": "chaosotel.control"
+            }
+        }
+    ],
+    "configuration": {
+        "postgres_host": {
+            "type": "env",
+            "key": "POSTGRES_HOST",
+            "default": "postgres"
+        },
+        "postgres_port": {
+            "type": "env",
+            "key": "POSTGRES_PORT",
+            "default": "5432"
+        },
+        "postgres_db": {
+            "type": "env",
+            "key": "POSTGRES_DB",
+            "default": "testdb"
+        },
+        "postgres_user": {
+            "type": "env",
+            "key": "POSTGRES_USER",
+            "default": "postgres"
+        },
+        "postgres_password": {
+            "type": "env",
+            "key": "POSTGRES_PASSWORD",
+            "default": "postgres"
+        }
+    },
+    "steady-state-hypothesis": {
+        "title": "Dead Tuples are low",
+        "probes": [
+            {
+                "type": "probe",
+                "name": "check-dead-tuples",
+                "tolerance": {
+                    "type": "range",
+                    "range": [
+                        0,
+                        1000
+                    ]
+                },
+                "provider": {
+                    "type": "python",
+                    "module": "chaosdb.probes.postgres.postgres_system_metrics",
+                    "func": "collect_postgres_system_metrics",
+                    "arguments": {
+                        "host": "${postgres_host}",
+                        "port": "${postgres_port}",
+                        "database": "${postgres_db}",
+                        "user": "${postgres_user}",
+                        "password": "${postgres_password}"
+                    }
+                },
+                "pauses": {
+                    "after": 1
+                }
+            }
+        ]
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "generate-dead-tuples",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_load",
+                "func": "generate_dead_tuples",
+                "arguments": {
+                    "host": "${postgres_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "table_name": "mobile_purchases",
+                    "count": 5000
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        }
+    ],
+    "rollbacks": []
+}

@@ -1,0 +1,50 @@
+{
+  "version": "1.0",
+  "title": "Process Kill Disaster Recovery Test",
+  "description": "Test disaster recovery by killing critical database processes to verify automatic recovery, failover mechanisms, and system resilience.",
+  "configuration": {
+    "otelservicename": "process-kill-disaster-recovery-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-postgres",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "kill-postgres-process",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.compute.process_kill",
+        "func": "kill_process_by_name",
+        "arguments": {
+          "process_name": "postgres",
+          "signal_type": "SIGTERM",
+          "timeout_seconds": 10
+        }
+      }
+    }
+  ],
+  "rollbacks": []
+}
+

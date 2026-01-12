@@ -1,0 +1,123 @@
+{
+    "version": "1.0",
+    "title": "PostgreSQL Replication Lag Test",
+    "description": "Test replication lag monitoring by generating load on primary and measuring lag on replica. Validates that replication lag stays within acceptable bounds under normal and stressed conditions.",
+    "configuration": {
+        "otelservicename": {
+            "type": "env",
+            "key": "OTEL_SERVICE_NAME",
+            "default": "postgres-replication-lag-test"
+        },
+        "otelendpoint": {
+            "type": "env",
+            "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+            "default": "http://otel-collector:4318"
+        },
+        "postgres_primary_host": {
+            "type": "env",
+            "key": "POSTGRES_PRIMARY_HOST",
+            "default": "postgres-primary"
+        },
+        "postgres_replica_host": {
+            "type": "env",
+            "key": "POSTGRES_REPLICA_HOST",
+            "default": "postgres-replica"
+        },
+        "postgres_port": {
+            "type": "env",
+            "key": "POSTGRES_PORT",
+            "default": "5432"
+        },
+        "postgres_db": {
+            "type": "env",
+            "key": "POSTGRES_DB",
+            "default": "testdb"
+        },
+        "postgres_user": {
+            "type": "env",
+            "key": "POSTGRES_USER",
+            "default": "postgres"
+        },
+        "postgres_password": {
+            "type": "env",
+            "key": "POSTGRES_PASSWORD",
+            "default": "postgres"
+        }
+    },
+    "controls": [
+        {
+            "name": "opentelemetry",
+            "provider": {
+                "type": "python",
+        "module": "chaosotel.control"
+            }
+        }
+    ],
+    "steady-state-hypothesis": {
+        "title": "Replication lag is acceptable",
+        "probes": [
+            {
+                "name": "check-replication-lag",
+                "type": "probe",
+                "provider": {
+                    "type": "python",
+                    "module": "chaosdb.probes.postgres.postgres_replication_lag",
+                    "func": "check_replication_lag",
+                    "arguments": {
+                        "primary_host": "${postgres_primary_host}",
+                        "replica_host": "${postgres_replica_host}",
+                        "port": "${postgres_port}",
+                        "database": "${postgres_db}",
+                        "user": "${postgres_user}",
+                        "password": "${postgres_password}",
+                        "max_lag_seconds": 5.0
+                    }
+                },
+                "tolerance": true
+            }
+        ]
+    },
+    "method": [
+        {
+            "name": "generate-write-load-on-primary",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_load",
+                "func": "generate_dead_tuples",
+                "arguments": {
+                    "host": "${postgres_primary_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "table_name": "mobile_purchases",
+                    "count": 5000
+                }
+            },
+            "pauses": {
+                "after": 2
+            }
+        },
+        {
+            "name": "verify-replication-lag-after-load",
+            "type": "probe",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.probes.postgres.postgres_replication_lag",
+                "func": "check_replication_lag",
+                "arguments": {
+                    "primary_host": "${postgres_primary_host}",
+                    "replica_host": "${postgres_replica_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "max_lag_seconds": 10.0
+                }
+            },
+            "tolerance": true
+        }
+    ],
+    "rollbacks": []
+}

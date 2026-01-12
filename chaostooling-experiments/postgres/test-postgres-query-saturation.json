@@ -1,0 +1,107 @@
+{
+  "version": "1.0",
+  "title": "PostgreSQL Query Saturation Test",
+  "description": "Test database query handling capacity by saturating it with a high volume of concurrent queries to measure performance degradation and identify bottlenecks.",
+  "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "postgres-query-saturation-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
+    "postgres_host": {
+      "type": "env",
+      "key": "POSTGRES_HOST",
+      "default": "postgres-primary"
+    },
+    "postgres_port": {
+      "type": "env",
+      "key": "POSTGRES_PORT",
+      "default": "5432"
+    },
+    "postgres_db": {
+      "type": "env",
+      "key": "POSTGRES_DB",
+      "default": "testdb"
+    },
+    "postgres_user": {
+      "type": "env",
+      "key": "POSTGRES_USER",
+      "default": "postgres"
+    },
+    "postgres_password": {
+      "type": "env",
+      "key": "POSTGRES_PASSWORD",
+      "default": "postgres"
+    }
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-postgres",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}"
+          }
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_query_saturation",
+        "func": "inject_query_saturation",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "num_threads": 20,
+          "queries_per_thread": 1000,
+          "duration_seconds": 60,
+          "slow_query_threshold_ms": 1000
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_query_saturation",
+        "func": "stop_query_saturation"
+      }
+    }
+  ]
+}
+

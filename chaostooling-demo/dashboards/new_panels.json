@@ -1,0 +1,1754 @@
+[
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 0,
+            "y": 46
+        },
+        "id": 100,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_cpu_utilization_ratio{container_name=\"chaostooling-wl-demo-app-server-1-1\"}",
+                "legendFormat": "CPU",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "app-server-1 CPU",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 4,
+            "y": 46
+        },
+        "id": 101,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_cpu_utilization_ratio{container_name=\"chaostooling-wl-demo-app-server-2-1\"}",
+                "legendFormat": "CPU",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "app-server-2 CPU",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 8,
+            "y": 46
+        },
+        "id": 102,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_cpu_utilization_ratio{container_name=\"chaostooling-wl-demo-haproxy-1\"}",
+                "legendFormat": "CPU",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "haproxy CPU",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 12,
+            "y": 46
+        },
+        "id": 103,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_cpu_utilization_ratio{container_name=\"chaostooling-wl-demo-postgres-primary-1\"}",
+                "legendFormat": "CPU",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "postgres-primary CPU",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 16,
+            "y": 46
+        },
+        "id": 104,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_cpu_utilization_ratio{container_name=\"chaostooling-wl-demo-postgres-replica-1\"}",
+                "legendFormat": "CPU",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "postgres-replica CPU",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 20,
+            "y": 46
+        },
+        "id": 105,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_cpu_utilization_ratio{container_name=\"chaostooling-wl-demo-payment-service-1\"}",
+                "legendFormat": "CPU",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "payment-service CPU",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 0,
+            "y": 52
+        },
+        "id": 106,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_memory_usage_total_bytes{container_name=\"chaostooling-wl-demo-app-server-1-1\"} / chaos_container_memory_usage_limit_bytes{container_name=\"chaostooling-wl-demo-app-server-1-1\"} * 100",
+                "legendFormat": "Memory",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "app-server-1 Memory",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 4,
+            "y": 52
+        },
+        "id": 107,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_memory_usage_total_bytes{container_name=\"chaostooling-wl-demo-app-server-2-1\"} / chaos_container_memory_usage_limit_bytes{container_name=\"chaostooling-wl-demo-app-server-2-1\"} * 100",
+                "legendFormat": "Memory",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "app-server-2 Memory",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 8,
+            "y": 52
+        },
+        "id": 108,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_memory_usage_total_bytes{container_name=\"chaostooling-wl-demo-haproxy-1\"} / chaos_container_memory_usage_limit_bytes{container_name=\"chaostooling-wl-demo-haproxy-1\"} * 100",
+                "legendFormat": "Memory",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "haproxy Memory",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 12,
+            "y": 52
+        },
+        "id": 109,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_memory_usage_total_bytes{container_name=\"chaostooling-wl-demo-postgres-primary-1\"} / chaos_container_memory_usage_limit_bytes{container_name=\"chaostooling-wl-demo-postgres-primary-1\"} * 100",
+                "legendFormat": "Memory",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "postgres-primary Memory",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 16,
+            "y": 52
+        },
+        "id": 110,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_memory_usage_total_bytes{container_name=\"chaostooling-wl-demo-postgres-replica-1\"} / chaos_container_memory_usage_limit_bytes{container_name=\"chaostooling-wl-demo-postgres-replica-1\"} * 100",
+                "legendFormat": "Memory",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "postgres-replica Memory",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 70
+                        },
+                        {
+                            "color": "red",
+                            "value": 90
+                        }
+                    ]
+                },
+                "unit": "percent"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 20,
+            "y": 52
+        },
+        "id": 111,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "chaos_container_memory_usage_total_bytes{container_name=\"chaostooling-wl-demo-payment-service-1\"} / chaos_container_memory_usage_limit_bytes{container_name=\"chaostooling-wl-demo-payment-service-1\"} * 100",
+                "legendFormat": "Memory",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "payment-service Memory",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 0,
+            "y": 58
+        },
+        "id": 112,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"chaostooling-wl-demo-app-server-1-1\"}[1m])) + sum(rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"chaostooling-wl-demo-app-server-1-1\"}[1m]))",
+                "legendFormat": "Network I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "app-server-1 Network I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 4,
+            "y": 58
+        },
+        "id": 113,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"chaostooling-wl-demo-app-server-2-1\"}[1m])) + sum(rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"chaostooling-wl-demo-app-server-2-1\"}[1m]))",
+                "legendFormat": "Network I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "app-server-2 Network I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 8,
+            "y": 58
+        },
+        "id": 114,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"chaostooling-wl-demo-haproxy-1\"}[1m])) + sum(rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"chaostooling-wl-demo-haproxy-1\"}[1m]))",
+                "legendFormat": "Network I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "haproxy Network I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 12,
+            "y": 58
+        },
+        "id": 115,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"chaostooling-wl-demo-postgres-primary-1\"}[1m])) + sum(rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"chaostooling-wl-demo-postgres-primary-1\"}[1m]))",
+                "legendFormat": "Network I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "postgres-primary Network I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 16,
+            "y": 58
+        },
+        "id": 116,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"chaostooling-wl-demo-postgres-replica-1\"}[1m])) + sum(rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"chaostooling-wl-demo-postgres-replica-1\"}[1m]))",
+                "legendFormat": "Network I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "postgres-replica Network I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 20,
+            "y": 58
+        },
+        "id": 117,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"chaostooling-wl-demo-payment-service-1\"}[1m])) + sum(rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"chaostooling-wl-demo-payment-service-1\"}[1m]))",
+                "legendFormat": "Network I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "payment-service Network I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 0,
+            "y": 64
+        },
+        "id": 118,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_blockio_io_service_bytes_recursive_total{container_name=\"chaostooling-wl-demo-app-server-1-1\"}[1m]))",
+                "legendFormat": "Disk I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "app-server-1 Disk I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 4,
+            "y": 64
+        },
+        "id": 119,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_blockio_io_service_bytes_recursive_total{container_name=\"chaostooling-wl-demo-app-server-2-1\"}[1m]))",
+                "legendFormat": "Disk I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "app-server-2 Disk I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 8,
+            "y": 64
+        },
+        "id": 120,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_blockio_io_service_bytes_recursive_total{container_name=\"chaostooling-wl-demo-haproxy-1\"}[1m]))",
+                "legendFormat": "Disk I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "haproxy Disk I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 12,
+            "y": 64
+        },
+        "id": 121,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_blockio_io_service_bytes_recursive_total{container_name=\"chaostooling-wl-demo-postgres-primary-1\"}[1m]))",
+                "legendFormat": "Disk I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "postgres-primary Disk I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 16,
+            "y": 64
+        },
+        "id": 122,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_blockio_io_service_bytes_recursive_total{container_name=\"chaostooling-wl-demo-postgres-replica-1\"}[1m]))",
+                "legendFormat": "Disk I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "postgres-replica Disk I/O",
+        "type": "gauge"
+    },
+    {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+        },
+        "fieldConfig": {
+            "defaults": {
+                "color": {
+                    "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": null,
+                "min": 0,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {
+                            "color": "green",
+                            "value": 0
+                        },
+                        {
+                            "color": "yellow",
+                            "value": 1000000
+                        },
+                        {
+                            "color": "red",
+                            "value": 10000000
+                        }
+                    ]
+                },
+                "unit": "Bps"
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 20,
+            "y": 64
+        },
+        "id": 123,
+        "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+                "calcs": [
+                    "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+            {
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(chaos_container_blockio_io_service_bytes_recursive_total{container_name=\"chaostooling-wl-demo-payment-service-1\"}[1m]))",
+                "legendFormat": "Disk I/O",
+                "range": true,
+                "refId": "A"
+            }
+        ],
+        "title": "payment-service Disk I/O",
+        "type": "gauge"
+    }
+]

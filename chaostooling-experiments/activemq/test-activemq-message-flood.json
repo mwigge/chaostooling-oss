@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "title": "ActiveMQ Message Flood Test",
+  "description": "Test messaging system resilience under message flood by flooding ActiveMQ queues with high volume of messages.",
+  "configuration": {
+    "otelservicename": "activemq-message-flood-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Messaging system is accessible",
+    "probes": [
+      {
+        "name": "probe-activemq",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.activemq.activemq_connectivity",
+          "func": "probe_activemq_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-message-flood",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.activemq.activemq_message_flood",
+        "func": "inject_message_flood",
+        "arguments": {
+          "num_producers": 10,
+          "messages_per_producer": 1000,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-message-flood",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.activemq.activemq_message_flood",
+        "func": "stop_message_flood"
+      }
+    }
+  ]
+}
+

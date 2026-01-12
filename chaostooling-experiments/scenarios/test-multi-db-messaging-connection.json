@@ -1,0 +1,195 @@
+{
+  "version": "1.0",
+  "title": "Multi-DB and Messaging Connectivity Test",
+  "description": "Validation for Postgres, MySQL, MSSQL, Redis, MongoDB, Cassandra, Kafka, RabbitMQ, and ActiveMQ.",
+  "configuration": {
+    "otelservicename": "databases-connectivity-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "All systems are reachable",
+    "probes": [
+      {
+        "name": "probe-postgres",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-mysql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mysql.mysql_connectivity",
+          "func": "probe_mysql_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-redis",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.redis.redis_connectivity",
+          "func": "probe_redis_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-mongodb",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mongodb.mongodb_connectivity",
+          "func": "probe_mongodb_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-cassandra",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.cassandra.cassandra_connectivity",
+          "func": "probe_cassandra_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-mssql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mssql.mssql_connectivity",
+          "func": "probe_mssql_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-kafka",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.kafka.kafka_connectivity",
+          "func": "probe_kafka_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-rabbitmq",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
+          "func": "probe_rabbitmq_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-activemq",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.activemq.activemq_connectivity",
+          "func": "probe_activemq_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "test-postgres-connectivity",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_connectivity",
+        "func": "test_postgres_connection"
+      }
+    },
+    {
+      "name": "test-mysql-connectivity",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mysql.mysql_connectivity",
+        "func": "test_mysql_connection"
+      }
+    },
+    {
+      "name": "test-redis-connectivity",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.redis.redis_connectivity",
+        "func": "test_redis_connection"
+      }
+    },
+    {
+      "name": "test-mongodb-connectivity",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mongodb.mongodb_connectivity",
+        "func": "test_mongodb_connection"
+      }
+    },
+    {
+      "name": "test-cassandra-connectivity",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.cassandra.cassandra_connectivity",
+        "func": "test_cassandra_connection"
+      }
+    },
+    {
+      "name": "test-mssql-connectivity",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mssql.mssql_connectivity",
+        "func": "test_mssql_connection"
+      }
+    },
+    {
+      "name": "test-kafka-connectivity",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.kafka.kafka_connectivity",
+        "func": "test_kafka_connection"
+      }
+    },
+    {
+      "name": "test-rabbitmq-connectivity",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_connectivity",
+        "func": "test_rabbitmq_connection"
+      }
+    },
+    {
+      "name": "test-activemq-connectivity",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.activemq.activemq_connectivity",
+        "func": "test_activemq_connection"
+      }
+    }
+  ]
+}

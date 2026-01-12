@@ -1,0 +1,105 @@
+groups:
+  - name: ultimate-chaos-alerts
+
+    interval: 30s
+    rules:
+      - alert: HighReplicationLag
+        expr: chaos_replication_lag_seconds > 10
+        for: 2m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Replication lag is high"
+          description: "Replication lag between primary and replica is {{ $value }} seconds (threshold: 10s)"
+
+      - alert: DataInconsistency
+        expr: chaos_data_consistency_is_consistent == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Data inconsistency detected"
+          description: "Primary and replica databases are inconsistent"
+
+      - alert: TransactionIntegrityFailure
+        expr: chaos_transaction_integrity_is_ok == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: platform
+        annotations:
+          summary: "Transaction integrity check failed"
+          description: "Missing transactions or gaps detected in transaction sequence"
+
+      - alert: HighCPUUsage
+        expr: chaos_compute_cpu_usage_percent > 90
+        for: 5m
+        labels:
+          severity: warning
+          category: compute
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% (threshold: 90%)"
+
+      - alert: HighMemoryUsage
+        expr: chaos_compute_memory_usage_percent > 90
+        for: 5m
+        labels:
+          severity: warning
+          category: compute
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% (threshold: 90%)"
+
+      - alert: DatabaseConnectionFailure
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Database connection failure"
+          description: "Cannot connect to database instance {{ $labels.instance }}"
+
+      - alert: AppServerDown
+        expr: up{job=~"app-server.*"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          category: connectivity
+        annotations:
+          summary: "App server is down"
+          description: "App server {{ $labels.instance }} is not responding"
+
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, sum(rate(chaos_db_query_latency_milliseconds_bucket{db_operation="probe_api_transaction_flow"}[5m])) by (le)) > 5000
+        for: 5m
+        labels:
+          severity: warning
+          category: platform
+        annotations:
+          summary: "High API latency"
+          description: "P95 API response time is {{ $value }}ms (threshold: 5000ms)"
+
+      - alert: HighTransactionFailureRate
+        expr: sum(rate(chaos_api_transaction_failed_total[5m])) / sum(rate(chaos_api_transaction_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          category: platform
+        annotations:
+          summary: "High transaction failure rate"
+          description: "Transaction failure rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      - alert: MissingTransactions
+        expr: chaos_transaction_missing_count > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: platform
+        annotations:
+          summary: "Missing transactions detected"
+          description: "{{ $value }} transactions are missing from the database"
+

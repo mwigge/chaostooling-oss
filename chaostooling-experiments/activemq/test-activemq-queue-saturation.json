@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "title": "ActiveMQ Queue Saturation Test",
+  "description": "Test messaging system resilience under queue saturation by flooding ActiveMQ queues with high message volume.",
+  "configuration": {
+    "otelservicename": "activemq-queue-saturation-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Messaging system is accessible",
+    "probes": [
+      {
+        "name": "probe-activemq",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.activemq.activemq_connectivity",
+          "func": "probe_activemq_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-queue-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.activemq.activemq_queue_saturation",
+        "func": "inject_queue_saturation",
+        "arguments": {
+          "num_producers": 20,
+          "messages_per_producer": 1000,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-queue-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.activemq.activemq_queue_saturation",
+        "func": "stop_queue_saturation"
+      }
+    }
+  ]
+}
+

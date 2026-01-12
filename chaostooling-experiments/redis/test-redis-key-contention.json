@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "title": "Redis Key Contention Test",
+  "description": "Test database resilience under key contention by creating concurrent operations on the same keys.",
+  "configuration": {
+    "otelservicename": "redis-key-contention-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-redis",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.redis.redis_connectivity",
+          "func": "probe_redis_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-key-contention",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.redis.redis_key_contention",
+        "func": "inject_key_contention",
+        "arguments": {
+          "num_threads": 10,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-key-contention",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.redis.redis_key_contention",
+        "func": "stop_key_contention"
+      }
+    }
+  ]
+}
+

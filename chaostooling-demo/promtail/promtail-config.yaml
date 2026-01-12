@@ -1,0 +1,93 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Extract container name
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container_name'
+      # Add service_name based on container name patterns
+      # Docker Compose naming: <project>_<service>_<instance>
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/.*chaos-runner.*'
+        target_label: 'service_name'
+        replacement: 'chaostoolkit-demo'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/.*app-server-1.*'
+        target_label: 'service_name'
+        replacement: 'app-server-1'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/.*app-server-2.*'
+        target_label: 'service_name'
+        replacement: 'app-server-2'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/.*postgres-primary.*'
+        target_label: 'service_name'
+        replacement: 'postgres-primary'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/.*postgres-replica.*'
+        target_label: 'service_name'
+        replacement: 'postgres-replica'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/.*payment-service.*'
+        target_label: 'service_name'
+        replacement: 'payment-service'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/.*haproxy.*'
+        target_label: 'service_name'
+        replacement: 'haproxy'
+
+  # Scrape experiment logs from shared volume
+  - job_name: chaostoolkit-experiment-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: chaostoolkit-experiment-logs
+          service_name: chaostoolkit-demo
+          log_type: experiment
+          __path__: /var/log/chaostoolkit/chaostoolkit.log
+    pipeline_stages:
+      - regex:
+          expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<level>\w+)\] (?P<message>.*)'
+      - labels:
+          level:
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05'
+          fallback_formats:
+            - '2006-01-02T15:04:05'
+            - RFC3339
+
+  # Scrape journal.json (structured experiment data)
+  # Note: journal.json is a single JSON object, not JSONL
+  # We read it as plain text to avoid parse errors - journal is better accessed via reporting system
+  - job_name: chaostoolkit-journal
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: chaostoolkit-journal
+          service_name: chaostoolkit-demo
+          log_type: journal
+          __path__: /var/log/chaostoolkit/journal.json
+    pipeline_stages:
+      # Read the entire file as a single line (plain text, no JSON parsing to avoid errors)
+      - regex:
+          expression: '^(?P<message>.*)$'
+

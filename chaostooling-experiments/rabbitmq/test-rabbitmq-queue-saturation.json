@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "title": "RabbitMQ Queue Saturation Test",
+  "description": "Test messaging system resilience under queue saturation by flooding RabbitMQ queues with high message volume.",
+  "configuration": {
+    "otelservicename": "rabbitmq-queue-saturation-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Messaging system is accessible",
+    "probes": [
+      {
+        "name": "probe-rabbitmq",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
+          "func": "probe_rabbitmq_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-queue-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_queue_saturation",
+        "func": "inject_queue_saturation",
+        "arguments": {
+          "num_producers": 20,
+          "messages_per_producer": 1000,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-queue-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_queue_saturation",
+        "func": "stop_queue_saturation"
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,42 @@
+# Pre-commit hooks configuration
+# Install: pre-commit install
+# Run on all files: pre-commit run --all-files
+
+repos:
+  # Black formatter
+  - repo: https://github.com/psf/black
+    rev: 25.11.0
+    hooks:
+      - id: black
+        language_version: python3.10
+        args: ['--line-length=80']
+        
+  # isort - import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 6.1.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+        
+  # Ruff - fast Python linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.8
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+        
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: detect-private-key
+

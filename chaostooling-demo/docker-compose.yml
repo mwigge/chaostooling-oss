@@ -1,0 +1,740 @@
+services:
+  # --- Observability Stack ---
+
+  tempo:
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo/config.yml" ]
+    volumes:
+      - ./tempo/config.yml:/etc/tempo/config.yml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"   # tempo UI
+      - "9317:4317"   # OTLP gRPC receiver
+      - "9318:4318"   # OTLP HTTP receiver
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./promtail/promtail-config.yaml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - chaos-experiment-logs:/var/log/chaostoolkit:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ./loki/config.yml:/etc/loki/config.yml:ro
+    ports:
+      - "3100:3100"   # HTTP API + OTLP /otlp endpoint
+      - "9096:9096"   # gRPC (if needed)
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: [ "--config=/etc/otelcol-contrib/config.yaml" ]
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "8327:4317"    # OTLP gRPC (changed from 4317 to avoid conflicts)
+      - "4318:4318"    # OTLP HTTP
+      - "8889:8889"    # Prometheus exporter
+      - "8888:8888"    # collector self-metrics
+      - "1777:1777"    # pprof
+      - "55679:55679"  # zpages
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus-alert-rules.yml:/etc/prometheus/alert-rules.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-remote-write-receiver'
+      - '--enable-feature=exemplar-storage'
+      - '--enable-feature=native-histograms'
+    depends_on:
+      - otel-collector
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/e2e_test_dashboard.json
+    volumes:
+      - ./dashboards:/var/lib/grafana/dashboards
+      - ./grafana-provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+  # --- Application Stack (for E2E demos) ---
+  # Legacy HA-Proxy (kept for backward compatibility)
+  haproxy:
+    image: haproxy:2.8
+    ports:
+      - "80:80"
+      - "8404:8404"   # Stats
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - app-server-1
+      - app-server-2
+
+  # --- SITE A (Primary Site) ---
+  haproxy-site-a:
+    image: haproxy:2.8
+    ports:
+      - "8080:80"
+      - "8405:8404"   # Stats
+    volumes:
+      - ./haproxy/haproxy-site-a.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - app-server-1-site-a
+      - app-server-2-site-a
+    environment:
+      - SITE_A_HAPROXY_URL=http://haproxy-site-a:80
+
+  app-server-1-site-a:
+    build:
+      context: ./app-server
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}:${POSTGRES_PORT:-5432},${POSTGRES_REPLICA_HOST:-postgres-replica-site-a}:${POSTGRES_PORT:-5432}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-testdb}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - PAYMENT_SERVICE_URL=${SITE_A_PAYMENT_SERVICE_URL:-http://payment-service-site-a:5000}
+      - ORDER_SERVICE_URL=${SITE_A_ORDER_SERVICE_URL:-http://order-service-site-a:5000}
+      - INVENTORY_SERVICE_URL=${SITE_A_INVENTORY_SERVICE_URL:-http://inventory-service-site-a:5000}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_USER=${RABBITMQ_USER:-chaos}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-password}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=app-server-1-site-a
+    depends_on:
+      - otel-collector
+      - postgres-primary-site-a
+      - postgres-replica-site-a
+      - payment-service-site-a
+      - order-service-site-a
+      - inventory-service-site-a
+      - kafka
+      - rabbitmq
+      - mongodb
+      - redis
+    ports:
+      - "5001:5000"
+
+  app-server-2-site-a:
+    build:
+      context: ./app-server
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}:${POSTGRES_PORT:-5432},${POSTGRES_REPLICA_HOST:-postgres-replica-site-a}:${POSTGRES_PORT:-5432}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-testdb}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - PAYMENT_SERVICE_URL=${SITE_A_PAYMENT_SERVICE_URL:-http://payment-service-site-a:5000}
+      - ORDER_SERVICE_URL=${SITE_A_ORDER_SERVICE_URL:-http://order-service-site-a:5000}
+      - INVENTORY_SERVICE_URL=${SITE_A_INVENTORY_SERVICE_URL:-http://inventory-service-site-a:5000}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_USER=${RABBITMQ_USER:-chaos}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-password}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=app-server-2-site-a
+    depends_on:
+      - otel-collector
+      - postgres-primary-site-a
+      - postgres-replica-site-a
+      - payment-service-site-a
+      - order-service-site-a
+      - inventory-service-site-a
+      - kafka
+      - rabbitmq
+      - mongodb
+      - redis
+    ports:
+      - "5002:5000"
+
+  payment-service-site-a:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5000"
+    environment:
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_USER=${RABBITMQ_USER:-chaos}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-password}
+      - POSTGRES_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-testdb}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=payment-service-site-a
+    depends_on:
+      - otel-collector
+      - rabbitmq
+      - postgres-primary-site-a
+
+  order-service-site-a:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    ports:
+      - "5004:5000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - POSTGRES_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-testdb}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=order-service-site-a
+    depends_on:
+      - otel-collector
+      - kafka
+      - postgres-primary-site-a
+
+  inventory-service-site-a:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+    ports:
+      - "5005:5000"
+    environment:
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
+      - MONGODB_DB=${MONGODB_DB:-test}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=inventory-service-site-a
+    depends_on:
+      - otel-collector
+      - mongodb
+      - redis
+
+  notification-service-site-a:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "5006:5000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - POSTGRES_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-testdb}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=notification-service-site-a
+    depends_on:
+      - otel-collector
+      - kafka
+      - postgres-primary-site-a
+
+  # --- SITE B (DR Site) ---
+  haproxy-site-b:
+    image: haproxy:2.8
+    ports:
+      - "8081:80"
+      - "8406:8404"   # Stats
+    volumes:
+      - ./haproxy/haproxy-site-b.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - app-server-site-b
+    environment:
+      - SITE_B_HAPROXY_URL=http://haproxy-site-b:80
+
+  app-server-site-b:
+    build:
+      context: ./app-server
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_HOST=${POSTGRES_DR_HOST:-postgres-primary-site-b}:${POSTGRES_PORT:-5432}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-testdb}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=app-server-site-b
+    depends_on:
+      - otel-collector
+      - postgres-primary-site-b
+    ports:
+      - "5009:5000"
+
+  # Legacy app-server-1 (kept for backward compatibility)
+  app-server-1:
+    build:
+      context: ./app-server
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-primary:5432,postgres-replica:5432
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=testdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PAYMENT_SERVICE_URL=http://payment-service:5000
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=app-server-1
+    depends_on:
+      - otel-collector
+      - postgres-primary
+      - postgres-replica
+      - payment-service
+    ports:
+      - "5007:5000"
+
+  # Legacy app-server-2 (kept for backward compatibility)
+  app-server-2:
+    build:
+      context: ./app-server
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-primary:5432,postgres-replica:5432
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=testdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PAYMENT_SERVICE_URL=http://payment-service:5000
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=app-server-2
+    depends_on:
+      - otel-collector
+      - postgres-primary
+      - postgres-replica
+      - payment-service
+    ports:
+      - "5008:5000"
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=payment-service
+
+  # --- Database Stack with Replication (for E2E demos) ---
+  # Site A Primary Database
+  postgres-primary-site-a:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-testdb}
+      POSTGRES_REPLICATION_USER: ${POSTGRES_REPLICATION_USER:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD:-replicator}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-primary-site-a-data:/var/lib/postgresql/data
+      - ./scripts/init-primary.sh:/docker-entrypoint-initdb.d/init-primary.sh:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "max_wal_senders=3"
+      - "-c"
+      - "max_replication_slots=3"
+      - "-c"
+      - "hot_standby=on"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-replica-site-a:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-testdb}
+      PGUSER: ${POSTGRES_REPLICATION_USER:-replicator}
+      PGPASSWORD: ${POSTGRES_REPLICATION_PASSWORD:-replicator}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-replica-site-a-data:/var/lib/postgresql/data
+      - ./scripts/init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh:ro
+    depends_on:
+      postgres-primary-site-a:
+        condition: service_healthy
+    command:
+      - "bash"
+      - "-c"
+      - |
+        rm -rf /var/lib/postgresql/data/*
+        until pg_basebackup -h postgres-primary-site-a -D /var/lib/postgresql/data -U ${POSTGRES_REPLICATION_USER:-replicator} -v -P; do
+          echo "Waiting for primary to be ready..."
+          sleep 2
+        done
+        echo "primary_conninfo = 'host=postgres-primary-site-a port=5432 user=${POSTGRES_REPLICATION_USER:-replicator} password=${POSTGRES_REPLICATION_PASSWORD:-replicator}'" >> /var/lib/postgresql/data/postgresql.conf
+        touch /var/lib/postgresql/data/standby.signal
+        chown -R postgres:postgres /var/lib/postgresql/data
+        chmod 700 /var/lib/postgresql/data
+        exec gosu postgres postgres
+
+  # Site B DR Database
+  postgres-primary-site-b:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-testdb}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-primary-site-b-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Legacy postgres-primary (kept for backward compatibility)
+  postgres-primary:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testdb
+      POSTGRES_REPLICATION_USER: replicator
+      POSTGRES_REPLICATION_PASSWORD: replicator
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres-primary-data:/var/lib/postgresql/data
+      - ./scripts/init-primary.sh:/docker-entrypoint-initdb.d/init-primary.sh:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "max_wal_senders=3"
+      - "-c"
+      - "max_replication_slots=3"
+      - "-c"
+      - "hot_standby=on"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-replica:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testdb
+      PGUSER: replicator
+      PGPASSWORD: replicator
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres-replica-data:/var/lib/postgresql/data
+      - ./scripts/init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh:ro
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    command:
+      - "bash"
+      - "-c"
+      - |
+        rm -rf /var/lib/postgresql/data/*
+        until pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U replicator -v -P; do
+          echo "Waiting for primary to be ready..."
+          sleep 2
+        done
+        echo "primary_conninfo = 'host=postgres-primary port=5432 user=replicator password=replicator'" >> /var/lib/postgresql/data/postgresql.conf
+        touch /var/lib/postgresql/data/standby.signal
+        chown -R postgres:postgres /var/lib/postgresql/data
+        chmod 700 /var/lib/postgresql/data
+        exec gosu postgres postgres
+
+  # --- Target Systems (Databases & Messaging) ---
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testdb
+    ports:
+      - "5437:5432"   # Changed port to avoid conflict with other postgres services
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: testdb
+    ports:
+      - "3306:3306"
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Password123!"
+    ports:
+      - "1433:1433"
+
+  mongodb:
+    image: mongo:6.0
+    environment:
+      MONGO_INITDB_DATABASE: test
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./scripts/init-mongodb-inventory.js:/docker-entrypoint-initdb.d/init-mongodb-inventory.js:ro
+
+  redis:
+    image: redis:7.0
+    ports:
+      - "6379:6379"
+
+  cassandra:
+    image: cassandra:4.1
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=ChaosCluster
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9999:9999"   # JMX Exporter metrics endpoint
+    volumes:
+      - ./kafka-jmx/jmx_prometheus_javaagent.jar:/opt/jmx_prometheus_javaagent.jar:ro
+      - ./kafka-jmx/kafka-jmx-config.yml:/opt/kafka-jmx-config.yml:ro
+      - ./kafka-jmx/kafka-entrypoint-wrapper.sh:/usr/local/bin/kafka-entrypoint-wrapper.sh:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/kafka-entrypoint-wrapper.sh"]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Single listener for internal container-to-container communication
+      # External access via Docker port mapping (9092:9092)
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: chaos
+      RABBITMQ_DEFAULT_PASS: password
+
+  activemq:
+    image: apache/activemq-classic:5.18.3
+    ports:
+      - "61616:61616"
+      - "61613:61613"   # STOMP
+      - "8161:8161"     # Web console
+
+  # --- Chaos Runner ---
+  chaos-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["/scripts/chaos-runner-entrypoint.sh"]
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - postgres
+      - postgres-primary
+      - postgres-primary-site-a
+      - postgres-replica-site-a
+      - postgres-primary-site-b
+      - mysql
+      - mssql
+      - mongodb
+      - redis
+      - cassandra
+      - kafka
+      - rabbitmq
+      - activemq
+      - haproxy
+      - haproxy-site-a
+      - haproxy-site-b
+      - app-server-1
+      - app-server-2
+      - app-server-1-site-a
+      - app-server-2-site-a
+      - app-server-site-b
+      - payment-service
+      - payment-service-site-a
+      - order-service-site-a
+      - inventory-service-site-a
+      - notification-service-site-a
+      - otel-collector
+      - tempo
+      - loki
+    volumes:
+      - ../chaostooling-experiments:/experiments
+      - ../chaostooling-extension-db:/chaostooling-extension-db
+      - ../chaostooling-extension-compute:/chaostooling-extension-compute
+      - ../chaostoolkit-extension-app:/chaostooling-extension-app
+      - ../chaostooling-extension-network:/chaostooling-extension-network
+      - ../chaostooling-otel:/chaostooling-otel
+      - ../chaostooling-reporting:/chaostooling-reporting
+      - /var/run/docker.sock:/var/run/docker.sock
+      - chaos-experiment-logs:/var/log/chaostoolkit
+      - ./reporting-output:/var/log/chaostoolkit/reports
+      - ./scripts/chaos-runner-entrypoint.sh:/scripts/chaos-runner-entrypoint.sh:ro
+    environment:
+      # OpenTelemetry / meta #
+      # Metrics and Logs use HTTP/protobuf
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
+      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
+      # Traces use gRPC (chaosotel uses gRPC exporter)
+      # Set generic endpoint for gRPC traces (port 4317)
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      # Do NOT set OTEL_EXPORTER_OTLP_TRACES_ENDPOINT as it conflicts with gRPC exporter
+      - OTEL_LOG_LEVEL=debug
+      - OTEL_EXPORTER_OTLP_METRICS_TIMEOUT=10000
+      - OTEL_METRIC_EXPORT_INTERVAL=5000
+      - OTEL_SERVICE_NAME=chaostoolkit-demo
+      - OTEL_SERVICE_NAMESPACE=chaos-engineering
+      - OTEL_TRACES_SAMPLER=parentbased_always_on
+      - CHAOSTOOLKIT_IN_DOCKER=true
+      - CHAOSTOOLKIT_LOG_FILE=/var/log/chaostoolkit/chaostoolkit.log
+      - CHAOSTOOLKIT_JOURNAL_PATH=/var/log/chaostoolkit/journal.json
+      - PYTHONPATH=/chaostooling-extension-db:/chaostooling-extension-compute:/chaostooling-extension-app:/chaostooling-extension-network:/chaostooling-otel
+
+      # Postgres (for basic experiments)
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=testdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+      # Postgres Primary/Replica (for E2E experiments)
+      - POSTGRES_PRIMARY_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}
+      - POSTGRES_PRIMARY_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_REPLICA_HOST=${POSTGRES_REPLICA_HOST:-postgres-replica-site-a}
+      - POSTGRES_REPLICA_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DR_HOST=${POSTGRES_DR_HOST:-postgres-primary-site-b}
+      # Site A URLs
+      - SITE_A_HAPROXY_URL=${SITE_A_HAPROXY_URL:-http://haproxy-site-a:80}
+      - SITE_A_APP_SERVER_1_URL=${SITE_A_APP_SERVER_1_URL:-http://app-server-1-site-a:5000}
+      - SITE_A_APP_SERVER_2_URL=${SITE_A_APP_SERVER_2_URL:-http://app-server-2-site-a:5000}
+      - SITE_A_PAYMENT_SERVICE_URL=${SITE_A_PAYMENT_SERVICE_URL:-http://payment-service-site-a:5000}
+      - SITE_A_ORDER_SERVICE_URL=${SITE_A_ORDER_SERVICE_URL:-http://order-service-site-a:5000}
+      - SITE_A_INVENTORY_SERVICE_URL=${SITE_A_INVENTORY_SERVICE_URL:-http://inventory-service-site-a:5000}
+      # Site B URLs (DR)
+      - SITE_B_HAPROXY_URL=${SITE_B_HAPROXY_URL:-http://haproxy-site-b:80}
+      - SITE_B_APP_SERVER_URL=${SITE_B_APP_SERVER_URL:-http://app-server-site-b:5000}
+
+      # MySQL
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DB=testdb
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=mysql
+
+      # MongoDB
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DB=test
+
+      # Redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+
+      # Cassandra
+      - CASSANDRA_HOSTS=cassandra
+      - CASSANDRA_KEYSPACE=system
+
+      # Kafka
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+
+      # RabbitMQ
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_USER=chaos
+      - RABBITMQ_PASSWORD=password
+
+      # ActiveMQ
+      - ACTIVEMQ_HOST=activemq
+      - ACTIVEMQ_PORT=61613
+      - ACTIVEMQ_USER=admin
+      - ACTIVEMQ_PASSWORD=admin
+
+      # E2E Application
+      - API_URL=http://haproxy:80
+    working_dir: /experiments
+    command: tail -f /dev/null
+
+volumes:
+  postgres-primary-data:
+  postgres-replica-data:
+  postgres-primary-site-a-data:
+  chaos-experiment-logs:
+  postgres-replica-site-a-data:
+  postgres-primary-site-b-data:
+  tempo-data:
+
+networks:
+  default:
+    driver: bridge
+    name: chaostoolkit-wl-demo-network
+

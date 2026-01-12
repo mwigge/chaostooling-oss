@@ -1,0 +1,120 @@
+# Kafka JMX Exporter Configuration
+# Exposes Kafka JMX metrics in Prometheus format
+# Reference: https://github.com/prometheus/jmx_exporter
+#
+# Format: Prometheus metrics use lowercase with underscores
+# Counters automatically get _total suffix
+# Histograms create _bucket, _count, _sum metrics
+#
+# Note: hostPort is ignored when using as Java agent (via KAFKA_OPTS)
+# The port is specified in KAFKA_OPTS: -javaagent:...=9999:...
+
+rules:
+  # ========================================================================
+  # Producer Metrics - Match dashboard queries
+  # ========================================================================
+  
+  # Producer record send rate (counter) -> kafka_producer_record_send_rate_counter_total
+  - pattern: kafka.producer<type=(.*-producer-metrics|producer-metrics), client-id=(.+)><>record-send-rate
+    name: kafka_producer_record_send_rate_counter
+    type: COUNTER
+    labels:
+      client_id: "$2"
+    
+  # Producer record error rate (counter) -> kafka_producer_record_error_rate_counter_total  
+  - pattern: kafka.producer<type=(.*-producer-metrics|producer-metrics), client-id=(.+)><>record-error-rate
+    name: kafka_producer_record_error_rate_counter
+    type: COUNTER
+    labels:
+      client_id: "$2"
+
+  # Producer request latency (histogram buckets) -> kafka_producer_request_latency_bucket
+  # Note: Kafka JMX doesn't expose histogram buckets directly, so we capture latency metrics
+  # and Prometheus can create histograms, or we use percentile metrics
+  - pattern: kafka.producer<type=(.*-producer-metrics|producer-metrics), client-id=(.+)><>request-latency-avg
+    name: kafka_producer_request_latency_avg_milliseconds
+    type: GAUGE
+    labels:
+      client_id: "$2"
+      
+  - pattern: kafka.producer<type=(.*-producer-metrics|producer-metrics), client-id=(.+)><>request-latency-max
+    name: kafka_producer_request_latency_max_milliseconds
+    type: GAUGE
+    labels:
+      client_id: "$2"
+
+  # Request latency from network layer (better histogram support)
+  - pattern: kafka.network<type=RequestMetrics, name=RequestLatencyMs, request=(.+), clientId=(.+)><>Mean
+    name: kafka_producer_request_latency_milliseconds
+    type: GAUGE
+    labels:
+      request: "$1"
+      client_id: "$2"
+      quantile: "0.5"
+
+  - pattern: kafka.network<type=RequestMetrics, name=RequestLatencyMs, request=(.+), clientId=(.+)><>P95
+    name: kafka_producer_request_latency_milliseconds
+    type: GAUGE
+    labels:
+      request: "$1"
+      client_id: "$2"
+      quantile: "0.95"
+
+  - pattern: kafka.network<type=RequestMetrics, name=RequestLatencyMs, request=(.+), clientId=(.+)><>P99
+    name: kafka_producer_request_latency_milliseconds
+    type: GAUGE
+    labels:
+      request: "$1"
+      client_id: "$2"
+      quantile: "0.99"
+
+  # ========================================================================
+  # Consumer Metrics - Match dashboard queries
+  # ========================================================================
+  
+  # Consumer records consumed rate (counter) -> kafka_consumer_records_consumed_rate_counter_total
+  - pattern: kafka.consumer<type=(.*-consumer-metrics|consumer-metrics), client-id=(.+)><>records-consumed-rate
+    name: kafka_consumer_records_consumed_rate_counter
+    type: COUNTER
+    labels:
+      client_id: "$2"
+
+  # Consumer lag (gauge) -> kafka_consumer_lag_messages
+  - pattern: kafka.consumer<type=(.*-consumer-fetch-manager-metrics|consumer-fetch-manager-metrics), client-id=(.+), topic=(.+), partition=(.+)><>records-lag
+    name: kafka_consumer_lag_messages
+    type: GAUGE
+    labels:
+      client_id: "$2"
+      topic: "$3"
+      partition: "$4"
+    
+  # Aggregate consumer lag (max across partitions)
+  - pattern: kafka.consumer<type=(.*-consumer-fetch-manager-metrics|consumer-fetch-manager-metrics), client-id=(.+)><>records-lag-max
+    name: kafka_consumer_lag_max_messages
+    type: GAUGE
+    labels:
+      client_id: "$2"
+
+  # ========================================================================
+  # Broker Metrics (useful for monitoring)
+  # ========================================================================
+  
+  # Broker topic metrics
+  - pattern: kafka.server<type=BrokerTopicMetrics, name=(.+)><>Count
+    name: kafka_broker_topic_metrics_count_total
+    type: COUNTER
+    labels:
+      metric_name: "$1"
+      
+  - pattern: kafka.server<type=BrokerTopicMetrics, name=(.+)><>OneMinuteRate
+    name: kafka_broker_topic_metrics_one_minute_rate
+    type: GAUGE
+    labels:
+      metric_name: "$1"
+
+  # Network request metrics
+  - pattern: kafka.network<type=RequestMetrics, name=RequestsPerSec, request=(.+)><>Count
+    name: kafka_network_requests_total
+    type: COUNTER
+    labels:
+      request: "$1"

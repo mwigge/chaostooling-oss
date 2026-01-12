@@ -1,0 +1,36 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies for database drivers and network tools
+RUN apt-get update && apt-get install -y \
+    gcc \
+    unixodbc-dev \
+    libpq-dev \
+    postgresql-client \
+    curl \
+    docker.io \
+    iproute2 \
+    iptables \
+    stress-ng \
+    dos2unix \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Chaos Toolkit
+RUN pip install chaostoolkit "chaostoolkit-lib[jsonpath]"
+RUN pip install opentelemetry-exporter-otlp-proto-grpc
+
+
+# Disable Python bytecode generation
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Copy setup and entrypoint scripts
+COPY scripts/docker-entrypoint.sh /docker-entrypoint.sh
+COPY scripts/setup-extensions.sh /setup-extensions.sh
+RUN dos2unix /docker-entrypoint.sh /setup-extensions.sh && \
+    chmod +x /docker-entrypoint.sh /setup-extensions.sh
+
+WORKDIR /experiments
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["bash"]

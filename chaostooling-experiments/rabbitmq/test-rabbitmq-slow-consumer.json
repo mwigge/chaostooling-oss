@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "title": "RabbitMQ Slow Consumer Test",
+  "description": "Test messaging system resilience under slow consumers by creating consumers that process messages slowly, causing message backlog.",
+  "configuration": {
+    "otelservicename": "rabbitmq-slow-consumer-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Messaging system is accessible",
+    "probes": [
+      {
+        "name": "probe-rabbitmq",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
+          "func": "probe_rabbitmq_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-slow-consumer",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_slow_consumer",
+        "func": "inject_slow_consumer",
+        "arguments": {
+          "num_consumers": 5,
+          "duration_seconds": 60,
+          "consume_delay_ms": 5000
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-slow-consumer",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_slow_consumer",
+        "func": "stop_slow_consumer"
+      }
+    }
+  ]
+}
+

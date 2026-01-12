@@ -1,0 +1,164 @@
+"""ActiveMQ consumer rebalancing storm chaos action."""
+import os
+import time
+import threading
+import stomp
+from typing import Optional, Dict
+from chaosotel import ensure_initialized, get_tracer, get_logger, flush
+from opentelemetry.trace import StatusCode
+
+_active_consumers = []
+_stop_event = threading.Event()
+
+def inject_rebalancing_storm(
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    user: Optional[str] = None,
+    password: Optional[str] = None,
+    queue: Optional[str] = None,
+    num_consumers: int = 10,
+    rebalance_interval_seconds: int = 5,
+    duration_seconds: int = 60
+) -> Dict:
+    """
+    Inject consumer rebalancing storm by rapidly adding/removing consumers.
+    Forces frequent rebalancing to test system stability.
+    """
+    host = host or os.getenv("ACTIVEMQ_HOST", "localhost")
+    port = port or int(os.getenv("ACTIVEMQ_PORT", "61613"))
+    user = user or os.getenv("ACTIVEMQ_USER", "admin")
+    password = password or os.getenv("ACTIVEMQ_PASSWORD", "admin")
+    queue = queue or os.getenv("ACTIVEMQ_QUEUE", "chaos.test")
+    
+    ensure_initialized()
+    metrics = get_metrics_core()
+    tracer = get_tracer()
+    logger = get_logger()
+    start_time = time.time()
+    
+    global _active_consumers, _stop_event
+    _stop_event.clear()
+    _active_consumers = []
+    
+    rebalances_triggered = 0
+    errors = 0
+    
+    def consumer_worker(consumer_id: int):
+        nonlocal rebalances_triggered, errors
+        conn = None
+        try:
+            with tracer.start_as_current_span(f"rebalancing_storm.consumer.{consumer_id}") as span:
+                span.set_attribute("messaging.system", "activemq")
+                span.set_attribute("messaging.destination", queue)
+                span.set_attribute("chaos.consumer_id", consumer_id)
+                span.set_attribute("chaos.action", "rebalancing_storm")
+                
+                end_time = time.time() + duration_seconds
+                
+                while not _stop_event.is_set() and time.time() < end_time:
+                    try:
+                        conn = stomp.Connection([(host, port)])
+                        conn.connect(user, password, wait=True)
+                        conn.subscribe(destination=f"/queue/{queue}", id=consumer_id, ack='auto')
+                        
+                        _active_consumers.append(conn)
+                        rebalances_triggered += 1
+                        
+                        # Consume briefly
+                        time.sleep(0.5)
+                        
+                        # Disconnect to trigger rebalance
+                        conn.disconnect()
+                        conn = None
+                        _active_consumers = [c for c in _active_consumers if c != conn]
+                        
+                        time.sleep(rebalance_interval_seconds)
+                        
+                        span.set_status(StatusCode.OK)
+                        
+                    except Exception as e:
+                        errors += 1
+                        if metrics_module.error_counter:
+                            metrics_module.error_counter.add(1, get_metric_tags(db_name=queue, error_type=type(e).__name__))
+                        logger.warning(f"Rebalancing consumer {consumer_id} error: {e}")
+                        span.set_status(StatusCode.ERROR, str(e))
+                        if conn:
+                            try:
+                                conn.disconnect()
+                            except:
+                                pass
+                        time.sleep(0.5)
+                        
+        except Exception as e:
+            errors += 1
+            logger.error(f"Rebalancing consumer worker {consumer_id} failed: {e}")
+        finally:
+            if conn:
+                try:
+                    conn.disconnect()
+                except:
+                    pass
+    
+    try:
+        with tracer.start_as_current_span("chaos.activemq.rebalancing_storm") as span:
+            span.set_attribute("messaging.system", "activemq")
+            span.set_attribute("messaging.destination", queue)
+            span.set_attribute("chaos.num_consumers", num_consumers)
+            span.set_attribute("chaos.rebalance_interval_seconds", rebalance_interval_seconds)
+            span.set_attribute("chaos.duration_seconds", duration_seconds)
+            span.set_attribute("chaos.action", "rebalancing_storm")
+            
+            logger.info(f"Starting ActiveMQ rebalancing storm with {num_consumers} consumers for {duration_seconds}s")
+            
+            threads = []
+            for i in range(num_consumers):
+                thread = threading.Thread(target=consumer_worker, args=(i,), daemon=True)
+                thread.start()
+                threads.append(thread)
+                time.sleep(0.5)
+            
+            time.sleep(duration_seconds)
+            _stop_event.set()
+            for thread in threads:
+                thread.join(timeout=10)
+            
+            for conn in _active_consumers:
+                try:
+                    conn.disconnect()
+                except:
+                    pass
+            
+            duration_ms = (time.time() - start_time) * 1000
+            
+            result = {
+                "success": True,
+                "duration_ms": duration_ms,
+                "rebalances_triggered": rebalances_triggered,
+                "errors": errors,
+                "consumers_used": num_consumers
+            }
+            
+            span.set_attribute("chaos.rebalances_triggered", rebalances_triggered)
+            span.set_status(StatusCode.OK)
+            
+            logger.info(f"ActiveMQ rebalancing storm completed: {result}")
+            flush()
+            return result
+    except Exception as e:
+        _stop_event.set()
+        if metrics_module.error_counter:
+            metrics_module.error_counter.add(1, get_metric_tags(db_name=queue, error_type=type(e).__name__))
+        logger.error(f"ActiveMQ rebalancing storm failed: {e}")
+        flush()
+        raise
+
+def stop_rebalancing_storm():
+    global _stop_event, _active_consumers
+    _stop_event.set()
+    for conn in _active_consumers:
+        try:
+            conn.disconnect()
+        except:
+            pass
+    _active_consumers = []
+

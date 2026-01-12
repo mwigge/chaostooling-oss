@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "title": "MongoDB Slow Operations Test",
+  "description": "Test database resilience under slow operations by creating operations that take extended time to complete.",
+  "configuration": {
+    "otelservicename": "mongodb-slow-operations-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-mongodb",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mongodb.mongodb_connectivity",
+          "func": "probe_mongodb_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-slow-operations",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mongodb.mongodb_slow_operations",
+        "func": "inject_slow_operations",
+        "arguments": {
+          "num_threads": 10,
+          "duration_seconds": 60,
+          "delay_ms": 5000
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-slow-operations",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mongodb.mongodb_slow_operations",
+        "func": "stop_slow_operations"
+      }
+    }
+  ]
+}
+

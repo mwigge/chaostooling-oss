@@ -1,0 +1,106 @@
+{
+  "version": "1.0",
+  "title": "MySQL Connection Pool Exhaustion Test",
+  "description": "Test database resilience under connection pool exhaustion by attempting to open and hold a large number of connections.",
+  "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "mysql-pool-exhaustion-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
+    "mysql_host": {
+      "type": "env",
+      "key": "MYSQL_HOST",
+      "default": "mysql-primary"
+    },
+    "mysql_port": {
+      "type": "env",
+      "key": "MYSQL_PORT",
+      "default": "3306"
+    },
+    "mysql_db": {
+      "type": "env",
+      "key": "MYSQL_DB",
+      "default": "testdb"
+    },
+    "mysql_user": {
+      "type": "env",
+      "key": "MYSQL_USER",
+      "default": "root"
+    },
+    "mysql_password": {
+      "type": "env",
+      "key": "MYSQL_PASSWORD",
+      "default": "mysql"
+    }
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-mysql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mysql.mysql_connectivity",
+          "func": "probe_mysql_connectivity",
+          "arguments": {
+            "host": "${mysql_host}",
+            "port": "${mysql_port}",
+            "database": "${mysql_db}",
+            "user": "${mysql_user}",
+            "password": "${mysql_password}"
+          }
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-connection-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mysql.mysql_pool_exhaustion",
+        "func": "inject_connection_pool_exhaustion",
+        "arguments": {
+          "host": "${mysql_host}",
+          "port": "${mysql_port}",
+          "database": "${mysql_db}",
+          "user": "${mysql_user}",
+          "password": "${mysql_password}",
+          "num_connections": 100,
+          "duration_seconds": 60,
+          "leak_connections": false
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-connection-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mysql.mysql_pool_exhaustion",
+        "func": "stop_pool_exhaustion"
+      }
+    }
+  ]
+}
+

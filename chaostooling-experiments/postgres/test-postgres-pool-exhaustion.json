@@ -1,0 +1,105 @@
+{
+  "version": "1.0",
+  "title": "PostgreSQL Connection Pool Exhaustion Test",
+  "description": "Test database connection pool resilience by exhausting available connections to verify connection management, timeout handling, and recovery mechanisms.",
+  "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "postgres-pool-exhaustion-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
+    "postgres_host": {
+      "type": "env",
+      "key": "POSTGRES_HOST",
+      "default": "postgres-primary"
+    },
+    "postgres_port": {
+      "type": "env",
+      "key": "POSTGRES_PORT",
+      "default": "5432"
+    },
+    "postgres_db": {
+      "type": "env",
+      "key": "POSTGRES_DB",
+      "default": "testdb"
+    },
+    "postgres_user": {
+      "type": "env",
+      "key": "POSTGRES_USER",
+      "default": "postgres"
+    },
+    "postgres_password": {
+      "type": "env",
+      "key": "POSTGRES_PASSWORD",
+      "default": "postgres"
+    }
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-postgres",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}"
+          }
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "inject_connection_pool_exhaustion",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "num_connections": 100,
+          "duration_seconds": 60,
+          "leak_connections": false
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "stop_pool_exhaustion"
+      }
+    }
+  ]
+}

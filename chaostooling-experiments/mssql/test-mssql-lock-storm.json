@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "title": "MSSQL Lock Storm Test",
+  "description": "Test database resilience under lock contention by creating concurrent transactions that lock the same rows, causing deadlocks and contention.",
+  "configuration": {
+    "otelservicename": "mssql-lock-storm-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-mssql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mssql.mssql_connectivity",
+          "func": "probe_mssql_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-lock-storm",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mssql.mssql_lock_storm",
+        "func": "inject_lock_storm",
+        "arguments": {
+          "num_threads": 10,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-lock-storm",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mssql.mssql_lock_storm",
+        "func": "stop_lock_storm"
+      }
+    }
+  ]
+}
+

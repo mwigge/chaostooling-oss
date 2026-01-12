@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "title": "Redis Connection Exhaustion Test",
+  "description": "Test database resilience under connection exhaustion by attempting to open and hold a large number of connections.",
+  "configuration": {
+    "otelservicename": "redis-connection-exhaustion-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-redis",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.redis.redis_connectivity",
+          "func": "probe_redis_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-connection-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.redis.redis_connection_exhaustion",
+        "func": "inject_connection_exhaustion",
+        "arguments": {
+          "num_connections": 100,
+          "hold_duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-connection-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.redis.redis_connection_exhaustion",
+        "func": "stop_connection_exhaustion"
+      }
+    }
+  ]
+}
+

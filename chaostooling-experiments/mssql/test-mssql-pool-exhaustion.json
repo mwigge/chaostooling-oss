@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "title": "MSSQL Connection Pool Exhaustion Test",
+  "description": "Test database resilience under connection pool exhaustion by attempting to open and hold a large number of connections.",
+  "configuration": {
+    "otelservicename": "mssql-pool-exhaustion-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-mssql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mssql.mssql_connectivity",
+          "func": "probe_mssql_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-connection-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mssql.mssql_pool_exhaustion",
+        "func": "inject_connection_pool_exhaustion",
+        "arguments": {
+          "num_connections": 100,
+          "hold_duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-connection-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mssql.mssql_pool_exhaustion",
+        "func": "stop_connection_pool_exhaustion"
+      }
+    }
+  ]
+}
+

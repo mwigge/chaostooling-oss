@@ -1,0 +1,107 @@
+{
+  "version": "1.0",
+  "title": "MySQL Slow Transactions Test",
+  "description": "Test database resilience under slow transactions by creating transactions that hold locks for extended periods.",
+  "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "mysql-slow-transactions-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
+    "mysql_host": {
+      "type": "env",
+      "key": "MYSQL_HOST",
+      "default": "mysql-primary"
+    },
+    "mysql_port": {
+      "type": "env",
+      "key": "MYSQL_PORT",
+      "default": "3306"
+    },
+    "mysql_db": {
+      "type": "env",
+      "key": "MYSQL_DB",
+      "default": "testdb"
+    },
+    "mysql_user": {
+      "type": "env",
+      "key": "MYSQL_USER",
+      "default": "root"
+    },
+    "mysql_password": {
+      "type": "env",
+      "key": "MYSQL_PASSWORD",
+      "default": "mysql"
+    }
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-mysql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mysql.mysql_connectivity",
+          "func": "probe_mysql_connectivity",
+          "arguments": {
+            "host": "${mysql_host}",
+            "port": "${mysql_port}",
+            "database": "${mysql_db}",
+            "user": "${mysql_user}",
+            "password": "${mysql_password}"
+          }
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-slow-transactions",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mysql.mysql_slow_transactions",
+        "func": "inject_slow_transactions",
+        "arguments": {
+          "host": "${mysql_host}",
+          "port": "${mysql_port}",
+          "database": "${mysql_db}",
+          "user": "${mysql_user}",
+          "password": "${mysql_password}",
+          "num_threads": 5,
+          "duration_seconds": 60,
+          "transaction_delay_ms": 5000,
+          "table_name": "chaos_test_table"
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-slow-transactions",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mysql.mysql_slow_transactions",
+        "func": "stop_slow_transactions"
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,104 @@
+{
+  "version": "1.0",
+  "title": "PostgreSQL Lock Storm Test",
+  "description": "Test database resilience under lock contention by creating concurrent transactions that lock the same rows, causing deadlocks and contention.",
+  "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "postgres-lock-storm-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
+    "postgres_host": {
+      "type": "env",
+      "key": "POSTGRES_HOST",
+      "default": "postgres-primary"
+    },
+    "postgres_port": {
+      "type": "env",
+      "key": "POSTGRES_PORT",
+      "default": "5432"
+    },
+    "postgres_db": {
+      "type": "env",
+      "key": "POSTGRES_DB",
+      "default": "testdb"
+    },
+    "postgres_user": {
+      "type": "env",
+      "key": "POSTGRES_USER",
+      "default": "postgres"
+    },
+    "postgres_password": {
+      "type": "env",
+      "key": "POSTGRES_PASSWORD",
+      "default": "postgres"
+    }
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-postgres",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}"
+          }
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-lock-storm",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_lock_storm",
+        "func": "inject_lock_storm",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "num_threads": 10,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-lock-storm",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_lock_storm",
+        "func": "stop_lock_storm"
+      }
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "version": "1.0",
+  "title": "E2E Transaction Flow Test",
+  "description": "Simulate a business transaction flowing through RabbitMQ -> PostgreSQL -> Kafka -> MongoDB.",
+  "configuration": {
+    "otelservicename": "e2e-transaction-flow-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "All systems are accessible",
+    "probes": [
+      {
+        "name": "probe-rabbitmq",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
+          "func": "probe_rabbitmq_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-postgres",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-kafka",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.kafka.kafka_connectivity",
+          "func": "probe_kafka_connectivity"
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-mongodb",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mongodb.mongodb_connectivity",
+          "func": "probe_mongodb_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "step-1-rabbitmq-publish",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_message_flood",
+        "func": "inject_message_flood",
+        "arguments": {
+          "num_producers": 1,
+          "messages_per_producer": 1,
+          "duration_seconds": 1
+        }
+      }
+    },
+    {
+      "name": "step-2-postgres-insert",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_query_saturation",
+        "func": "inject_query_saturation",
+        "arguments": {
+          "num_threads": 1,
+          "duration_seconds": 1
+        }
+      }
+    },
+    {
+      "name": "step-3-kafka-publish",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.kafka.kafka_message_flood",
+        "func": "inject_message_flood",
+        "arguments": {
+          "num_producers": 1,
+          "messages_per_producer": 1,
+          "duration_seconds": 1
+        }
+      }
+    },
+    {
+      "name": "step-4-mongodb-archive",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mongodb.mongodb_document_contention",
+        "func": "inject_document_contention",
+        "arguments": {
+          "num_threads": 1,
+          "duration_seconds": 1
+        }
+      }
+    }
+  ],
+  "rollbacks": []
+}

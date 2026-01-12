@@ -1,0 +1,91 @@
+# To limit exposure to denial of service attacks, change the host in endpoints below from 0.0.0.0 to a specific network interface.
+# See https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/security-best-practices.md#safeguards-against-denial-of-service-attacks
+
+extensions:
+  health_check:
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        max_recv_msg_size_mib: 10        # 100MB max message size
+        max_concurrent_streams: 10       # More concurrent streams
+
+      http:
+        endpoint: 0.0.0.0:4318
+        max_request_body_size: 10485760  # 100MB (default: ~4MB)
+
+  # Collect own metrics
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'otel-collector'
+        scrape_interval: 10s
+        static_configs:
+        - targets: ['0.0.0.0:8888']
+
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 5s
+    timeout: 20s
+    api_version: "1.25"
+    metrics:
+      container.network.io.usage.rx_bytes:
+        enabled: true
+      container.network.io.usage.tx_bytes:
+        enabled: true
+      container.memory.usage.total:
+        enabled: true
+      container.memory.usage.limit:
+        enabled: true
+      container.blockio.io_service_bytes_recursive:
+        enabled: true
+
+processors:
+  batch:
+
+exporters:
+  debug:
+    verbosity: detailed
+  
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+    tls:
+      insecure: true
+
+  otlphttp/tempo:
+    endpoint: http://tempo:4318
+    tls:
+      insecure: true
+    # Tempo’s HTTP OTLP receiver is on 4318; use http exporter to avoid gRPC dial failures.
+
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: chaos
+    resource_to_telemetry_conversion:
+      enabled: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/tempo, debug]
+
+    metrics:
+      receivers: [otlp, prometheus, docker_stats]
+      processors: [batch]
+      exporters: [prometheus]
+
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki]
+
+  extensions: [health_check, pprof, zpages]
+

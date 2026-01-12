@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "title": "MongoDB Document Contention Test",
+  "description": "Test database resilience under document contention by creating concurrent operations on the same documents.",
+  "configuration": {
+    "otelservicename": "mongodb-document-contention-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-mongodb",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mongodb.mongodb_connectivity",
+          "func": "probe_mongodb_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-document-contention",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mongodb.mongodb_document_contention",
+        "func": "inject_document_contention",
+        "arguments": {
+          "num_threads": 10,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-document-contention",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mongodb.mongodb_document_contention",
+        "func": "stop_document_contention"
+      }
+    }
+  ]
+}
+

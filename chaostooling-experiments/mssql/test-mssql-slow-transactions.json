@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "title": "MSSQL Slow Transactions Test",
+  "description": "Test database resilience under slow transactions by creating transactions that hold locks for extended periods.",
+  "configuration": {
+    "otelservicename": "mssql-slow-transactions-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-mssql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mssql.mssql_connectivity",
+          "func": "probe_mssql_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-slow-transactions",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mssql.mssql_slow_transactions",
+        "func": "inject_slow_transactions",
+        "arguments": {
+          "num_threads": 10,
+          "duration_seconds": 60,
+          "delay_ms": 5000
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-slow-transactions",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mssql.mssql_slow_transactions",
+        "func": "stop_slow_transactions"
+      }
+    }
+  ]
+}
+

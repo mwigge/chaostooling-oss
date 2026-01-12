@@ -1,0 +1,395 @@
+{
+    "version": "1.0.0",
+    "title": "Extensive PostgreSQL Chaos Experiment",
+    "description": "Comprehensive chaos experiment combining multiple PostgreSQL failure scenarios (Cache Miss, Vacuum Starvation, Temp Spill, Lock Storm, Pool Exhaustion, Query Saturation, Slow Transactions), Disaster Recovery (Primary Failover), and Infrastructure Chaos (CPU Stress, Network Latency). Supports S/M/L/XL sizing via environment variables.",
+    "tags": [
+        "postgres",
+        "extensive",
+        "sre",
+        "dr",
+        "infrastructure"
+    ],
+    "configuration": {
+        "postgres_host": {
+            "type": "env",
+            "key": "POSTGRES_HOST",
+            "default": "postgres-primary"
+        },
+        "postgres_port": {
+            "type": "env",
+            "key": "POSTGRES_PORT",
+            "default": "5432"
+        },
+        "postgres_db": {
+            "type": "env",
+            "key": "POSTGRES_DB",
+            "default": "testdb"
+        },
+        "postgres_user": {
+            "type": "env",
+            "key": "POSTGRES_USER",
+            "default": "postgres"
+        },
+        "postgres_password": {
+            "type": "env",
+            "key": "POSTGRES_PASSWORD",
+            "default": "postgres"
+        },
+        "postgres_replica_host": {
+            "type": "env",
+            "key": "POSTGRES_REPLICA_HOST",
+            "default": "postgres-replica"
+        },
+        "stress_duration": {
+            "type": "env",
+            "key": "STRESS_DURATION",
+            "default": "30"
+        },
+        "num_threads": {
+            "type": "env",
+            "key": "NUM_THREADS",
+            "default": "5"
+        },
+        "row_count": {
+            "type": "env",
+            "key": "ROW_COUNT",
+            "default": "1000"
+        },
+        "cpu_stress_load": {
+            "type": "env",
+            "key": "CPU_STRESS_LOAD",
+            "default": "80"
+        },
+        "network_latency_ms": {
+            "type": "env",
+            "key": "NETWORK_LATENCY_MS",
+            "default": "200"
+        }
+    },
+    "controls": [
+        {
+            "name": "opentelemetry",
+            "provider": {
+                "type": "python",
+        "module": "chaosotel.control"
+            }
+        }
+    ],
+    "steady-state-hypothesis": {
+        "title": "System is healthy",
+        "probes": [
+            {
+                "type": "probe",
+                "name": "check-postgres-connectivity",
+                "tolerance": true,
+                "provider": {
+                    "type": "python",
+                    "module": "chaosdb.probes.postgres.postgres_connectivity",
+                    "func": "probe_postgres_connectivity",
+                    "arguments": {
+                        "host": "${postgres_host}",
+                        "port": "${postgres_port}",
+                        "database": "${postgres_db}",
+                        "user": "${postgres_user}",
+                        "password": "${postgres_password}"
+                    }
+                }
+            },
+            {
+                "type": "probe",
+                "name": "collect-sre-metrics",
+                "tolerance": true,
+                "provider": {
+                    "type": "python",
+                    "module": "chaosdb.probes.postgres.postgres_system_metrics",
+                    "func": "collect_postgres_system_metrics",
+                    "arguments": {
+                        "host": "${postgres_host}",
+                        "port": "${postgres_port}",
+                        "database": "${postgres_db}",
+                        "user": "${postgres_user}",
+                        "password": "${postgres_password}"
+                    }
+                }
+            }
+        ]
+    },
+    "method": [
+        {
+            "name": "SCENARIO-1-Cache-Miss-Storm",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_load",
+                "func": "force_sequential_scans",
+                "arguments": {
+                    "host": "${postgres_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "table_name": "mobile_purchases",
+                    "duration_seconds": "${stress_duration}",
+                    "num_threads": "${num_threads}"
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-2-Vacuum-Starvation",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_load",
+                "func": "generate_dead_tuples",
+                "arguments": {
+                    "host": "${postgres_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "table_name": "mobile_purchases",
+                    "count": "${row_count}"
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-3-Temp-File-Spill",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_load",
+                "func": "complex_sort_query",
+                "arguments": {
+                    "host": "${postgres_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "table_name": "mobile_purchases",
+                    "duration_seconds": "${stress_duration}"
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-4-Lock-Storm",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_lock_storm",
+                "func": "inject_lock_storm",
+                "arguments": {
+                    "host": "${postgres_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "num_threads": "${num_threads}",
+                    "duration_seconds": "${stress_duration}"
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-5-Pool-Exhaustion",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+                "func": "inject_connection_pool_exhaustion",
+                "arguments": {
+                    "host": "${postgres_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "num_connections": 50,
+                    "duration_seconds": "${stress_duration}",
+                    "leak_connections": false
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-6-Query-Saturation",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_query_saturation",
+                "func": "inject_query_saturation",
+                "arguments": {
+                    "host": "${postgres_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "num_threads": "${num_threads}",
+                    "queries_per_thread": 100,
+                    "duration_seconds": "${stress_duration}",
+                    "slow_query_threshold_ms": 1000
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "probe-query-saturation-status",
+            "type": "probe",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.probes.postgres.postgres_query_saturation_status",
+                "func": "probe_query_saturation_status",
+                "arguments": {
+                    "host": "${postgres_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}"
+                }
+            },
+            "tolerance": true,
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-7-Slow-Transactions",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_slow_transactions",
+                "func": "inject_slow_transactions",
+                "arguments": {
+                    "host": "${postgres_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "num_threads": "${num_threads}",
+                    "duration_seconds": "${stress_duration}",
+                    "transaction_delay_ms": 2000
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-8-Infrastructure-CPU-Stress",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaoscompute.actions.compute_stress",
+                "func": "stress_cpu",
+                "arguments": {
+                    "duration": "${stress_duration}",
+                    "load": "${cpu_stress_load}",
+                    "cores": 1
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-9-Infrastructure-Network-Latency",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosnetwork.actions.network_latency",
+                "func": "simulate_network_conditions",
+                "arguments": {
+                    "latency": "${network_latency_ms}",
+                    "duration": "${stress_duration}"
+                }
+            },
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-10-DR-Primary-Failover",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_replication",
+                "func": "stop_primary",
+                "arguments": {
+                    "container_name": "${postgres_host}"
+                }
+            },
+            "pauses": {
+                "after": 10
+            }
+        },
+        {
+            "name": "verify-failover-connectivity",
+            "type": "probe",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.probes.postgres.postgres_connectivity",
+                "func": "probe_postgres_connectivity",
+                "arguments": {
+                    "host": "${postgres_replica_host}",
+                    "port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}"
+                }
+            },
+            "tolerance": true
+        },
+        {
+            "name": "SCENARIO-11-Replication-Lag-Check",
+            "type": "probe",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.probes.postgres.postgres_replication_lag",
+                "func": "check_replication_lag",
+                "arguments": {
+                    "primary_host": "${postgres_host}",
+                    "primary_port": "${postgres_port}",
+                    "replica_host": "${postgres_replica_host}",
+                    "replica_port": "${postgres_port}",
+                    "database": "${postgres_db}",
+                    "user": "${postgres_user}",
+                    "password": "${postgres_password}",
+                    "max_lag_seconds": 10.0
+                }
+            },
+            "tolerance": true,
+            "pauses": {
+                "after": 5
+            }
+        },
+        {
+            "name": "SCENARIO-10-DR-Recovery",
+            "type": "action",
+            "provider": {
+                "type": "python",
+                "module": "chaosdb.actions.postgres.postgres_replication",
+                "func": "start_replica",
+                "arguments": {
+                    "container_name": "${postgres_host}"
+                }
+            },
+            "pauses": {
+                "after": 15
+            }
+        }
+    ],
+    "rollbacks": []
+}

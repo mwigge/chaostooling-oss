@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "title": "Cassandra Query Saturation Test",
+  "description": "Test database resilience under query saturation by flooding the database with concurrent queries.",
+  "configuration": {
+    "otelservicename": "cassandra-query-saturation-test"
+  },
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Database is accessible",
+    "probes": [
+      {
+        "name": "probe-cassandra",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.cassandra.cassandra_connectivity",
+          "func": "probe_cassandra_connectivity"
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.cassandra.cassandra_query_saturation",
+        "func": "inject_query_saturation",
+        "arguments": {
+          "num_threads": 20,
+          "duration_seconds": 60
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.cassandra.cassandra_query_saturation",
+        "func": "stop_query_saturation"
+      }
+    }
+  ]
+}
+
