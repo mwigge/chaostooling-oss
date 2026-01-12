@@ -33,7 +33,7 @@ receivers:
     endpoint: unix:///var/run/docker.sock
     collection_interval: 5s
     timeout: 20s
-    api_version: "1.25"
+    api_version: "1.45"
     metrics:
       container.network.io.usage.rx_bytes:
         enabled: true

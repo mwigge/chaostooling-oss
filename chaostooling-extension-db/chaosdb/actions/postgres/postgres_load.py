@@ -45,6 +45,7 @@ def force_sequential_scans(
     stop_event = threading.Event()
     
     def run_scans():
+        logger = logging.getLogger("chaosdb.postgres.run_scans")
         try:
             conn = psycopg2.connect(
                 host=host, port=port, database=database,
