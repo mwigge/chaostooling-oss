@@ -20,6 +20,25 @@ RUN apt-get update && apt-get install -y \
 RUN pip install chaostoolkit "chaostoolkit-lib[jsonpath]"
 RUN pip install opentelemetry-exporter-otlp-proto-grpc
 
+# Install dependencies for extensions
+RUN pip install \
+    psycopg2-binary \
+    mysql-connector-python \
+    pyodbc \
+    pymongo \
+    redis \
+    cassandra-driver \
+    kafka-python \
+    pika \
+    stomp.py \
+    requests \
+    psutil \
+    opentelemetry-api \
+    opentelemetry-sdk \
+    opentelemetry-exporter-otlp \
+    opentelemetry-instrumentation-requests \
+    python-json-logger
+
 
 # Disable Python bytecode generation
 ENV PYTHONDONTWRITEBYTECODE=1
