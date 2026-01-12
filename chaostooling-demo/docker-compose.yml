@@ -627,12 +627,7 @@ services:
       - loki
     volumes:
       - ../chaostooling-experiments:/experiments
-      - ../chaostooling-extension-db:/chaostooling-extension-db
-      - ../chaostooling-extension-compute:/chaostooling-extension-compute
-      - ../chaostoolkit-extension-app:/chaostooling-extension-app
-      - ../chaostooling-extension-network:/chaostooling-extension-network
-      - ../chaostooling-otel:/chaostooling-otel
-      - ../chaostooling-reporting:/chaostooling-reporting
+      - ../:/chaostooling-oss
       - /var/run/docker.sock:/var/run/docker.sock
       - chaos-experiment-logs:/var/log/chaostoolkit
       - ./reporting-output:/var/log/chaostoolkit/reports
@@ -657,7 +652,6 @@ services:
       - CHAOSTOOLKIT_IN_DOCKER=true
       - CHAOSTOOLKIT_LOG_FILE=/var/log/chaostoolkit/chaostoolkit.log
       - CHAOSTOOLKIT_JOURNAL_PATH=/var/log/chaostoolkit/journal.json
-      - PYTHONPATH=/chaostooling-extension-db:/chaostooling-extension-compute:/chaostooling-extension-app:/chaostooling-extension-network:/chaostooling-otel
 
       # Postgres (for basic experiments)
       - POSTGRES_HOST=postgres-primary-site-a
