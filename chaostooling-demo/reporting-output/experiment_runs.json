@@ -1,0 +1,16 @@
+{
+  "Production-Scale Distributed Transaction Chaos Experiment": {
+    "total_runs": 1,
+    "successful_runs": 1,
+    "failed_runs": 0,
+    "runs": [
+      {
+        "experiment_id": "2847-20260112145340-e74b0c79",
+        "run_timestamp": "2026-01-12T14:37:47.697987+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 324.16618299484253
+      }
+    ]
+  }
+}

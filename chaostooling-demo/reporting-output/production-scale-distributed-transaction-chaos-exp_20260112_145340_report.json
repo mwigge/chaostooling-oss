@@ -1,0 +1,468 @@
+{
+  "experiment": {
+    "id": "2847-20260112145340-e74b0c79",
+    "title": "Production-Scale Distributed Transaction Chaos Experiment",
+    "description": "Comprehensive production-scale chaos engineering experiment showcasing distributed transactions across 8-10 hops: HA-Proxy \u2192 App Servers \u2192 Kafka \u2192 RabbitMQ \u2192 PostgreSQL Primary/Replica \u2192 DR Site \u2192 MongoDB \u2192 Redis. Demonstrates the power of Chaos Toolkit and distributed tracing with OpenTelemetry across a production-like environment with disaster recovery capabilities.",
+    "tags": [
+      "production",
+      "distributed",
+      "transactions",
+      "dr",
+      "messaging",
+      "database",
+      "observability",
+      "ultimate"
+    ]
+  },
+  "execution": {
+    "start": "2026-01-12T14:37:47.697987+00:00",
+    "end": "2026-01-12T14:43:11.862436+00:00",
+    "duration": 324.16618299484253,
+    "status": "completed"
+  },
+  "steady_state": {},
+  "run": [
+    {
+      "activity": {
+        "name": "SCENARIO-1-Cache-Miss-Storm",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.actions.postgres.postgres_load",
+          "func": "force_sequential_scans",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}",
+            "table_name": "mobile_purchases",
+            "duration_seconds": "${stress_duration}",
+            "num_threads": "${num_threads}"
+          }
+        },
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": true,
+      "start": "2026-01-12T14:37:47.830567+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:38:17.846834+00:00",
+      "duration": 30.016267
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-2-Vacuum-Starvation",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.actions.postgres.postgres_load",
+          "func": "generate_dead_tuples",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}",
+            "table_name": "mobile_purchases",
+            "count": "${row_count}"
+          }
+        },
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": true,
+      "start": "2026-01-12T14:38:22.848510+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:38:23.075751+00:00",
+      "duration": 0.227241
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-3-Temp-File-Spill",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.actions.postgres.postgres_load",
+          "func": "complex_sort_query",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}",
+            "table_name": "mobile_purchases",
+            "duration_seconds": "${stress_duration}"
+          }
+        },
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": true,
+      "start": "2026-01-12T14:38:28.077192+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:38:58.083689+00:00",
+      "duration": 30.006497
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-4-Lock-Storm",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.actions.postgres.postgres_lock_storm",
+          "func": "inject_lock_storm",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}",
+            "num_threads": "${num_threads}",
+            "duration_seconds": "${stress_duration}"
+          }
+        },
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": {
+        "success": true,
+        "duration_ms": 32794.49653625488,
+        "locks_created": 11,
+        "deadlocks_detected": 0,
+        "errors": 46,
+        "threads_used": 5
+      },
+      "start": "2026-01-12T14:39:03.085193+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:39:35.883049+00:00",
+      "duration": 32.797856
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-5-Pool-Exhaustion",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+          "func": "inject_connection_pool_exhaustion",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}",
+            "num_connections": 50,
+            "duration_seconds": "${stress_duration}",
+            "leak_connections": false
+          }
+        },
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": {
+        "success": true,
+        "duration_ms": 35031.165599823,
+        "connections_created": 50,
+        "connections_failed": 0,
+        "connections_leaked": 0,
+        "errors": 0,
+        "target_connections": 50
+      },
+      "start": "2026-01-12T14:39:40.884703+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:40:15.920970+00:00",
+      "duration": 35.036267
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-6-Query-Saturation",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.actions.postgres.postgres_query_saturation",
+          "func": "inject_query_saturation",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}",
+            "num_threads": "${num_threads}",
+            "queries_per_thread": 100,
+            "duration_seconds": "${stress_duration}",
+            "slow_query_threshold_ms": 1000
+          }
+        },
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": {
+        "success": true,
+        "duration_ms": 1077.3086547851562,
+        "total_queries": 500,
+        "slow_queries": 0,
+        "timeouts": 0,
+        "errors": 0,
+        "queries_per_second": 464.11954250911793,
+        "threads_used": 5
+      },
+      "start": "2026-01-12T14:40:20.922369+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:40:22.003485+00:00",
+      "duration": 1.081116
+    },
+    {
+      "activity": {
+        "name": "probe-query-saturation-status",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_query_saturation_status",
+          "func": "probe_query_saturation_status",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}"
+          }
+        },
+        "tolerance": true,
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": {
+        "success": true,
+        "active_queries": 1,
+        "waiting_queries": 6,
+        "total_connections": 7,
+        "max_connections": 100,
+        "connection_utilization_percent": 7.000000000000001,
+        "probe_time_ms": 9.936809539794922
+      },
+      "start": "2026-01-12T14:40:27.004962+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:40:27.018125+00:00",
+      "duration": 0.013163
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-7-Slow-Transactions",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.actions.postgres.postgres_slow_transactions",
+          "func": "inject_slow_transactions",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}",
+            "num_threads": "${num_threads}",
+            "duration_seconds": "${stress_duration}",
+            "transaction_delay_ms": 2000
+          }
+        },
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": {
+        "success": true,
+        "duration_ms": 38117.26927757263,
+        "transactions_completed": 19,
+        "average_transaction_time_ms": 8968.64706591556,
+        "errors": 0,
+        "threads_used": 5
+      },
+      "start": "2026-01-12T14:40:32.019468+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:41:10.140050+00:00",
+      "duration": 38.120582
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-8-Infrastructure-CPU-Stress",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaoscompute.actions.compute_stress",
+          "func": "stress_cpu",
+          "arguments": {
+            "duration": "${stress_duration}",
+            "load": "${cpu_stress_load}",
+            "cores": 1
+          }
+        },
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": true,
+      "start": "2026-01-12T14:41:15.141443+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:41:45.206722+00:00",
+      "duration": 30.065279
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-9-Infrastructure-Network-Latency",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosnetwork.actions.network_latency",
+          "func": "simulate_network_conditions",
+          "arguments": {
+            "latency": "${network_latency_ms}",
+            "duration": "${stress_duration}"
+          }
+        },
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": {
+        "success": true,
+        "latency_ms": 200,
+        "jitter_ms": 0,
+        "loss_percent": 0.0,
+        "duration": 30
+      },
+      "start": "2026-01-12T14:41:50.208160+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:42:20.619634+00:00",
+      "duration": 30.411474
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-10-DR-Primary-Failover",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.actions.postgres.postgres_replication",
+          "func": "stop_primary",
+          "arguments": {
+            "container_name": "${postgres_host}"
+          }
+        },
+        "pauses": {
+          "after": 10
+        },
+        "_activity_spans": []
+      },
+      "output": {
+        "success": true,
+        "container_name": "postgres-primary-site-a",
+        "action": "stopped"
+      },
+      "start": "2026-01-12T14:42:25.621089+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:42:26.290302+00:00",
+      "duration": 0.669213
+    },
+    {
+      "activity": {
+        "name": "verify-failover-connectivity",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity",
+          "arguments": {
+            "host": "${postgres_replica_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}"
+          }
+        },
+        "tolerance": true,
+        "_activity_spans": []
+      },
+      "output": true,
+      "start": "2026-01-12T14:42:36.293873+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:42:36.307986+00:00",
+      "duration": 0.014113
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-11-Replication-Lag-Check",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_replication_lag",
+          "func": "check_replication_lag",
+          "arguments": {
+            "primary_host": "${postgres_host}",
+            "primary_port": "${postgres_port}",
+            "replica_host": "${postgres_replica_host}",
+            "replica_port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}",
+            "max_lag_seconds": 10.0
+          }
+        },
+        "tolerance": true,
+        "pauses": {
+          "after": 5
+        },
+        "_activity_spans": []
+      },
+      "output": false,
+      "start": "2026-01-12T14:42:36.309009+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:42:46.324527+00:00",
+      "duration": 10.015518
+    },
+    {
+      "activity": {
+        "name": "SCENARIO-10-DR-Recovery",
+        "type": "action",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.actions.postgres.postgres_replication",
+          "func": "start_replica",
+          "arguments": {
+            "container_name": "${postgres_host}"
+          }
+        },
+        "pauses": {
+          "after": 15
+        },
+        "_activity_spans": []
+      },
+      "output": {
+        "success": true,
+        "container_name": "postgres-primary-site-a",
+        "action": "started"
+      },
+      "start": "2026-01-12T14:42:51.325939+00:00",
+      "status": "succeeded",
+      "end": "2026-01-12T14:42:56.816903+00:00",
+      "duration": 5.490964
+    }
+  ],
+  "rollbacks": [],
+  "deviations": []
+}

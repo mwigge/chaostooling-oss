@@ -486,8 +486,18 @@ def before_activity_control(
     """Create activity span as child of root experiment span."""
     ensure_initialized()
     metrics = get_metrics_core()
-    activity = (context or {}).get("activity", {})
-    activity_name = activity.get("name", "unknown")
+    
+    activity = context or {}
+    
+    activity_name = activity.get("name")
+    if not activity_name:
+        provider = activity.get("provider", {})
+        func = provider.get("func")
+        if func:
+            activity_name = func
+        else:
+             activity_name = "unknown"
+
     activity_type = activity.get("type", "unknown")
     target_type = _infer_target_type(activity)
 

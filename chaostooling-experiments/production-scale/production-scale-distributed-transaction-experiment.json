@@ -111,6 +111,41 @@
       "key": "REDIS_PORT",
       "default": "6379"
     },
+    "mysql_host": {
+      "type": "env",
+      "key": "MYSQL_HOST",
+      "default": "mysql"
+    },
+    "mysql_port": {
+      "type": "env",
+      "key": "MYSQL_PORT",
+      "default": "3306"
+    },
+    "mysql_db": {
+      "type": "env",
+      "key": "MYSQL_DATABASE",
+      "default": "testdb"
+    },
+    "mssql_host": {
+      "type": "env",
+      "key": "MSSQL_HOST",
+      "default": "mssql"
+    },
+    "mssql_port": {
+      "type": "env",
+      "key": "MSSQL_PORT",
+      "default": "1433"
+    },
+    "cassandra_host": {
+      "type": "env",
+      "key": "CASSANDRA_HOST",
+      "default": "cassandra"
+    },
+    "cassandra_port": {
+      "type": "env",
+      "key": "CASSANDRA_PORT",
+      "default": "9042"
+    },
     "_comment4": "=== MESSAGING SYSTEMS ===",
     "kafka_bootstrap_servers": {
       "type": "env",
@@ -141,6 +176,21 @@
       "type": "env",
       "key": "RABBITMQ_PASSWORD",
       "default": "password"
+    },
+    "activemq_host": {
+      "type": "env",
+      "key": "ACTIVEMQ_HOST",
+      "default": "activemq"
+    },
+    "activemq_port": {
+      "type": "env",
+      "key": "ACTIVEMQ_PORT",
+      "default": "61616"
+    },
+    "activemq_web_port": {
+      "type": "env",
+      "key": "ACTIVEMQ_WEB_PORT",
+      "default": "8161"
     },
     "_comment5": "=== CHAOS PARAMETERS ===",
     "network_latency_ms": {
@@ -675,4 +725,3 @@
   ],
   "rollbacks": []
 }
-

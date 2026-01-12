@@ -71,7 +71,7 @@
             "name": "opentelemetry",
             "provider": {
                 "type": "python",
-        "module": "chaosotel.control"
+                "module": "chaosotel.control"
             }
         }
     ],
