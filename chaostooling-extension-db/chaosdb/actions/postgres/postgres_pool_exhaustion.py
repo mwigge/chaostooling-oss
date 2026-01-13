@@ -120,6 +120,17 @@ def inject_connection_pool_exhaustion(
                         db_name=database,
                         count=1,
                     )
+                    
+                    # Record connection pool utilization (assuming default max_connections=100)
+                    # In production, you'd query the actual max_connections from PostgreSQL
+                    max_connections = 100  # Default PostgreSQL max_connections
+                    current_connections = len(_active_connections) + 1
+                    utilization_percent = min(100.0, (current_connections / max_connections) * 100.0)
+                    metrics.record_db_connection_pool_utilization(
+                        db_system=db_system,
+                        utilization_percent=utilization_percent,
+                        db_name=database,
+                    )
 
                     _active_connections.append(conn)
 

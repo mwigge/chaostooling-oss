@@ -169,9 +169,16 @@ def inject_slow_transactions(
                             tags=tags,
                         )
 
-                        # Mark as slow transaction if exceeds threshold
+                        # Mark as slow transaction if exceeds threshold and record metric
                         if txn_duration_ms > transaction_delay_ms:
                             span.set_attribute("chaos.slow_transaction_detected", True)
+                            # Record slow query count (threshold is transaction_delay_ms)
+                            metrics.record_db_slow_query_count(
+                                db_system=db_system,
+                                threshold_ms=transaction_delay_ms,
+                                db_name=database,
+                                tags=tags,
+                            )
 
                         span.set_status(StatusCode.OK)
 

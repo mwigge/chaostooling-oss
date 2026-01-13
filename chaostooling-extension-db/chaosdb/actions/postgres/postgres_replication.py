@@ -229,14 +229,15 @@ def start_replica(
     logger = logging.getLogger("chaosdb.postgres.replication")
 
     try:
+        recovery_start_time = time.time()
         with tracer.start_as_current_span("chaos.postgres.start_replica") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
                 db_name=None,
-                host=replica_host,
-                port=replica_port,
+                host=None,  # replica_host not available in this function
+                port=None,  # replica_port not available in this function
                 chaos_activity="postgresql_start_replica",
                 chaos_action="start_replica",
                 chaos_operation="start_replica"
@@ -255,10 +256,22 @@ def start_replica(
             else:
                 raise ValueError("container_name is required")
 
+            # Calculate and record MTTR
+            recovery_time_ms = (time.time() - recovery_start_time) * 1000
+            metrics = get_metrics_core()
+            metrics.record_mttr(
+                service_name=container_name or "postgres-replica",
+                recovery_time_ms=recovery_time_ms,
+                recovery_type="replica_failover",
+                success=True,
+                tags={"container_name": container_name} if container_name else None,
+            )
+
             result_dict = {
                 "success": True,
                 "container_name": container_name,
                 "action": "started",
+                "mttr_ms": recovery_time_ms,
             }
 
             span.set_status(StatusCode.OK)

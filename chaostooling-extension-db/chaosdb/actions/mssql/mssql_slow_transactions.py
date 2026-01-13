@@ -138,11 +138,12 @@ def inject_slow_transactions(
                             db_operation="slow_transaction",
                         )
 
-                        if txn_duration_ms > 1000:
-                            metrics.record_db_slow_query(
+                        # Record slow query if exceeds threshold (using transaction_delay_ms as threshold)
+                        if txn_duration_ms > transaction_delay_ms:
+                            metrics.record_db_slow_query_count(
                                 db_system=db_system,
+                                threshold_ms=transaction_delay_ms,
                                 db_name=database,
-                                query_duration_ms=txn_duration_ms,
                                 tags=tags,
                             )
 

@@ -33,20 +33,20 @@ class MetricsCore:
         """Record action duration."""
         try:
             histogram = self._get_or_create_histogram(
-                "operation.duration",
+                "chaos_operation_duration_milliseconds",
                 unit="ms",
                 description="Operation execution duration",
             )
             attributes = {
-                "operation.name": str(name),
-                "operation.status": str(status),
+                "operation_name": str(name),
+                "operation_status": str(status),
             }
             if severity:
-                attributes["operation.severity"] = str(severity)
+                attributes["operation_severity"] = str(severity)
             if target_type:
-                attributes["operation.target_type"] = str(target_type)
+                attributes["operation_target_type"] = str(target_type)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             histogram.record(float(duration_ms), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -63,14 +63,14 @@ class MetricsCore:
         """Record action count."""
         try:
             counter = self._get_or_create_counter(
-                f"chaos.operation.{status}",
+                f"chaos_operation_{status}_total",
                 description=f"Count of {status} operations",
             )
-            attributes = {"operation.name": str(name)}
+            attributes = {"operation_name": str(name)}
             if severity:
-                attributes["operation.severity"] = str(severity)
+                attributes["operation_severity"] = str(severity)
             if target_type:
-                attributes["operation.target_type"] = str(target_type)
+                attributes["operation_target_type"] = str(target_type)
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -87,15 +87,15 @@ class MetricsCore:
         """Record probe duration."""
         try:
             histogram = self._get_or_create_histogram(
-                "probe.duration",
+                "chaos_probe_duration_milliseconds",
                 unit="ms",
                 description="Probe execution duration",
             )
-            attributes = {"probe.name": str(name), "probe.status": str(status)}
+            attributes = {"probe_name": str(name), "probe_status": str(status)}
             if target_type:
-                attributes["probe.target_type"] = str(target_type)
+                attributes["probe_target_type"] = str(target_type)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             histogram.record(float(duration_ms), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -110,11 +110,11 @@ class MetricsCore:
         """Record probe count."""
         try:
             counter = self._get_or_create_counter(
-                "probe.executions", description="Probe execution count"
+                "chaos_probe_executions_total", description="Probe execution count"
             )
-            attributes = {"probe.name": str(name), "probe.status": str(status)}
+            attributes = {"probe_name": str(name), "probe_status": str(status)}
             if target_type:
-                attributes["probe.target_type"] = str(target_type)
+                attributes["probe_target_type"] = str(target_type)
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -129,19 +129,14 @@ class MetricsCore:
     ) -> None:
         """Record recovery time (MTTR)."""
         try:
-            histogram = self._get_or_create_histogram(
-                "recovery.duration",
-                unit="ms",
-                description="Recovery execution duration",
+            # Use the new record_mttr method for consistency
+            self.record_mttr(
+                service_name=name,
+                recovery_time_ms=duration_ms,
+                recovery_type="recovery",
+                success=success,
+                tags={"target_type": target_type} if target_type else None,
             )
-            attributes = {
-                "recovery.name": str(name),
-                "recovery.success": str(success),
-            }
-            if target_type:
-                attributes["recovery.target_type"] = str(target_type)
-            histogram.record(float(duration_ms), attributes=attributes)
-            self._metric_count += 1
         except Exception as e:
             logger.error(f"Error recording recovery time: {e}")
 
@@ -315,17 +310,17 @@ class MetricsCore:
         """Record database query latency."""
         try:
             histogram = self._get_or_create_histogram(
-                "db.query.latency",
+                "chaos_db_query_latency_milliseconds",
                 unit="ms",
                 description="Database query latency",
             )
-            attributes = {"db.system": str(db_system)}
+            attributes = {"db_system": str(db_system)}
             if db_name:
-                attributes["db.name"] = str(db_name)
+                attributes["db_name"] = str(db_name)
             if db_operation:
-                attributes["db.operation"] = str(db_operation)
+                attributes["db_operation"] = str(db_operation)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             histogram.record(float(duration_ms), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -342,15 +337,15 @@ class MetricsCore:
         """Record database query count."""
         try:
             counter = self._get_or_create_counter(
-                "db.query.count", description="Database query count"
+                "chaos_db_query_count_total", description="Database query count"
             )
-            attributes = {"db.system": str(db_system)}
+            attributes = {"db_system": str(db_system)}
             if db_name:
-                attributes["db.name"] = str(db_name)
+                attributes["db_name"] = str(db_name)
             if db_operation:
-                attributes["db.operation"] = str(db_operation)
+                attributes["db_operation"] = str(db_operation)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -366,20 +361,126 @@ class MetricsCore:
         """Record database error."""
         try:
             counter = self._get_or_create_counter(
-                "db.error.count", description="Database error count"
+                "chaos_db_error_count_total", description="Database error count"
             )
             attributes = {
-                "db.system": str(db_system),
-                "error.type": str(error_type),
+                "db_system": str(db_system),
+                "error_type": str(error_type),
             }
             if db_name:
-                attributes["db.name"] = str(db_name)
+                attributes["db_name"] = str(db_name)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
             logger.error(f"Error recording db error: {e}")
+
+    def record_db_deadlock(
+        self,
+        db_system: str,
+        db_name: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record database deadlock."""
+        try:
+            counter = self._get_or_create_counter(
+                "chaos_db_deadlock_count_total", description="Database deadlock count"
+            )
+            attributes = {"db_system": str(db_system)}
+            if db_name:
+                attributes["db_name"] = str(db_name)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+            counter.add(1, attributes=attributes)
+            # Also record as error type "Deadlock"
+            self.record_db_error(
+                db_system=db_system,
+                error_type="Deadlock",
+                db_name=db_name,
+                tags=tags,
+            )
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording db deadlock: {e}")
+
+    def record_db_lock(
+        self,
+        db_system: str,
+        lock_type: str = "wait",
+        db_name: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record database lock event."""
+        try:
+            counter = self._get_or_create_counter(
+                "chaos_db_lock_count_total", description="Database lock count"
+            )
+            attributes = {
+                "db_system": str(db_system),
+                "lock_type": str(lock_type),
+            }
+            if db_name:
+                attributes["db_name"] = str(db_name)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+            counter.add(1, attributes=attributes)
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording db lock: {e}")
+
+    def record_db_slow_query_count(
+        self,
+        db_system: str,
+        threshold_ms: float = 1000.0,
+        db_name: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record slow query count."""
+        try:
+            counter = self._get_or_create_counter(
+                "chaos_db_slow_query_count_total",
+                description="Database slow query count",
+            )
+            attributes = {
+                "db_system": str(db_system),
+                "threshold_ms": str(threshold_ms),
+            }
+            if db_name:
+                attributes["db_name"] = str(db_name)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+            counter.add(1, attributes=attributes)
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording slow query count: {e}")
+
+    def record_db_connection_pool_utilization(
+        self,
+        db_system: str,
+        utilization_percent: float,
+        db_name: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record connection pool utilization percentage."""
+        try:
+            gauge = self._get_or_create_gauge(
+                "chaos_db_connection_pool_utilization",
+                unit="percent",
+                description="Database connection pool utilization",
+            )
+            attributes = {"db_system": str(db_system)}
+            if db_name:
+                attributes["db_name"] = str(db_name)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+            if hasattr(gauge, "record"):
+                gauge.record(float(utilization_percent), attributes=attributes)
+            elif hasattr(gauge, "set"):
+                gauge.set(float(utilization_percent), attributes=attributes)
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording connection pool utilization: {e}")
 
     def record_db_connection_failure(
         self,
@@ -390,14 +491,14 @@ class MetricsCore:
         """Record database connection failure."""
         try:
             counter = self._get_or_create_counter(
-                "db.connection.failure",
+                "chaos_db_connection_failure_total",
                 description="Database connection failure count",
             )
-            attributes = {"db.system": str(db_system)}
+            attributes = {"db_system": str(db_system)}
             if db_name:
-                attributes["db.name"] = str(db_name)
+                attributes["db_name"] = str(db_name)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -505,17 +606,17 @@ class MetricsCore:
         """Record messaging operation latency."""
         try:
             histogram = self._get_or_create_histogram(
-                "messaging.operation.latency",
+                "chaos_messaging_operation_latency_milliseconds",
                 unit="ms",
                 description="Messaging operation latency",
             )
-            attributes = {"messaging.system": str(mq_system)}
+            attributes = {"mq_system": str(mq_system)}
             if mq_destination:
-                attributes["messaging.destination"] = str(mq_destination)
+                attributes["mq_destination"] = str(mq_destination)
             if mq_operation:
-                attributes["messaging.operation"] = str(mq_operation)
+                attributes["mq_operation"] = str(mq_operation)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             histogram.record(float(duration_ms), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -532,16 +633,16 @@ class MetricsCore:
         """Record messaging operation count."""
         try:
             counter = self._get_or_create_counter(
-                "messaging.operation.count",
+                "chaos_messaging_operation_count_total",
                 description="Messaging operation count",
             )
-            attributes = {"messaging.system": str(mq_system)}
+            attributes = {"mq_system": str(mq_system)}
             if mq_destination:
-                attributes["messaging.destination"] = str(mq_destination)
+                attributes["mq_destination"] = str(mq_destination)
             if mq_operation:
-                attributes["messaging.operation"] = str(mq_operation)
+                attributes["mq_operation"] = str(mq_operation)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -558,18 +659,18 @@ class MetricsCore:
         """Record messaging error."""
         try:
             counter = self._get_or_create_counter(
-                "messaging.error.count", description="Messaging error count"
+                "chaos_messaging_error_count_total", description="Messaging error count"
             )
             attributes = {
-                "messaging.system": str(mq_system),
-                "error.type": str(error_type),
+                "mq_system": str(mq_system),
+                "error_type": str(error_type),
             }
             if mq_destination:
-                attributes["messaging.destination"] = str(mq_destination)
+                attributes["mq_destination"] = str(mq_destination)
             if mq_operation:
-                attributes["messaging.operation"] = str(mq_operation)
+                attributes["mq_operation"] = str(mq_operation)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -584,14 +685,14 @@ class MetricsCore:
         """Record messaging connection failure."""
         try:
             counter = self._get_or_create_counter(
-                "messaging.connection.failure",
+                "chaos_messaging_connection_failure_total",
                 description="Messaging connection failure count",
             )
-            attributes = {"messaging.system": str(mq_system)}
+            attributes = {"mq_system": str(mq_system)}
             if mq_destination:
-                attributes["messaging.destination"] = str(mq_destination)
+                attributes["mq_destination"] = str(mq_destination)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -683,6 +784,129 @@ class MetricsCore:
             self._metric_count += 1
         except Exception as e:
             logger.error(f"Error recording messaging histogram: {e}")
+
+    # ========================================================================
+    # Transaction Metrics
+    # ========================================================================
+
+    def record_transaction(
+        self,
+        db_operation: str,
+        status: str = "successful",
+        db_system: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record transaction count."""
+        try:
+            counter = self._get_or_create_counter(
+                f"chaos_chaos_transaction_{status}_total",
+                description=f"Transaction {status} count",
+            )
+            attributes = {"tag_db_operation": str(db_operation)}
+            if db_system:
+                attributes["tag_db_system"] = str(db_system)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+            counter.add(1, attributes=attributes)
+            # Also record total
+            total_counter = self._get_or_create_counter(
+                "chaos_chaos_transaction_total",
+                description="Total transaction count",
+            )
+            total_counter.add(1, attributes=attributes)
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording transaction: {e}")
+
+    def record_transaction_reconnection_attempt(
+        self,
+        db_operation: str,
+        db_system: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record transaction reconnection attempt."""
+        try:
+            counter = self._get_or_create_counter(
+                "chaos_chaos_transaction_reconnection_attempts_total",
+                description="Transaction reconnection attempts",
+            )
+            attributes = {"tag_db_operation": str(db_operation)}
+            if db_system:
+                attributes["tag_db_system"] = str(db_system)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+            counter.add(1, attributes=attributes)
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording transaction reconnection: {e}")
+
+    def record_transaction_integrity(
+        self,
+        is_integrity_ok: bool,
+        db_system: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record transaction integrity check result."""
+        try:
+            gauge = self._get_or_create_gauge(
+                "chaos_transaction_integrity_check",
+                unit="1",
+                description="Transaction integrity check (1=ok, 0=failed)",
+            )
+            attributes = {}
+            if db_system:
+                attributes["db_system"] = str(db_system)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+            value = 1.0 if is_integrity_ok else 0.0
+            if hasattr(gauge, "record"):
+                gauge.record(float(value), attributes=attributes)
+            elif hasattr(gauge, "set"):
+                gauge.set(float(value), attributes=attributes)
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording transaction integrity: {e}")
+
+    # ========================================================================
+    # MTTR (Mean Time To Recovery) Metrics
+    # ========================================================================
+
+    def record_mttr(
+        self,
+        service_name: str,
+        recovery_time_ms: float,
+        recovery_type: str = "failover",
+        success: bool = True,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record Mean Time To Recovery (MTTR) for a service."""
+        try:
+            histogram = self._get_or_create_histogram(
+                "chaos_mttr_seconds",
+                unit="ms",
+                description="Mean Time To Recovery in milliseconds",
+            )
+            attributes = {
+                "service_name": str(service_name),
+                "recovery_type": str(recovery_type),
+                "recovery_success": str(success),
+            }
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+            histogram.record(float(recovery_time_ms), attributes=attributes)
+            # Also record as gauge for current MTTR
+            gauge = self._get_or_create_gauge(
+                "chaos_mttr_current_seconds",
+                unit="ms",
+                description="Current MTTR per service",
+            )
+            if hasattr(gauge, "record"):
+                gauge.record(float(recovery_time_ms), attributes=attributes)
+            elif hasattr(gauge, "set"):
+                gauge.set(float(recovery_time_ms), attributes=attributes)
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording MTTR: {e}")
 
     def shutdown(self) -> None:
         """Shutdown metrics core."""

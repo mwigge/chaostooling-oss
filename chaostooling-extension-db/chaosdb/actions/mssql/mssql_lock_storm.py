@@ -92,6 +92,12 @@ def inject_lock_storm(
                         cursor.fetchone()
 
                         locks_created += 1
+                        # Record lock creation
+                        metrics.record_db_lock(
+                            db_system=db_system,
+                            lock_type="row_lock",
+                            db_name=database,
+                        )
 
                         time.sleep(0.5)
                         
@@ -101,6 +107,10 @@ def inject_lock_storm(
                         except pyodbc.Error as e:
                             if "deadlock" in str(e).lower() or "1205" in str(e):
                                 deadlocks_detected += 1
+                                metrics.record_db_deadlock(
+                                    db_system=db_system,
+                                    db_name=database,
+                                )
                                 logger.warning(f"Deadlock detected in thread {thread_id}: {e}")
                             conn.rollback()
 

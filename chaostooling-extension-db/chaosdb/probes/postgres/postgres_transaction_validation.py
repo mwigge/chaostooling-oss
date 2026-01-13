@@ -337,6 +337,13 @@ def probe_transaction_integrity(
 
             probe_time_ms = (time.time() - start) * 1000
 
+            # Record transaction integrity check result
+            metrics.record_transaction_integrity(
+                is_integrity_ok=is_integrity_ok,
+                db_system=db_system,
+                tags={"database": database, "table_name": table_name},
+            )
+
             metrics.record_db_query_latency(
                 probe_time_ms,
                 db_system=db_system,
@@ -554,12 +561,31 @@ def probe_api_transaction_flow(
 
                             if retry_count > 0:
                                 reconnection_successes += 1
+                                # Record reconnection attempt
+                                metrics.record_transaction_reconnection_attempt(
+                                    db_operation="api_transaction_flow",
+                                    db_system="postgresql",
+                                )
+
+                            # Record successful transaction
+                            metrics.record_transaction(
+                                db_operation="api_transaction_flow",
+                                status="successful",
+                                db_system="postgresql",
+                            )
 
                         else:
                             failed += 1
 
                             errors.append(
                                 f"HTTP {response.status_code}: {response.text}"
+                            )
+
+                            # Record failed transaction
+                            metrics.record_transaction(
+                                db_operation="api_transaction_flow",
+                                status="failed",
+                                db_system="postgresql",
                             )
 
                             success = True  # Don't retry on HTTP errors
@@ -588,12 +614,26 @@ def probe_api_transaction_flow(
                                 f"Connection/timeout failed after {max_retries} attempts: {str(e)}"
                             )
 
+                            # Record failed transaction
+                            metrics.record_transaction(
+                                db_operation="api_transaction_flow",
+                                status="failed",
+                                db_system="postgresql",
+                            )
+
                             success = True  # Stop retrying after max attempts
 
                     except Exception as e:
                         errors.append(str(e))
 
                         failed += 1
+
+                        # Record failed transaction
+                        metrics.record_transaction(
+                            db_operation="api_transaction_flow",
+                            status="failed",
+                            db_system="postgresql",
+                        )
 
                         success = True  # Don't retry on other errors
 

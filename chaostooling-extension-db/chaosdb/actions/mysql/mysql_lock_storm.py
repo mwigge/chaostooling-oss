@@ -203,10 +203,20 @@ def inject_lock_storm(
                                 (thread_id, secondary_id),
                             )
                             conn.commit()
+                            # Record lock creation
+                            metrics.record_db_lock(
+                                db_system=db_system,
+                                lock_type="row_lock",
+                                db_name=database,
+                            )
                         except mysql.connector.errors.DatabaseError as e:
                             error_msg = str(e).lower()
                             if "deadlock" in error_msg or "1213" in str(e):
                                 deadlocks_detected += 1
+                                metrics.record_db_deadlock(
+                                    db_system=db_system,
+                                    db_name=database,
+                                )
                                 metrics.record_db_error(
                                     db_system=db_system,
                                     error_type="Deadlock",

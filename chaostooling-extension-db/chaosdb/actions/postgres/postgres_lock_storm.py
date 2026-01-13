@@ -138,6 +138,12 @@ def inject_lock_storm(
                         cursor.fetchone()
 
                         locks_created += 1
+                        # Record lock creation
+                        metrics.record_db_lock(
+                            db_system=db_system,
+                            lock_type="row_lock",
+                            db_name=database,
+                        )
 
                         # Hold locks briefly to increase overlap
                         time.sleep(0.3)
