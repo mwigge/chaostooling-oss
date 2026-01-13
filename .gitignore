@@ -132,3 +132,5 @@ celerybeat-schedule
 # ruff
 .ruff_cache/
 
+# CI/CD artifacts
+bandit-report.json
