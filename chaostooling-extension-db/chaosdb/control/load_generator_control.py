@@ -79,7 +79,15 @@ def before_experiment_control(
         )
 
         _load_generator_started = True
-        logger.info(f"Load generator started: {result}")
+        logger.info(f"Load generator started successfully: {result}")
+        
+        # Verify load generator is actually running
+        from ..actions.load_generator.transaction_load_generator import get_background_load_stats
+        try:
+            stats = get_background_load_stats(load_generator_url=url)
+            logger.info(f"Load generator verification: {stats}")
+        except Exception as verify_error:
+            logger.warning(f"Could not verify load generator status: {verify_error}")
 
     except Exception as e:
         logger.warning(f"Failed to start load generator: {e}")
