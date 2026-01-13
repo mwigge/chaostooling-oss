@@ -78,14 +78,18 @@ def inject_connection_pool_exhaustion(
             with tracer.start_as_current_span(
                 f"pool_exhaustion.connection.{conn_id}"
             ) as span:
-                span.set_attribute("db.system", db_system)
-                span.set_attribute("db.name", database)
-                span.set_attribute("chaos.connection_id", conn_id)
-                span.set_attribute("chaos.action", "connection_pool_exhaustion")
-                span.set_attribute("chaos.activity", "mysql_connection_pool_exhaustion")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "mysql")
-                span.set_attribute("chaos.operation", "connection_pool_exhaustion")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system=db_system,
+                    db_name=database,
+                    host=host,
+                    port=port,
+                    chaos_activity="mysql_connection_pool_exhaustion",
+                    chaos_action="connection_pool_exhaustion",
+                    chaos_operation="connection_pool_exhaustion",
+                    chaos_connection_id=conn_id
+                )
 
                 acquisition_start = time.time()
 

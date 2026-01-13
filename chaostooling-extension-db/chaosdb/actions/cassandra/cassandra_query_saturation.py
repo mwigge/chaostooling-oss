@@ -51,14 +51,18 @@ def inject_query_saturation(
         session = None
         try:
             with tracer.start_as_current_span(f"query_saturation.worker.{thread_id}") as span:
-                span.set_attribute("db.system", "cassandra")
-                span.set_attribute("db.name", keyspace)
-                span.set_attribute("chaos.thread_id", thread_id)
-                span.set_attribute("chaos.action", "query_saturation")
-                span.set_attribute("chaos.activity", "cassandra_query_saturation")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "cassandra")
-                span.set_attribute("chaos.operation", "query_saturation")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system="cassandra",
+                    db_name=keyspace,
+                    host=host,
+                    port=port,
+                    chaos_activity="cassandra_query_saturation",
+                    chaos_action="query_saturation",
+                    chaos_operation="query_saturation",
+                    chaos_thread_id=thread_id
+                )
 
                 cluster = Cluster([host], port=port)
                 session = cluster.connect(keyspace)

@@ -172,12 +172,17 @@ def stop_replica(
 
     try:
         with tracer.start_as_current_span("chaos.postgres.stop_replica") as span:
-            span.set_attribute("db.system", "postgresql")
-            span.set_attribute("chaos.action", "stop_replica")
-            span.set_attribute("chaos.activity", "postgresql_stop_replica")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "postgresql")
-            span.set_attribute("chaos.operation", "stop_replica")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="postgresql",
+                db_name=None,
+                host=replica_host,
+                port=replica_port,
+                chaos_activity="postgresql_stop_replica",
+                chaos_action="stop_replica",
+                chaos_operation="stop_replica"
+            )
 
             if container_name:
                 span.set_attribute("chaos.container_name", container_name)
@@ -225,12 +230,17 @@ def start_replica(
 
     try:
         with tracer.start_as_current_span("chaos.postgres.start_replica") as span:
-            span.set_attribute("db.system", "postgresql")
-            span.set_attribute("chaos.action", "start_replica")
-            span.set_attribute("chaos.activity", "postgresql_start_replica")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "postgresql")
-            span.set_attribute("chaos.operation", "start_replica")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="postgresql",
+                db_name=None,
+                host=replica_host,
+                port=replica_port,
+                chaos_activity="postgresql_start_replica",
+                chaos_action="start_replica",
+                chaos_operation="start_replica"
+            )
 
             if container_name:
                 span.set_attribute("chaos.container_name", container_name)
@@ -287,12 +297,17 @@ def stop_primary(
 
     try:
         with tracer.start_as_current_span("chaos.postgres.stop_primary") as span:
-            span.set_attribute("db.system", "postgresql")
-            span.set_attribute("chaos.action", "stop_primary")
-            span.set_attribute("chaos.activity", "postgresql_stop_primary")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "postgresql")
-            span.set_attribute("chaos.operation", "stop_primary")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="postgresql",
+                db_name=None,
+                host=primary_host,
+                port=primary_port,
+                chaos_activity="postgresql_stop_primary",
+                chaos_action="stop_primary",
+                chaos_operation="stop_primary"
+            )
 
             if container_name:
                 span.set_attribute("chaos.container_name", container_name)

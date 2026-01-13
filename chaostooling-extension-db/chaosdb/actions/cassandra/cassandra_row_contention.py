@@ -65,16 +65,18 @@ def inject_row_contention(
         session = None
         try:
             with tracer.start_as_current_span(f"row_contention.worker.{thread_id}") as span:
-                span.set_attribute("db.system", "cassandra")
-                span.set_attribute("db.name", keyspace)
-                span.set_attribute("network.peer.address", host)
-                span.set_attribute("network.peer.port", port)
-                span.set_attribute("chaos.thread_id", thread_id)
-                span.set_attribute("chaos.action", "row_contention")
-                span.set_attribute("chaos.activity", "cassandra_row_contention")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "cassandra")
-                span.set_attribute("chaos.operation", "row_contention")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system="cassandra",
+                    db_name=keyspace,
+                    host=host,
+                    port=port,
+                    chaos_activity="cassandra_row_contention",
+                    chaos_action="row_contention",
+                    chaos_operation="row_contention",
+                    chaos_thread_id=thread_id
+                )
 
                 cluster = Cluster([host], port=port)
                 if user and password:

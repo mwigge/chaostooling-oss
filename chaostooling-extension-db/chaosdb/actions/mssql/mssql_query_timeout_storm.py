@@ -55,19 +55,19 @@ def inject_query_timeout_storm(
         conn = None
         try:
             with tracer.start_as_current_span(f"query_timeout_storm.worker.{thread_id}") as span:
-                span.set_attribute("db.system", "mssql")
-                span.set_attribute("db.name", database)
-                span.set_attribute("chaos.thread_id", thread_id)
-                span.set_attribute("chaos.action", "query_timeout_storm")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system="mssql",
+                    db_name=database,
+                    host=host,
+                    port=port,
+                    chaos_activity="mssql_query_timeout_storm",
+                    chaos_action="query_timeout_storm",
+                    chaos_operation="query_timeout_storm",
+                    chaos_thread_id=thread_id
+                )
                 span.set_attribute("chaos.timeout_seconds", timeout_seconds)
-                span.set_attribute("chaos.activity", "mssql_query_timeout_storm")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "mssql")
-                span.set_attribute("chaos.operation", "query_timeout_storm")
-                span.set_attribute("chaos.activity", "mssql_query_timeout_storm")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "mssql")
-                span.set_attribute("chaos.operation", "query_timeout_storm")
                 
                 conn = pyodbc.connect(connection_string, timeout=timeout_seconds)
                 cursor = conn.cursor()

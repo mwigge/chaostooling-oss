@@ -49,14 +49,18 @@ def inject_connection_exhaustion(
         session = None
         try:
             with tracer.start_as_current_span(f"connection_exhaustion.connection.{conn_id}") as span:
-                span.set_attribute("db.system", "cassandra")
-                span.set_attribute("db.name", keyspace)
-                span.set_attribute("chaos.connection_id", conn_id)
-                span.set_attribute("chaos.action", "connection_exhaustion")
-                span.set_attribute("chaos.activity", "cassandra_connection_exhaustion")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "cassandra")
-                span.set_attribute("chaos.operation", "connection_exhaustion")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system="cassandra",
+                    db_name=keyspace,
+                    host=host,
+                    port=port,
+                    chaos_activity="cassandra_connection_exhaustion",
+                    chaos_action="connection_exhaustion",
+                    chaos_operation="connection_exhaustion",
+                    chaos_connection_id=conn_id
+                )
 
                 try:
                     cluster = Cluster([host], port=port)

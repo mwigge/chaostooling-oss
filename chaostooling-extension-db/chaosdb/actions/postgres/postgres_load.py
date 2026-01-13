@@ -100,7 +100,17 @@ def force_sequential_scans(
         with tracer.start_as_current_span(
             "action.postgres.force_sequential_scans"
         ) as span:
-            span.set_attribute("db.system", "postgresql")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="postgresql",
+                db_name=database,
+                host=host,
+                port=port,
+                chaos_activity="postgres_force_sequential_scans",
+                chaos_action="force_sequential_scans",
+                chaos_operation="force_sequential_scans"
+            )
             span.set_attribute("chaos.duration", duration_seconds)
 
             logger.info(
@@ -159,7 +169,17 @@ def generate_dead_tuples(
         with tracer.start_as_current_span(
             "action.postgres.generate_dead_tuples"
         ) as span:
-            span.set_attribute("db.system", "postgresql")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="postgresql",
+                db_name=database,
+                host=host,
+                port=port,
+                chaos_activity="postgres_generate_dead_tuples",
+                chaos_action="generate_dead_tuples",
+                chaos_operation="generate_dead_tuples"
+            )
             span.set_attribute("chaos.count", count)
 
             conn = psycopg2.connect(
@@ -286,7 +306,17 @@ def complex_sort_query(
 
     try:
         with tracer.start_as_current_span("action.postgres.complex_sort_query") as span:
-            span.set_attribute("db.system", "postgresql")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="postgresql",
+                db_name=database,
+                host=host,
+                port=port,
+                chaos_activity="postgres_complex_sort_queries",
+                chaos_action="complex_sort_queries",
+                chaos_operation="complex_sort_queries"
+            )
 
             logger.info(
                 f"Starting complex sort queries on {table_name} for {duration_seconds}s"
