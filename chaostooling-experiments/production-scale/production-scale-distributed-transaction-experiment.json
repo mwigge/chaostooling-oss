@@ -1234,5 +1234,23 @@
       }
     }
   ],
-  "rollbacks": []
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "generate-experiment-reports",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.actions",
+        "func": "generate_experiment_reports",
+        "arguments": {
+          "output_dir": "${CHAOS_REPORTING_OUTPUT_DIR:-./reporting-output}",
+          "formats": "${CHAOS_REPORTING_FORMATS:-html,json}",
+          "executive": true,
+          "compliance": true,
+          "audit": true,
+          "product_owner": true
+        }
+      }
+    }
+  ]
 }

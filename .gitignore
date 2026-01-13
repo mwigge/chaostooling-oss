@@ -61,6 +61,10 @@ journal.json
 journal.yaml
 *.log
 
+# Chaos Toolkit - Experiment-specific outputs (do not sync)
+chaostooling-experiments/chaostoolkit.log
+chaostooling-experiments/journal.json
+
 # Reports (keep directory, ignore files)
 reporting-output/*
 !reporting-output/.gitkeep
@@ -68,6 +72,9 @@ reports/
 *.html
 *.pdf
 *.csv
+
+# Reporting output from experiments (do not sync)
+chaostooling-demo/reporting-output/
 
 # Docker
 .docker/

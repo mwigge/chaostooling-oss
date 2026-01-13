@@ -94,13 +94,14 @@ def inject_slow_transactions(
                 f"slow_transaction.worker.{thread_id}"
             ) as span:
                 # Use modular helper from chaosotel for consistent span attributes
+                # Helper automatically uses environment variables for defaults if not provided
                 from chaosotel.core.trace_core import set_db_span_attributes
                 set_db_span_attributes(
                     span,
-                    db_system="postgresql",
-                    db_name=database,
-                    host=host,
-                    port=port,
+                    db_system=db_system,  # Uses DB_SYSTEM env var if not provided
+                    db_name=database,    # Uses POSTGRES_DB/MYSQL_DB/etc env var if not provided
+                    host=host,           # Uses POSTGRES_HOST/MYSQL_HOST/etc env var if not provided
+                    port=port,           # Uses POSTGRES_PORT/MYSQL_PORT/etc env var if not provided
                     chaos_activity="postgresql_slow_transactions",
                     chaos_action="slow_transactions",
                     chaos_operation="slow_transactions",

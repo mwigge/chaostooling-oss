@@ -106,16 +106,33 @@ from chaosotel.core.trace_core import set_db_span_attributes
 
 tracer = trace.get_tracer(__name__)
 with tracer.start_as_current_span("slow_transaction.worker.1") as span:
+    # Helper automatically uses environment variables for defaults if not provided
+    # Environment variables checked (in order):
+    # - db_system: DB_SYSTEM (defaults to "postgresql")
+    # - db_name: POSTGRES_DB, MYSQL_DB, MSSQL_DB, CASSANDRA_KEYSPACE, REDIS_DB, MONGODB_DB, or DB_NAME
+    # - db_user: POSTGRES_USER, MYSQL_USER, MSSQL_USER, or DB_USER
+    # - host: POSTGRES_HOST, POSTGRES_PRIMARY_HOST, MYSQL_HOST, MSSQL_HOST, CASSANDRA_HOST, REDIS_HOST, MONGODB_HOST, or DB_HOST
+    # - port: POSTGRES_PORT, MYSQL_PORT, MSSQL_PORT, CASSANDRA_PORT, REDIS_PORT, MONGODB_PORT, or DB_PORT
     set_db_span_attributes(
         span,
-        db_system="postgresql",  # Works with any DB: "mysql", "mssql", "cassandra", "redis", etc.
-        db_name="testdb",
-        host="postgres-primary-site-a",
-        port=5432,
+        db_system=None,  # Will use DB_SYSTEM env var or "postgresql"
+        db_name=None,    # Will use POSTGRES_DB/MYSQL_DB/etc env var
+        host=None,       # Will use POSTGRES_HOST/MYSQL_HOST/etc env var
+        port=None,       # Will use POSTGRES_PORT/MYSQL_PORT/etc env var
         chaos_activity="postgresql_slow_transactions",
         chaos_action="slow_transactions",
         chaos_operation="slow_transactions",
         chaos_thread_id=1
+    )
+    # Or pass explicit values (takes precedence over env vars):
+    set_db_span_attributes(
+        span,
+        db_system="postgresql",
+        db_name="testdb",
+        host="postgres-primary-site-a",
+        port=5432,
+        chaos_activity="postgresql_slow_transactions",
+        chaos_action="slow_transactions"
     )
     # ... your database code ...
 ```
@@ -127,15 +144,32 @@ from chaosotel.core.trace_core import set_messaging_span_attributes
 
 tracer = trace.get_tracer(__name__)
 with tracer.start_as_current_span("message_flood.producer.1") as span:
+    # Helper automatically uses environment variables for defaults if not provided
+    # Environment variables checked (in order):
+    # - messaging_system: MESSAGING_SYSTEM (defaults to "kafka")
+    # - destination: KAFKA_TOPIC, RABBITMQ_QUEUE, ACTIVEMQ_QUEUE, or MESSAGING_DESTINATION
+    # - bootstrap_servers: KAFKA_BOOTSTRAP_SERVERS (for Kafka)
+    # - host: RABBITMQ_HOST, ACTIVEMQ_HOST, or MESSAGING_HOST (for non-Kafka)
+    # - port: RABBITMQ_PORT, ACTIVEMQ_PORT, or MESSAGING_PORT (for non-Kafka)
     set_messaging_span_attributes(
         span,
-        messaging_system="kafka",  # or "rabbitmq", "activemq", etc.
-        destination="test-topic",
-        bootstrap_servers="kafka:9092",  # For Kafka (auto-parsed)
-        # OR host="rabbitmq", port=5672  # For RabbitMQ/ActiveMQ
+        messaging_system=None,      # Will use MESSAGING_SYSTEM env var or "kafka"
+        destination=None,           # Will use KAFKA_TOPIC/RABBITMQ_QUEUE/etc env var
+        bootstrap_servers=None,     # Will use KAFKA_BOOTSTRAP_SERVERS env var
+        # OR host=None, port=None   # Will use RABBITMQ_HOST/ACTIVEMQ_HOST/etc env var
         chaos_activity="kafka_message_flood",
         chaos_action="message_flood",
+        chaos_operation="message_flood",
         chaos_producer_id=1
+    )
+    # Or pass explicit values (takes precedence over env vars):
+    set_messaging_span_attributes(
+        span,
+        messaging_system="kafka",
+        destination="test-topic",
+        bootstrap_servers="kafka:9092",
+        chaos_activity="kafka_message_flood",
+        chaos_action="message_flood"
     )
     # ... your messaging code ...
 ```
@@ -656,7 +690,34 @@ Automated reporting extension with:
 pip install chaostooling-reporting
 ```
 
-**Usage:**
+**Usage as Action (Recommended - runs after all rollbacks):**
+Add to the `rollbacks` section of your experiment to ensure reports are generated after all rollbacks complete:
+
+```json
+{
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "generate-experiment-reports",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.actions",
+        "func": "generate_experiment_reports",
+        "arguments": {
+          "output_dir": "${CHAOS_REPORTING_OUTPUT_DIR:-./reporting-output}",
+          "formats": "${CHAOS_REPORTING_FORMATS:-html,json}",
+          "executive": true,
+          "compliance": true,
+          "audit": true,
+          "product_owner": true
+        }
+      }
+    }
+  ]
+}
+```
+
+**Usage as Control (automatic, but may run before rollbacks complete):**
 ```json
 {
   "controls": [
@@ -665,11 +726,26 @@ pip install chaostooling-reporting
       "provider": {
         "type": "python",
         "module": "chaostooling_reporting.control"
+      },
+      "configuration": {
+        "reporting": {
+          "enabled": true,
+          "output_dir": "./reporting-output",
+          "formats": ["html", "json"]
+        }
       }
     }
   ]
 }
 ```
+
+**Environment Variables:**
+- `CHAOS_REPORTING_OUTPUT_DIR` - Output directory (default: `./reporting-output`)
+- `CHAOS_REPORTING_FORMATS` - Comma-separated formats: `html,json,csv,pdf` (default: `html,json`)
+- `CHAOS_REPORTING_EXECUTIVE` - Generate executive report (default: `true`)
+- `CHAOS_REPORTING_COMPLIANCE` - Generate compliance report (default: `true`)
+- `CHAOS_REPORTING_AUDIT` - Generate audit trail (default: `true`)
+- `CHAOS_REPORTING_PRODUCT_OWNER` - Generate product owner report (default: `true`)
 
 ## Demo Environment (chaostooling-demo)
 

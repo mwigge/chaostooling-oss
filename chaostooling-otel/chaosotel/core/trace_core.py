@@ -237,7 +237,7 @@ def create_instrumented_span(
 
 def set_db_span_attributes(
     span: trace.Span,
-    db_system: str,
+    db_system: Optional[str] = None,
     db_name: Optional[str] = None,
     db_user: Optional[str] = None,
     db_operation: Optional[str] = None,
@@ -252,16 +252,18 @@ def set_db_span_attributes(
     Set standard database span attributes on an existing span.
     
     This is a modular helper that works with any database system and can be used
-    with context managers like `tracer.start_as_current_span()`.
+    with context managers like `tracer.start_as_current_span()`. Uses environment
+    variables for defaults when parameters are not provided.
     
     Args:
         span: OpenTelemetry span (from tracer.start_as_current_span())
         db_system: Database system name (e.g., "postgresql", "mysql", "mssql", "cassandra", "redis")
-        db_name: Database name (optional)
-        db_user: Database user (optional)
+                   Defaults to DB_SYSTEM env var or "postgresql"
+        db_name: Database name (optional, defaults to DB_NAME env var)
+        db_user: Database user (optional, defaults to DB_USER env var)
         db_operation: Database operation (e.g., "connect", "query", "slow_transaction")
-        host: Database host address
-        port: Database port
+        host: Database host address (defaults to DB_HOST or POSTGRES_HOST/MYSQL_HOST/etc env var)
+        port: Database port (defaults to DB_PORT or POSTGRES_PORT/MYSQL_PORT/etc env var)
         chaos_activity: Chaos activity name (e.g., "postgresql_slow_transactions")
         chaos_action: Chaos action type (e.g., "slow_transactions", "lock_storm")
         chaos_operation: Chaos operation name (e.g., "slow_transactions")
@@ -273,6 +275,24 @@ def set_db_span_attributes(
         
         tracer = trace.get_tracer(__name__)
         with tracer.start_as_current_span("slow_transaction.worker.1") as span:
+            # Helper automatically uses environment variables for defaults if not provided
+            # You can pass None or omit parameters to use env vars:
+            # - db_system: DB_SYSTEM env var (defaults to "postgresql")
+            # - db_name: POSTGRES_DB/MYSQL_DB/etc env var
+            # - host: POSTGRES_HOST/MYSQL_HOST/etc env var
+            # - port: POSTGRES_PORT/MYSQL_PORT/etc env var
+            set_db_span_attributes(
+                span,
+                db_system=None,  # Will use DB_SYSTEM env var or "postgresql"
+                db_name=None,    # Will use POSTGRES_DB/MYSQL_DB/etc env var
+                host=None,       # Will use POSTGRES_HOST/MYSQL_HOST/etc env var
+                port=None,       # Will use POSTGRES_PORT/MYSQL_PORT/etc env var
+                chaos_activity="postgresql_slow_transactions",
+                chaos_action="slow_transactions",
+                chaos_operation="slow_transactions",
+                chaos_thread_id=1
+            )
+            # Or pass explicit values (takes precedence over env vars):
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
@@ -280,12 +300,63 @@ def set_db_span_attributes(
                 host="postgres-primary-site-a",
                 port=5432,
                 chaos_activity="postgresql_slow_transactions",
-                chaos_action="slow_transactions",
-                chaos_operation="slow_transactions",
-                chaos_thread_id=1
+                chaos_action="slow_transactions"
             )
             # ... your database code here ...
     """
+    # Get defaults from environment variables if not provided
+    if not db_system:
+        db_system = os.getenv("DB_SYSTEM", "postgresql")
+    
+    if not db_name:
+        # Try system-specific env vars first, then generic
+        db_name = (
+            os.getenv("POSTGRES_DB") or
+            os.getenv("MYSQL_DB") or
+            os.getenv("MSSQL_DB") or
+            os.getenv("CASSANDRA_KEYSPACE") or
+            os.getenv("REDIS_DB") or
+            os.getenv("MONGODB_DB") or
+            os.getenv("DB_NAME")
+        )
+    
+    if not db_user:
+        db_user = (
+            os.getenv("POSTGRES_USER") or
+            os.getenv("MYSQL_USER") or
+            os.getenv("MSSQL_USER") or
+            os.getenv("DB_USER")
+        )
+    
+    if not host:
+        # Try system-specific env vars first, then generic
+        host = (
+            os.getenv("POSTGRES_HOST") or
+            os.getenv("POSTGRES_PRIMARY_HOST") or
+            os.getenv("MYSQL_HOST") or
+            os.getenv("MSSQL_HOST") or
+            os.getenv("CASSANDRA_HOST") or
+            os.getenv("REDIS_HOST") or
+            os.getenv("MONGODB_HOST") or
+            os.getenv("DB_HOST", "localhost")
+        )
+    
+    if not port:
+        # Try system-specific env vars first, then generic
+        port_str = (
+            os.getenv("POSTGRES_PORT") or
+            os.getenv("MYSQL_PORT") or
+            os.getenv("MSSQL_PORT") or
+            os.getenv("CASSANDRA_PORT") or
+            os.getenv("REDIS_PORT") or
+            os.getenv("MONGODB_PORT") or
+            os.getenv("DB_PORT", "5432")
+        )
+        try:
+            port = int(port_str)
+        except (ValueError, TypeError):
+            port = None
+    
     # Normalize db_system
     normalized_db_system = DB_SYSTEM_MAP.get(db_system.lower(), db_system.lower())
     
@@ -325,7 +396,7 @@ def set_db_span_attributes(
 
 def set_messaging_span_attributes(
     span: trace.Span,
-    messaging_system: str,
+    messaging_system: Optional[str] = None,
     destination: Optional[str] = None,
     destination_kind: Optional[str] = None,
     host: Optional[str] = None,
@@ -361,18 +432,68 @@ def set_messaging_span_attributes(
         
         tracer = trace.get_tracer(__name__)
         with tracer.start_as_current_span("message_flood.producer.1") as span:
+            # Helper automatically uses environment variables for defaults if not provided
+            # You can pass None or omit parameters to use env vars:
+            # - messaging_system: MESSAGING_SYSTEM env var (defaults to "kafka")
+            # - destination: KAFKA_TOPIC/RABBITMQ_QUEUE/etc env var
+            # - bootstrap_servers: KAFKA_BOOTSTRAP_SERVERS env var (for Kafka)
+            # - host: RABBITMQ_HOST/ACTIVEMQ_HOST/etc env var (for non-Kafka)
+            # - port: RABBITMQ_PORT/ACTIVEMQ_PORT/etc env var (for non-Kafka)
+            set_messaging_span_attributes(
+                span,
+                messaging_system=None,      # Will use MESSAGING_SYSTEM env var or "kafka"
+                destination=None,           # Will use KAFKA_TOPIC/RABBITMQ_QUEUE/etc env var
+                bootstrap_servers=None,     # Will use KAFKA_BOOTSTRAP_SERVERS env var
+                chaos_activity="kafka_message_flood",
+                chaos_action="message_flood",
+                chaos_operation="message_flood",
+                chaos_producer_id=1
+            )
+            # Or pass explicit values (takes precedence over env vars):
             set_messaging_span_attributes(
                 span,
                 messaging_system="kafka",
                 destination="test-topic",
                 bootstrap_servers="kafka:9092",
                 chaos_activity="kafka_message_flood",
-                chaos_action="message_flood",
-                chaos_operation="message_flood",
-                chaos_producer_id=1
+                chaos_action="message_flood"
             )
             # ... your messaging code here ...
     """
+    # Get defaults from environment variables if not provided
+    if not messaging_system:
+        messaging_system = os.getenv("MESSAGING_SYSTEM", "kafka")
+    
+    if not destination:
+        destination = (
+            os.getenv("KAFKA_TOPIC") or
+            os.getenv("RABBITMQ_QUEUE") or
+            os.getenv("ACTIVEMQ_QUEUE") or
+            os.getenv("MESSAGING_DESTINATION")
+        )
+    
+    if not bootstrap_servers and messaging_system.lower() == "kafka":
+        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
+    
+    if not host and not bootstrap_servers:
+        # Try system-specific env vars
+        host = (
+            os.getenv("RABBITMQ_HOST") or
+            os.getenv("ACTIVEMQ_HOST") or
+            os.getenv("MESSAGING_HOST", "localhost")
+        )
+    
+    if not port and not bootstrap_servers:
+        port_str = (
+            os.getenv("RABBITMQ_PORT") or
+            os.getenv("ACTIVEMQ_PORT") or
+            os.getenv("MESSAGING_PORT", "5672")
+        )
+        try:
+            port = int(port_str)
+        except (ValueError, TypeError):
+            port = None
+    
     # Normalize messaging_system
     normalized_messaging_system = MESSAGING_SYSTEM_MAP.get(messaging_system.lower(), messaging_system.lower())
     
