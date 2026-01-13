@@ -1,0 +1,48 @@
+[project]
+name = "chaostooling-reporting"
+version = "0.1.0"
+description = "Reporting and analytics extension for Chaos Toolkit experiments"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Morgan Wigge", email = "morgan@wigge.nu"}
+]
+keywords = ["chaos-engineering", "chaos-toolkit", "reporting", "analytics", "compliance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Office/Business",
+]
+
+dependencies = [
+    "jinja2>=3.0.0",
+    "weasyprint>=60.0",
+    "pandas>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1.1",
+    "pytest-cov>=5.0.0",
+    "mypy>=1.19.0",
+    "black>=25.11.0",
+    "ruff>=0.14.7",
+    "isort",
+    "bandit>=1.7.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["chaostooling_reporting"]
+
+[tool.setuptools.package-data]
+chaostooling_reporting = ["py.typed"]

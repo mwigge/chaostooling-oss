@@ -95,16 +95,39 @@ def probe_mysql_connectivity(
 
                 span.set_attribute("chaos.operation", "connectivity")
 
-            conn = mysql.connector.connect(
-                host=host,
-                port=port,
-                database=database,
-                user=user,
-                password=password,
-                connect_timeout=5,
-            )
-
-            conn.close()
+            # Retry logic for detached runs and slow startup
+            max_retries = 3
+            retry_delay = 2  # seconds
+            conn = None
+            last_error = None
+            
+            for attempt in range(max_retries):
+                try:
+                    conn = mysql.connector.connect(
+                        host=host,
+                        port=port,
+                        database=database,
+                        user=user,
+                        password=password,
+                        connect_timeout=30,  # Increased timeout for detached runs and slow startup
+                        autocommit=True,
+                    )
+                    # Success, exit retry loop
+                    break
+                except (mysql.connector.Error, Exception) as e:
+                    last_error = e
+                    if attempt < max_retries - 1:
+                        logger.warning(
+                            f"MySQL connection attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {retry_delay}s..."
+                        )
+                        time.sleep(retry_delay)
+                    else:
+                        # Final attempt failed, raise the exception
+                        raise
+            
+            # Close connection if successfully established
+            if conn:
+                conn.close()
 
             probe_time_ms = (time.time() - start) * 1000
 

@@ -182,9 +182,13 @@ services:
       - "5002:5000"
 
   payment-service-site-a:
+    # Option 1: Build from source (requires internet and certificates)
     build:
       context: ./payment-service
       dockerfile: Dockerfile
+    # Option 2: Use pre-built image (circumvents build requirements)
+    # Uncomment the line below and comment out the build section to use a pre-built image
+    # image: payment-service:latest
     ports:
       - "5003:5000"
     environment:

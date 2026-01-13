@@ -87,51 +87,121 @@ def generate_experiment_reports(
         
         # Find journal.json file
         if not journal_path:
-            # Try common locations - Chaos Toolkit writes journal.json in the experiment directory
-            possible_paths = [
-                Path("journal.json"),  # Current directory
-                Path.cwd() / "journal.json",  # Current working directory
-                Path("/experiments") / "journal.json",  # Docker container experiments mount
-                Path("/var/log/chaostoolkit/journal.json"),  # Log directory
-                Path(os.getenv("CHAOS_EXPERIMENT_DIR", ".")) / "journal.json",  # Environment variable
-                Path(os.getenv("HOME", ".")) / "journal.json",  # Home directory
-            ]
-            
-            # Also try parent directories (in case we're in a subdirectory)
-            current = Path.cwd()
-            for _ in range(3):  # Check up to 3 levels up
-                possible_paths.append(current / "journal.json")
-                current = current.parent
-            
-            # Try to find journal.json in common experiment locations
-            for base_path in [Path("/experiments"), Path.cwd(), Path(os.getenv("HOME", "."))]:
-                # Check for production-scale subdirectory
-                prod_scale = base_path / "production-scale" / "journal.json"
-                if prod_scale.exists():
-                    possible_paths.append(prod_scale)
-                # Check for any subdirectories
-                if base_path.exists() and base_path.is_dir():
-                    for subdir in base_path.iterdir():
-                        if subdir.is_dir():
-                            journal_file = subdir / "journal.json"
-                            if journal_file.exists():
-                                possible_paths.append(journal_file)
-            
-            for path in possible_paths:
-                if path.exists() and path.is_file():
-                    journal_path = str(path)
-                    logger.info(f"Found journal at: {journal_path}")
-                    break
+            # First, check environment variable (set by docker-compose.yml)
+            env_journal_path = os.getenv("CHAOSTOOLKIT_JOURNAL_PATH")
+            if env_journal_path and Path(env_journal_path).exists():
+                journal_path = env_journal_path
+                logger.info(f"Found journal from CHAOSTOOLKIT_JOURNAL_PATH: {journal_path}")
+            else:
+                # Try common locations - Chaos Toolkit writes journal.json in the experiment directory
+                possible_paths = []
+                
+                # Priority 1: Environment variables
+                if env_journal_path:
+                    possible_paths.append(Path(env_journal_path))
+                
+                chaos_experiment_dir = os.getenv("CHAOS_EXPERIMENT_DIR")
+                if chaos_experiment_dir:
+                    possible_paths.append(Path(chaos_experiment_dir) / "journal.json")
+                
+                # Priority 2: Log directory (where chaos-runner-entrypoint.sh sets working directory)
+                possible_paths.extend([
+                    Path("/var/log/chaostoolkit/journal.json"),  # Log directory (primary location in Docker)
+                    Path("/var/log/chaostoolkit") / "journal.json",  # Explicit log directory
+                ])
+                
+                # Priority 3: Current working directory and parent directories
+                current = Path.cwd()
+                for _ in range(5):  # Check up to 5 levels up (for detached runs)
+                    possible_paths.append(current / "journal.json")
+                    if current == current.parent:  # Reached root
+                        break
+                    current = current.parent
+                
+                # Priority 4: Experiment mount points
+                possible_paths.extend([
+                    Path("/experiments") / "journal.json",  # Docker container experiments mount
+                    Path("/experiments") / "production-scale" / "journal.json",  # Production scale experiments
+                ])
+                
+                # Priority 5: Search in experiment subdirectories
+                for base_path in [Path("/experiments"), Path.cwd(), Path(os.getenv("HOME", "/"))]:
+                    if base_path.exists() and base_path.is_dir():
+                        # Check for production-scale subdirectory
+                        prod_scale = base_path / "production-scale" / "journal.json"
+                        if prod_scale.exists():
+                            possible_paths.append(prod_scale)
+                        # Check for any subdirectories (limit depth to avoid performance issues)
+                        try:
+                            for subdir in base_path.iterdir():
+                                if subdir.is_dir() and not subdir.name.startswith('.'):
+                                    journal_file = subdir / "journal.json"
+                                    if journal_file.exists():
+                                        possible_paths.append(journal_file)
+                        except (PermissionError, OSError) as e:
+                            logger.debug(f"Could not search in {base_path}: {e}")
+                
+                # Priority 6: Home directory fallback
+                home_dir = Path(os.getenv("HOME", "/"))
+                if home_dir.exists():
+                    possible_paths.append(home_dir / "journal.json")
+                
+                # Remove duplicates while preserving order
+                seen = set()
+                unique_paths = []
+                for path in possible_paths:
+                    path_str = str(path)
+                    if path_str not in seen:
+                        seen.add(path_str)
+                        unique_paths.append(path)
+                
+                # Try each path
+                for path in unique_paths:
+                    try:
+                        if path.exists() and path.is_file():
+                            journal_path = str(path)
+                            logger.info(f"Found journal at: {journal_path}")
+                            break
+                    except (PermissionError, OSError) as e:
+                        logger.debug(f"Could not check {path}: {e}")
+                        continue
         
         if not journal_path or not Path(journal_path).exists():
-            error_msg = f"Journal file not found. Searched in: {[str(p) for p in possible_paths[:10]]} (and more locations)"
-            logger.error(error_msg)
-            logger.info(f"Current working directory: {Path.cwd()}")
-            logger.info(f"Files in current directory: {list(Path.cwd().iterdir())[:10]}")
+            # Log detailed debugging information
+            logger.error("Journal file not found. Searched in multiple locations:")
+            logger.error(f"  - CHAOSTOOLKIT_JOURNAL_PATH: {os.getenv('CHAOSTOOLKIT_JOURNAL_PATH', 'not set')}")
+            logger.error(f"  - CHAOS_EXPERIMENT_DIR: {os.getenv('CHAOS_EXPERIMENT_DIR', 'not set')}")
+            logger.error(f"  - Current working directory: {Path.cwd()}")
+            logger.error(f"  - Primary log directory: /var/log/chaostoolkit/journal.json")
+            logger.error(f"  - Experiments mount: /experiments/journal.json")
+            
+            # Try to list what's actually in the log directory
+            log_dir = Path("/var/log/chaostoolkit")
+            if log_dir.exists():
+                try:
+                    files = list(log_dir.iterdir())
+                    logger.error(f"  - Files in /var/log/chaostoolkit: {[f.name for f in files[:10]]}")
+                except Exception as e:
+                    logger.error(f"  - Could not list /var/log/chaostoolkit: {e}")
+            
+            # Try to list what's in current directory
+            try:
+                current_files = list(Path.cwd().iterdir())
+                logger.error(f"  - Files in current directory: {[f.name for f in current_files[:10]]}")
+            except Exception as e:
+                logger.error(f"  - Could not list current directory: {e}")
+            
+            error_msg = "Journal file not found. Please ensure the experiment has completed and journal.json exists."
             return {
                 "success": False,
                 "error": error_msg,
-                "reports": {}
+                "reports": {},
+                "debug_info": {
+                    "chaostoolkit_journal_path": os.getenv("CHAOSTOOLKIT_JOURNAL_PATH"),
+                    "chaos_experiment_dir": os.getenv("CHAOS_EXPERIMENT_DIR"),
+                    "current_working_directory": str(Path.cwd()),
+                    "log_directory_exists": log_dir.exists() if log_dir.exists() else False,
+                }
             }
         
         logger.info(f"Loading journal from {journal_path}")

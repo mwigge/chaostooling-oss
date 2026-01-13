@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install and update CA certificates to ensure SSL/TLS works
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    update-ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better Docker layer caching
+COPY requirements.txt .
+
+# Option 1: Use pre-downloaded wheels (for offline builds)
+# First, download wheels on a machine with internet:
+#   pip download -r requirements.txt -d ./wheels
+# Then copy wheels and install from local cache
+COPY wheels/ ./wheels/
+RUN pip install --no-cache-dir --find-links ./wheels --no-index -r requirements.txt || \
+    pip install --no-cache-dir -r requirements.txt
+
+# Option 2: Use pip with trusted hosts (less secure, circumvents certificate verification)
+# Uncomment the line below if you need to bypass SSL verification (NOT RECOMMENDED)
+# RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
+
+COPY app.py .
+
+CMD ["python", "app.py"]

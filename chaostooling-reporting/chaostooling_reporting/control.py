@@ -146,21 +146,62 @@ def after_experiment_control(
     
     # 3. Try reading from journal.json file (Chaos Toolkit creates this)
     if not journal:
-        journal_path = Path("journal.json")
-        if not journal_path.exists():
-            # Try in current working directory or common locations
-            for path in [Path.cwd() / "journal.json", Path("/var/log/chaostoolkit/journal.json")]:
-                if path.exists():
-                    journal_path = path
-                    break
+        journal_path = None
         
-        if journal_path.exists():
+        # First, check environment variable (set by docker-compose.yml)
+        env_journal_path = os.getenv("CHAOSTOOLKIT_JOURNAL_PATH")
+        if env_journal_path and Path(env_journal_path).exists():
+            journal_path = Path(env_journal_path)
+        else:
+            # Try common locations - Chaos Toolkit writes journal.json in the current working directory
+            # In Docker, chaos-runner-entrypoint.sh changes to /var/log/chaostoolkit
+            possible_paths = []
+            
+            # Priority 1: Environment variables
+            if env_journal_path:
+                possible_paths.append(Path(env_journal_path))
+            
+            chaos_experiment_dir = os.getenv("CHAOS_EXPERIMENT_DIR")
+            if chaos_experiment_dir:
+                possible_paths.append(Path(chaos_experiment_dir) / "journal.json")
+            
+            # Priority 2: Log directory (where chaos-runner-entrypoint.sh sets working directory)
+            possible_paths.extend([
+                Path("/var/log/chaostoolkit/journal.json"),  # Log directory (primary location in Docker)
+                Path.cwd() / "journal.json",  # Current working directory
+                Path("journal.json"),  # Relative to current directory
+            ])
+            
+            # Priority 3: Parent directories (for detached runs)
+            current = Path.cwd()
+            for _ in range(5):  # Check up to 5 levels up
+                possible_paths.append(current / "journal.json")
+                if current == current.parent:  # Reached root
+                    break
+                current = current.parent
+            
+            # Priority 4: Experiment mount points
+            possible_paths.extend([
+                Path("/experiments") / "journal.json",
+                Path("/experiments") / "production-scale" / "journal.json",
+            ])
+            
+            # Try each path
+            for path in possible_paths:
+                try:
+                    if path.exists() and path.is_file():
+                        journal_path = path
+                        break
+                except (PermissionError, OSError):
+                    continue
+        
+        if journal_path and journal_path.exists():
             try:
                 with open(journal_path, "r") as f:
                     journal = json.load(f)
                 logger.info(f"Loaded journal from {journal_path}")
             except Exception as e:
-                logger.warning(f"Failed to read journal.json: {e}")
+                logger.warning(f"Failed to read journal.json from {journal_path}: {e}")
     
     if not journal:
         logger.warning("No journal available, skipping report generation")
