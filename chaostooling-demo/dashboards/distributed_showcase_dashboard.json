@@ -1198,7 +1198,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_chaos_transaction_total) by (tag_db_operation)",
+          "expr": "sum(chaos_transaction_total) by (tag_db_operation)",
           "refId": "A",
           "legendFormat": "Total Transactions"
         },
@@ -1207,7 +1207,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_chaos_transaction_successful_total) by (tag_db_operation)",
+          "expr": "sum(chaos_transaction_successful_total) by (tag_db_operation)",
           "refId": "B",
           "legendFormat": "Successful"
         },
@@ -1216,7 +1216,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_chaos_transaction_failed_total) by (tag_db_operation)",
+          "expr": "sum(chaos_transaction_failed_total) by (tag_db_operation)",
           "refId": "C",
           "legendFormat": "Failed"
         }
@@ -1284,7 +1284,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "((sum(last_over_time(chaos_chaos_transaction_successful_total[5m])) / clamp_min(sum(last_over_time(chaos_chaos_transaction_total[5m])), 1)) * 100) or vector(0)",
+          "expr": "((sum(last_over_time(chaos_transaction_successful_total[5m])) / clamp_min(sum(last_over_time(chaos_transaction_total[5m])), 1)) * 100) or vector(0)",
           "refId": "A"
         }
       ],
@@ -1371,7 +1371,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_chaos_transaction_reconnection_attempts_total) by (tag_db_operation)",
+          "expr": "sum(chaos_transaction_reconnection_attempts_total) by (tag_db_operation)",
           "refId": "A",
           "legendFormat": "Reconnection Attempts"
         }

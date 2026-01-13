@@ -799,7 +799,7 @@ class MetricsCore:
         """Record transaction count."""
         try:
             counter = self._get_or_create_counter(
-                f"chaos_chaos_transaction_{status}_total",
+                f"chaos_transaction_{status}_total",
                 description=f"Transaction {status} count",
             )
             attributes = {"tag_db_operation": str(db_operation)}
@@ -810,7 +810,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             # Also record total
             total_counter = self._get_or_create_counter(
-                "chaos_chaos_transaction_total",
+                "chaos_transaction_total",
                 description="Total transaction count",
             )
             total_counter.add(1, attributes=attributes)
@@ -827,7 +827,7 @@ class MetricsCore:
         """Record transaction reconnection attempt."""
         try:
             counter = self._get_or_create_counter(
-                "chaos_chaos_transaction_reconnection_attempts_total",
+                "chaos_transaction_reconnection_attempts_total",
                 description="Transaction reconnection attempts",
             )
             attributes = {"tag_db_operation": str(db_operation)}
@@ -881,10 +881,13 @@ class MetricsCore:
     ) -> None:
         """Record Mean Time To Recovery (MTTR) for a service."""
         try:
+            # Convert milliseconds to seconds for consistency with metric name
+            recovery_time_seconds = float(recovery_time_ms) / 1000.0
+            
             histogram = self._get_or_create_histogram(
                 "chaos_mttr_seconds",
-                unit="ms",
-                description="Mean Time To Recovery in milliseconds",
+                unit="s",
+                description="Mean Time To Recovery in seconds",
             )
             attributes = {
                 "service_name": str(service_name),
@@ -893,17 +896,17 @@ class MetricsCore:
             }
             if tags:
                 attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
-            histogram.record(float(recovery_time_ms), attributes=attributes)
+            histogram.record(recovery_time_seconds, attributes=attributes)
             # Also record as gauge for current MTTR
             gauge = self._get_or_create_gauge(
                 "chaos_mttr_current_seconds",
-                unit="ms",
-                description="Current MTTR per service",
+                unit="s",
+                description="Current MTTR per service in seconds",
             )
             if hasattr(gauge, "record"):
-                gauge.record(float(recovery_time_ms), attributes=attributes)
+                gauge.record(recovery_time_seconds, attributes=attributes)
             elif hasattr(gauge, "set"):
-                gauge.set(float(recovery_time_ms), attributes=attributes)
+                gauge.set(recovery_time_seconds, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
             logger.error(f"Error recording MTTR: {e}")

@@ -71,6 +71,16 @@ def inject_connection_pool_exhaustion(
 
                     acquisition_time_ms = (time.time() - acquisition_start) * 1000
                     connections_created += 1
+                    
+                    # Record connection pool utilization (assuming default max_connections=32767 for MSSQL)
+                    max_connections = 32767  # Default MSSQL max_connections
+                    current_connections = len(_active_connections) + 1
+                    utilization_percent = min(100.0, (current_connections / max_connections) * 100.0)
+                    metrics.record_db_connection_pool_utilization(
+                        db_system=db_system,
+                        utilization_percent=utilization_percent,
+                        db_name=database,
+                    )
 
                     _active_connections.append(conn)
                     

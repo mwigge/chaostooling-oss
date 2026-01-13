@@ -177,6 +177,13 @@ def inject_query_saturation(
 
                         if query_duration_ms > slow_query_threshold_ms:
                             slow_queries += 1
+                            # Record slow query metric
+                            metrics.record_db_slow_query_count(
+                                db_system=db_system,
+                                threshold_ms=float(slow_query_threshold_ms),
+                                db_name=database,
+                                tags=tags,
+                            )
 
                         # Brief pause to avoid overwhelming
                         time.sleep(0.01)

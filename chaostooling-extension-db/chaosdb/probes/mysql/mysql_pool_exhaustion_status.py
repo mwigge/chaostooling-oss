@@ -174,6 +174,14 @@ def probe_pool_exhaustion_status(
                 count=1,
                 tags=tags,
             )
+            
+            # Record connection pool utilization metric
+            metrics.record_db_connection_pool_utilization(
+                db_system=db_system,
+                utilization_percent=connection_utilization,
+                db_name=database,
+                tags=tags,
+            )
 
             result = {
                 "success": True,
