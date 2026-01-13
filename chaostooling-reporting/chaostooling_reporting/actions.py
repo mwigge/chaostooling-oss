@@ -87,22 +87,47 @@ def generate_experiment_reports(
         
         # Find journal.json file
         if not journal_path:
-            # Try common locations
+            # Try common locations - Chaos Toolkit writes journal.json in the experiment directory
             possible_paths = [
-                Path("journal.json"),
-                Path.cwd() / "journal.json",
-                Path("/var/log/chaostoolkit/journal.json"),
-                Path(os.getenv("CHAOS_EXPERIMENT_DIR", ".")) / "journal.json",
+                Path("journal.json"),  # Current directory
+                Path.cwd() / "journal.json",  # Current working directory
+                Path("/experiments") / "journal.json",  # Docker container experiments mount
+                Path("/var/log/chaostoolkit/journal.json"),  # Log directory
+                Path(os.getenv("CHAOS_EXPERIMENT_DIR", ".")) / "journal.json",  # Environment variable
+                Path(os.getenv("HOME", ".")) / "journal.json",  # Home directory
             ]
             
+            # Also try parent directories (in case we're in a subdirectory)
+            current = Path.cwd()
+            for _ in range(3):  # Check up to 3 levels up
+                possible_paths.append(current / "journal.json")
+                current = current.parent
+            
+            # Try to find journal.json in common experiment locations
+            for base_path in [Path("/experiments"), Path.cwd(), Path(os.getenv("HOME", "."))]:
+                # Check for production-scale subdirectory
+                prod_scale = base_path / "production-scale" / "journal.json"
+                if prod_scale.exists():
+                    possible_paths.append(prod_scale)
+                # Check for any subdirectories
+                if base_path.exists() and base_path.is_dir():
+                    for subdir in base_path.iterdir():
+                        if subdir.is_dir():
+                            journal_file = subdir / "journal.json"
+                            if journal_file.exists():
+                                possible_paths.append(journal_file)
+            
             for path in possible_paths:
-                if path.exists():
+                if path.exists() and path.is_file():
                     journal_path = str(path)
+                    logger.info(f"Found journal at: {journal_path}")
                     break
         
         if not journal_path or not Path(journal_path).exists():
-            error_msg = f"Journal file not found. Tried: {[str(p) for p in possible_paths]}"
+            error_msg = f"Journal file not found. Searched in: {[str(p) for p in possible_paths[:10]]} (and more locations)"
             logger.error(error_msg)
+            logger.info(f"Current working directory: {Path.cwd()}")
+            logger.info(f"Files in current directory: {list(Path.cwd().iterdir())[:10]}")
             return {
                 "success": False,
                 "error": error_msg,

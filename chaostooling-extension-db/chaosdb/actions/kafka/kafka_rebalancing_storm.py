@@ -47,14 +47,22 @@ def inject_rebalancing_storm(
         consumer = None
         try:
             with tracer.start_as_current_span(f"rebalancing_storm.consumer.{consumer_id}") as span:
-                span.set_attribute("messaging.system", "kafka")
-                span.set_attribute("messaging.destination", topic)
-                span.set_attribute("chaos.consumer_id", consumer_id)
-                span.set_attribute("chaos.action", "rebalancing_storm")
-                span.set_attribute("chaos.activity", "kafka_rebalancing_storm")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "kafka")
-                span.set_attribute("chaos.operation", "rebalancing_storm")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                # Extract host/port from bootstrap_servers for network attributes
+                bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else None
+                bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else None
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="kafka",
+                    destination=topic,
+                    bootstrap_servers=bootstrap_servers,
+                    host=bootstrap_host,
+                    port=bootstrap_port,
+                    chaos_activity="kafka_rebalancing_storm",
+                    chaos_action="rebalancing_storm",
+                    chaos_operation="rebalancing_storm",
+                    chaos_consumer_id=consumer_id
+                )
 
                 end_time = time.time() + duration_seconds
                 

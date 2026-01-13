@@ -46,14 +46,22 @@ def inject_dlq_saturation(
         producer = None
         try:
             with tracer.start_as_current_span(f"dlq_saturation.producer.{producer_id}") as span:
-                span.set_attribute("messaging.system", "kafka")
-                span.set_attribute("messaging.destination", dlq_topic)
-                span.set_attribute("chaos.producer_id", producer_id)
-                span.set_attribute("chaos.action", "dlq_saturation")
-                span.set_attribute("chaos.activity", "kafka_dlq_saturation")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "kafka")
-                span.set_attribute("chaos.operation", "dlq_saturation")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                # Extract host/port from bootstrap_servers for network attributes
+                bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else None
+                bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else None
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="kafka",
+                    destination=dlq_topic,
+                    bootstrap_servers=bootstrap_servers,
+                    host=bootstrap_host,
+                    port=bootstrap_port,
+                    chaos_activity="kafka_dlq_saturation",
+                    chaos_action="dlq_saturation",
+                    chaos_operation="dlq_saturation",
+                    chaos_producer_id=producer_id
+                )
 
                 producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
                 

@@ -53,10 +53,18 @@ def inject_rebalancing_storm(
             with tracer.start_as_current_span(
                 f"rebalancing_storm.consumer.{consumer_id}"
             ) as span:
-                span.set_attribute("messaging.system", "activemq")
-                span.set_attribute("messaging.destination", queue)
-                span.set_attribute("chaos.consumer_id", consumer_id)
-                span.set_attribute("chaos.action", "rebalancing_storm")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="activemq",
+                    destination=queue,
+                    host=host,
+                    port=port,
+                    chaos_activity="activemq_rebalancing_storm",
+                    chaos_action="rebalancing_storm",
+                    chaos_operation="rebalancing_storm",
+                    chaos_consumer_id=consumer_id
+                )
 
                 end_time = time.time() + duration_seconds
 
@@ -113,14 +121,20 @@ def inject_rebalancing_storm(
 
     try:
         with tracer.start_as_current_span("chaos.activemq.rebalancing_storm") as span:
-            span.set_attribute("messaging.system", "activemq")
-            span.set_attribute("messaging.destination", queue)
-            span.set_attribute("chaos.num_consumers", num_consumers)
-            span.set_attribute(
-                "chaos.rebalance_interval_seconds", rebalance_interval_seconds
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            set_messaging_span_attributes(
+                span,
+                messaging_system="activemq",
+                destination=queue,
+                host=host,
+                port=port,
+                chaos_activity="activemq_rebalancing_storm",
+                chaos_action="rebalancing_storm",
+                chaos_operation="rebalancing_storm"
             )
+            span.set_attribute("chaos.num_consumers", num_consumers)
+            span.set_attribute("chaos.rebalance_interval_seconds", rebalance_interval_seconds)
             span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "rebalancing_storm")
 
             logger.info(
                 f"Starting ActiveMQ rebalancing storm with {num_consumers} consumers for {duration_seconds}s"

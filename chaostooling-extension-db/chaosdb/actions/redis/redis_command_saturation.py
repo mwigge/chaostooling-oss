@@ -59,13 +59,18 @@ def inject_command_saturation(
         r = None
         try:
             with tracer.start_as_current_span(f"command_saturation.worker.{thread_id}") as span:
-                span.set_attribute("db.system", "redis")
-                span.set_attribute("chaos.thread_id", thread_id)
-                span.set_attribute("chaos.action", "command_saturation")
-                span.set_attribute("chaos.activity", "redis_command_saturation")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "redis")
-                span.set_attribute("chaos.operation", "command_saturation")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system="redis",
+                    db_name=None,
+                    host=host,
+                    port=port,
+                    chaos_activity="redis_command_saturation",
+                    chaos_action="command_saturation",
+                    chaos_operation="command_saturation",
+                    chaos_thread_id=thread_id
+                )
 
                 r = redis.Redis(host=host, port=port, password=password, decode_responses=True)
                 

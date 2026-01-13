@@ -48,13 +48,18 @@ def inject_connection_exhaustion(
         conn = None
         try:
             with tracer.start_as_current_span(f"connection_exhaustion.connection.{conn_id}") as span:
-                span.set_attribute("messaging.system", "rabbitmq")
-                span.set_attribute("chaos.connection_id", conn_id)
-                span.set_attribute("chaos.action", "connection_exhaustion")
-                span.set_attribute("chaos.activity", "rabbitmq_connection_exhaustion")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "rabbitmq")
-                span.set_attribute("chaos.operation", "connection_exhaustion")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="rabbitmq",
+                    destination=None,
+                    host=host,
+                    port=port,
+                    chaos_activity="rabbitmq_connection_exhaustion",
+                    chaos_action="connection_exhaustion",
+                    chaos_operation="connection_exhaustion",
+                    chaos_connection_id=conn_id
+                )
 
                 try:
                     credentials = pika.PlainCredentials(user, password)

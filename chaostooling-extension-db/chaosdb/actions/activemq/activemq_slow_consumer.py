@@ -24,13 +24,18 @@ class SlowConsumerListener(stomp.ConnectionListener):
     
     def on_message(self, frame):
         with self.tracer.start_as_current_span(f"slow_consumer.message.{self.consumer_id}") as span:
-            span.set_attribute("messaging.system", "activemq")
-            span.set_attribute("chaos.consumer_id", self.consumer_id)
-            span.set_attribute("chaos.action", "slow_consumer")
-            span.set_attribute("chaos.activity", "activemq_slow_consumer")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "activemq")
-            span.set_attribute("chaos.operation", "slow_consumer")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            set_messaging_span_attributes(
+                span,
+                messaging_system="activemq",
+                destination=self.queue,
+                host=self.host,
+                port=self.port,
+                chaos_activity="activemq_slow_consumer",
+                chaos_action="slow_consumer",
+                chaos_operation="slow_consumer",
+                chaos_consumer_id=self.consumer_id
+            )
             
             try:
                 ack_start = time.time()
@@ -85,14 +90,18 @@ def inject_slow_consumer(
         conn = None
         try:
             with tracer.start_as_current_span(f"slow_consumer.worker.{consumer_id}") as span:
-                span.set_attribute("messaging.system", "activemq")
-                span.set_attribute("messaging.destination", queue)
-                span.set_attribute("chaos.consumer_id", consumer_id)
-                span.set_attribute("chaos.action", "slow_consumer")
-                span.set_attribute("chaos.activity", "activemq_slow_consumer")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "activemq")
-                span.set_attribute("chaos.operation", "slow_consumer")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="activemq",
+                    destination=queue,
+                    host=host,
+                    port=port,
+                    chaos_activity="activemq_slow_consumer",
+                    chaos_action="slow_consumer",
+                    chaos_operation="slow_consumer",
+                    chaos_consumer_id=consumer_id
+                )
 
                 conn = stomp.Connection([(host, port)])
                 listener = SlowConsumerListener(consumer_id, consume_delay_ms, tracer, logger)

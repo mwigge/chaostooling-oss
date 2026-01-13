@@ -118,6 +118,43 @@ def after_experiment_control(
         logger.warning(f"Failed to stop load generator: {e}")
 
 
+def load_control(
+    context: Any,
+    experiment: dict[str, Any],
+    configuration: dict[str, Any],
+    **kwargs: Any,
+) -> None:
+    """
+    Load control - called when control is loaded.
+    This ensures the control is properly initialized.
+    """
+    logger.info("Load generator control loaded")
+    configure_control(
+        control=None,
+        experiment=experiment,
+        configuration=configuration,
+        **kwargs
+    )
+
+
+def unload_control(
+    context: Any,
+    experiment: dict[str, Any],
+    configuration: dict[str, Any],
+    **kwargs: Any,
+) -> None:
+    """
+    Unload control - called when control is unloaded.
+    Ensures load generator is stopped.
+    """
+    logger.info("Load generator control unloaded")
+    cleanup_control(
+        control=None,
+        experiment=experiment,
+        **kwargs
+    )
+
+
 def cleanup_control(
     control: Any = None,
     experiment: Optional[dict[str, Any]] = None,

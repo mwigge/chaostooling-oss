@@ -58,13 +58,18 @@ def inject_key_contention(
         r = None
         try:
             with tracer.start_as_current_span(f"key_contention.worker.{thread_id}") as span:
-                span.set_attribute("db.system", "redis")
-                span.set_attribute("chaos.thread_id", thread_id)
-                span.set_attribute("chaos.action", "key_contention")
-                span.set_attribute("chaos.activity", "redis_key_contention")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "redis")
-                span.set_attribute("chaos.operation", "key_contention")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system="redis",
+                    db_name=None,
+                    host=host,
+                    port=port,
+                    chaos_activity="redis_key_contention",
+                    chaos_action="key_contention",
+                    chaos_operation="key_contention",
+                    chaos_thread_id=thread_id
+                )
 
                 r = redis.Redis(host=host, port=port, password=password, decode_responses=True)
                 

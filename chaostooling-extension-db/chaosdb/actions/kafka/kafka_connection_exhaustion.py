@@ -48,14 +48,22 @@ def inject_connection_exhaustion(
             with tracer.start_as_current_span(
                 f"connection_exhaustion.connection.{conn_id}"
             ) as span:
-                span.set_attribute("messaging.system", mq_system)
-                span.set_attribute("messaging.destination", topic)
-                span.set_attribute("chaos.connection_id", conn_id)
-                span.set_attribute("chaos.action", "connection_exhaustion")
-                span.set_attribute("chaos.activity", "kafka_connection_exhaustion")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "kafka")
-                span.set_attribute("chaos.operation", "connection_exhaustion")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                # Extract host/port from bootstrap_servers for network attributes
+                bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else None
+                bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else None
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system=mq_system,
+                    destination=topic,
+                    bootstrap_servers=bootstrap_servers,
+                    host=bootstrap_host,
+                    port=bootstrap_port,
+                    chaos_activity="kafka_connection_exhaustion",
+                    chaos_action="connection_exhaustion",
+                    chaos_operation="connection_exhaustion",
+                    chaos_connection_id=conn_id
+                )
 
                 try:
                     producer = KafkaProducer(bootstrap_servers=bootstrap_servers)

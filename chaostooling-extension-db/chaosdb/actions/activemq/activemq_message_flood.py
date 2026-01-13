@@ -61,16 +61,18 @@ def inject_message_flood(
         conn = None
         try:
             with tracer.start_as_current_span(f"message_flood.producer.{producer_id}") as span:
-                span.set_attribute("messaging.system", "activemq")
-                span.set_attribute("messaging.destination", queue)
-                span.set_attribute("network.peer.address", host)
-                span.set_attribute("network.peer.port", port)
-                span.set_attribute("chaos.producer_id", producer_id)
-                span.set_attribute("chaos.action", "message_flood")
-                span.set_attribute("chaos.activity", "activemq_message_flood")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "activemq")
-                span.set_attribute("chaos.operation", "message_flood")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="activemq",
+                    destination=queue,
+                    host=host,
+                    port=port,
+                    chaos_activity="activemq_message_flood",
+                    chaos_action="message_flood",
+                    chaos_operation="message_flood",
+                    chaos_producer_id=producer_id
+                )
 
                 conn = stomp.Connection([(host, port)])
                 conn.connect(user, password, wait=True)

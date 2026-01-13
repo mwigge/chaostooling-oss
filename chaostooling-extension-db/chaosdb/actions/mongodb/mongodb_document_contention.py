@@ -94,14 +94,18 @@ def inject_document_contention(
             with tracer.start_as_current_span(
                 f"document_contention.worker.{thread_id}"
             ) as span:
-                span.set_attribute("db.system", db_system)
-                span.set_attribute("db.name", database)
-                span.set_attribute("chaos.thread_id", thread_id)
-                span.set_attribute("chaos.action", "document_contention")
-                span.set_attribute("chaos.activity", "mongodb_document_contention")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "mongodb")
-                span.set_attribute("chaos.operation", "document_contention")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system=db_system,
+                    db_name=database,
+                    host=host,
+                    port=port,
+                    chaos_activity="mongodb_document_contention",
+                    chaos_action="document_contention",
+                    chaos_operation="document_contention",
+                    chaos_thread_id=thread_id
+                )
 
                 client = MongoClient(uri, serverSelectionTimeoutMS=5000)
                 db = client[database]

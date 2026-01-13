@@ -64,16 +64,18 @@ def inject_message_flood(
         channel = None
         try:
             with tracer.start_as_current_span(f"message_flood.producer.{producer_id}") as span:
-                span.set_attribute("messaging.system", "rabbitmq")
-                span.set_attribute("messaging.destination", queue)
-                span.set_attribute("network.peer.address", host)
-                span.set_attribute("network.peer.port", port)
-                span.set_attribute("chaos.producer_id", producer_id)
-                span.set_attribute("chaos.action", "message_flood")
-                span.set_attribute("chaos.activity", "rabbitmq_message_flood")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "rabbitmq")
-                span.set_attribute("chaos.operation", "message_flood")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="rabbitmq",
+                    destination=queue,
+                    host=host,
+                    port=port,
+                    chaos_activity="rabbitmq_message_flood",
+                    chaos_action="message_flood",
+                    chaos_operation="message_flood",
+                    chaos_producer_id=producer_id
+                )
 
                 credentials = pika.PlainCredentials(user, password)
                 params = pika.ConnectionParameters(host=host, port=port, virtual_host=vhost, credentials=credentials)

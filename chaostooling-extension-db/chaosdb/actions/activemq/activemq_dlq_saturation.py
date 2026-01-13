@@ -52,14 +52,18 @@ def inject_dlq_saturation(
         conn = None
         try:
             with tracer.start_as_current_span(f"dlq_saturation.producer.{producer_id}") as span:
-                span.set_attribute("messaging.system", "activemq")
-                span.set_attribute("messaging.destination", dlq_queue)
-                span.set_attribute("chaos.producer_id", producer_id)
-                span.set_attribute("chaos.action", "dlq_saturation")
-                span.set_attribute("chaos.activity", "activemq_dlq_saturation")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "activemq")
-                span.set_attribute("chaos.operation", "dlq_saturation")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="activemq",
+                    destination=dlq_queue,
+                    host=host,
+                    port=port,
+                    chaos_activity="activemq_dlq_saturation",
+                    chaos_action="dlq_saturation",
+                    chaos_operation="dlq_saturation",
+                    chaos_producer_id=producer_id
+                )
 
                 conn = stomp.Connection([(host, port)])
                 conn.connect(user, password, wait=True)

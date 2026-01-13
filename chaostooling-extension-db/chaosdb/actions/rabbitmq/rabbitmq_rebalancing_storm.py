@@ -53,14 +53,18 @@ def inject_rebalancing_storm(
         channel = None
         try:
             with tracer.start_as_current_span(f"rebalancing_storm.consumer.{consumer_id}") as span:
-                span.set_attribute("messaging.system", "rabbitmq")
-                span.set_attribute("messaging.destination", queue)
-                span.set_attribute("chaos.consumer_id", consumer_id)
-                span.set_attribute("chaos.action", "rebalancing_storm")
-                span.set_attribute("chaos.activity", "rabbitmq_rebalancing_storm")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "rabbitmq")
-                span.set_attribute("chaos.operation", "rebalancing_storm")
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="rabbitmq",
+                    destination=queue,
+                    host=host,
+                    port=port,
+                    chaos_activity="rabbitmq_rebalancing_storm",
+                    chaos_action="rebalancing_storm",
+                    chaos_operation="rebalancing_storm",
+                    chaos_consumer_id=consumer_id
+                )
 
                 end_time = time.time() + duration_seconds
                 
