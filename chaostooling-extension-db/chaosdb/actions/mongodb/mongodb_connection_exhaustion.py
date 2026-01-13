@@ -169,7 +169,7 @@ def inject_connection_exhaustion(
             if client and not leak_connections:
                 try:
                     client.close()
-                except:
+                except Exception:
                     pass
             elif client and leak_connections:
                 metrics = get_metrics_core()
@@ -227,7 +227,7 @@ def inject_connection_exhaustion(
                 for client in _active_connections:
                     try:
                         client.close()
-                    except:
+                    except Exception:
                         pass
 
             duration_ms = (time.time() - start_time) * 1000
@@ -271,6 +271,6 @@ def stop_connection_exhaustion():
     for client in _active_connections:
         try:
             client.close()
-        except:
+        except Exception:
             pass
     _active_connections = []

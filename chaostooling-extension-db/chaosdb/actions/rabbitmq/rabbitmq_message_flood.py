@@ -128,12 +128,12 @@ def inject_message_flood(
             if channel:
                 try:
                     channel.close()
-                except:
+                except Exception:
                     pass
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
     
     try:

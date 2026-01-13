@@ -5,20 +5,22 @@ import time
 from typing import Dict, Optional
 
 import stomp
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
-                       get_tracer)
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags,
+                       get_metrics_core, get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
 _stop_event = threading.Event()
 
 class SlowConsumerListener(stomp.ConnectionListener):
-    def __init__(self, consumer_id, consume_delay_ms, tracer, logger):
-        metrics = get_metrics_core()
+    def __init__(self, consumer_id, consume_delay_ms, tracer, logger, host, port, queue):
         self.consumer_id = consumer_id
         self.consume_delay_ms = consume_delay_ms
         self.tracer = tracer
         self.logger = logger
+        self.host = host
+        self.port = port
+        self.queue = queue
         self.messages_consumed = 0
         self.errors = 0
     
@@ -43,10 +45,17 @@ class SlowConsumerListener(stomp.ConnectionListener):
                 # Simulate slow processing
                 time.sleep(self.consume_delay_ms / 1000.0)
                 
-                ack_duration_ms = (time.time() - ack_start) * 1000
                 self.messages_consumed += 1
                 
+                # Record metrics
+                metrics = get_metrics_core()
                 tags = get_metric_tags(db_system="activemq", db_operation="slow_consume")
+                metrics.record_messaging_operation_count(
+                    count=1,
+                    mq_system="activemq",
+                    mq_destination=self.queue,
+                    tags=tags,
+                )
                 
                 
                 
@@ -74,6 +83,8 @@ def inject_slow_consumer(
     queue = queue or os.getenv("ACTIVEMQ_QUEUE", "chaos.test")
     
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "activemq")
+    metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
@@ -104,7 +115,7 @@ def inject_slow_consumer(
                 )
 
                 conn = stomp.Connection([(host, port)])
-                listener = SlowConsumerListener(consumer_id, consume_delay_ms, tracer, logger)
+                listener = SlowConsumerListener(consumer_id, consume_delay_ms, tracer, logger, host, port, queue)
                 conn.set_listener('', listener)
                 conn.connect(user, password, wait=True)
                 conn.subscribe(destination=f"/queue/{queue}", id=consumer_id, ack='client')
@@ -131,7 +142,7 @@ def inject_slow_consumer(
             if conn:
                 try:
                     conn.disconnect()
-                except:
+                except Exception:
                     pass
     
     try:

@@ -181,7 +181,7 @@ def inject_connection_pool_exhaustion(
                     # Note: Gauges can't be decremented directly, we'd need a different approach
                     # For now, we'll track this via a separate metric or use a different method
                     conn.close()
-                except:
+                except Exception:
                     pass
             elif conn and leak_connections:
                 metrics = get_metrics_core()
@@ -241,7 +241,7 @@ def inject_connection_pool_exhaustion(
                 for conn in _active_connections:
                     try:
                         conn.close()
-                    except:
+                    except Exception:
                         pass
 
             duration_ms = (time.time() - start_time) * 1000
@@ -285,6 +285,6 @@ def stop_pool_exhaustion():
     for conn in _active_connections:
         try:
             conn.close()
-        except:
+        except Exception:
             pass
     _active_connections = []

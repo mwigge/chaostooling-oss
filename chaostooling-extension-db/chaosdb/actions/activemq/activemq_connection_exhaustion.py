@@ -10,6 +10,7 @@ from chaosotel import (
     ensure_initialized,
     flush,
     get_logger,
+    get_metric_tags,
     get_metrics_core,
     get_tracer,
 )
@@ -38,6 +39,7 @@ def inject_connection_exhaustion(
     db_system = os.getenv("DB_SYSTEM", "activemq")
     tracer = get_tracer()
     logger = get_logger()
+    metrics = get_metrics_core()
     start_time = time.time()
 
     global _active_connections, _stop_event
@@ -55,6 +57,8 @@ def inject_connection_exhaustion(
             with tracer.start_as_current_span(
                 f"connection_exhaustion.connection.{conn_id}"
             ) as span:
+                # Get metrics in the function scope
+                metrics = get_metrics_core()
                 from chaosotel.core.trace_core import set_messaging_span_attributes
                 set_messaging_span_attributes(
                     span,
@@ -75,10 +79,14 @@ def inject_connection_exhaustion(
 
                     connections_created += 1
 
-                    if metrics_module.activemq_connections_count_gauge:
-                        metrics_module.activemq_connections_count_gauge.add(
-                            1, get_metric_tags(db_system="activemq")
-                        )
+                    # Record connection metric
+                    tags = get_metric_tags(db_system="activemq")
+                    metrics.record_messaging_gauge(
+                        "activemq_connections_count",
+                        connections_created,
+                        mq_system="activemq",
+                        tags=tags,
+                    )
 
                     _active_connections.append(conn)
 
@@ -108,12 +116,17 @@ def inject_connection_exhaustion(
         finally:
             if conn and not leak_connections:
                 try:
-                    if metrics_module.activemq_connections_count_gauge:
-                        metrics_module.activemq_connections_count_gauge.add(
-                            -1, get_metric_tags(db_system="activemq")
-                        )
+                    # Record connection closed metric
+                    metrics = get_metrics_core()
+                    tags = get_metric_tags(db_system="activemq")
+                    metrics.record_messaging_gauge(
+                        "activemq_connections_count",
+                        -1,
+                        mq_system="activemq",
+                        tags=tags,
+                    )
                     conn.disconnect()
-                except:
+                except Exception:
                     pass
             elif conn and leak_connections:
                 logger.warning(f"Leaking connection {conn_id} (intentional)")
@@ -158,12 +171,16 @@ def inject_connection_exhaustion(
             if not leak_connections:
                 for conn in _active_connections:
                     try:
-                        if metrics_module.activemq_connections_count_gauge:
-                            metrics_module.activemq_connections_count_gauge.add(
-                                -1, get_metric_tags(db_system="activemq")
-                            )
+                        # Record connection closed metric
+                        tags = get_metric_tags(db_system="activemq")
+                        metrics.record_messaging_gauge(
+                            "activemq_connections_count",
+                            -1,
+                            mq_system="activemq",
+                            tags=tags,
+                        )
                         conn.disconnect()
-                    except:
+                    except Exception:
                         pass
 
             duration_ms = (time.time() - start_time) * 1000
@@ -202,6 +219,6 @@ def stop_connection_exhaustion():
     for conn in _active_connections:
         try:
             conn.disconnect()
-        except:
+        except Exception:
             pass
     _active_connections = []

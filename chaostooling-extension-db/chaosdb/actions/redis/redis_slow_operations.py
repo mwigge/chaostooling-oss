@@ -5,7 +5,7 @@ import time
 from typing import Dict, Optional
 
 import redis
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+from chaosotel import ( get_metric_tags
                        get_tracer)
 from opentelemetry.trace import StatusCode
 
@@ -102,7 +102,7 @@ def inject_slow_operations(
             if r:
                 try:
                     r.close()
-                except:
+                except Exception:
                     pass
     
     try:

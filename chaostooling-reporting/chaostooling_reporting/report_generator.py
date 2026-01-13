@@ -512,7 +512,7 @@ class ReportGenerator:
     </div>
 """
 
-        html_content += f"""
+        html_content += """
     <h2>Recommendations</h2>
     <div class="service">
         <h3>Resilience Assessment</h3>
@@ -894,7 +894,7 @@ class ReportGenerator:
                 )
                 
                 if suggestions:
-                    html += f'''
+                    html += '''
         <div class="suggestion">
             <strong>Suggestions:</strong>
             <ul>

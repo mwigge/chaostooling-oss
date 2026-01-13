@@ -114,7 +114,7 @@ def probe_slow_operations_status(
 
                 write_latency_ms = row[1] if row and row[1] else 0
 
-            except:
+            except Exception:
                 read_latency_ms = 0
 
                 write_latency_ms = 0

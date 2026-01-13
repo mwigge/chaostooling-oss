@@ -134,7 +134,7 @@ def inject_message_flood(
             if conn:
                 try:
                     conn.disconnect()
-                except:
+                except Exception:
                     pass
     
     try:

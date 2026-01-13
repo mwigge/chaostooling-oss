@@ -5,7 +5,7 @@ import time
 from typing import Dict, Optional
 
 import pyodbc
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+from chaosotel import ( get_metric_tags
                        get_tracer)
 from opentelemetry.trace import StatusCode
 
@@ -125,7 +125,7 @@ def inject_query_saturation(
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
     
     try:

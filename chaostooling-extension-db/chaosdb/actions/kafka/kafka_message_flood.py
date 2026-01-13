@@ -124,7 +124,7 @@ def inject_message_flood(
             if producer:
                 try:
                     producer.close()
-                except:
+                except Exception:
                     pass
 
     try:

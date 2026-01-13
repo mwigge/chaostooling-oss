@@ -4,7 +4,6 @@ Tests for ChaoSOTEL calculator module.
 Tests risk level and complexity score calculations.
 """
 
-import pytest
 from chaosotel.calculator import (
     calculate_risk_level,
     calculate_complexity_score,

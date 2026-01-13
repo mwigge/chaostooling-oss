@@ -6,7 +6,7 @@ import time
 from typing import Optional
 
 import redis
-from chaosotel import (
+from chaosotel import ( get_metrics_core
     ensure_initialized,
     flush,
     get_logger,
@@ -184,6 +184,6 @@ def stop_connection_exhaustion():
     for r in _active_connections:
         try:
             r.close()
-        except:
+        except Exception:
             pass
     _active_connections = []

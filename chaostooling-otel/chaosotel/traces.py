@@ -151,7 +151,7 @@ class ServiceNameSpanProcessor(SpanProcessor):
                                 logger.debug(f"Updated span._resource.service.name to {service_name}")
                             except (AttributeError, TypeError):
                                 # _resource might be read-only, that's OK - the update during span creation should work
-                                logger.debug(f"Could not update _resource (read-only), but resource was set during span creation")
+                                logger.debug("Could not update _resource (read-only), but resource was set during span creation")
                     except Exception as e:
                         logger.debug(f"Could not update _resource in on_end: {e}")
                 else:

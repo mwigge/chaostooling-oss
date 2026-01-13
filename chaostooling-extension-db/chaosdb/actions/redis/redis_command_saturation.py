@@ -122,7 +122,7 @@ def inject_command_saturation(
             if r:
                 try:
                     r.close()
-                except:
+                except Exception:
                     pass
     
     try:

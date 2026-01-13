@@ -94,12 +94,12 @@ def inject_connection_exhaustion(
                 if session:
                     try:
                         session.shutdown()
-                    except:
+                    except Exception:
                         pass
                 if cluster:
                     try:
                         cluster.shutdown()
-                    except:
+                    except Exception:
                         pass
             elif (cluster, session) and leak_connections:
                 logger.warning(f"Leaking connection {conn_id} (intentional)")
@@ -136,7 +136,7 @@ def inject_connection_exhaustion(
                     try:
                         session.shutdown()
                         cluster.shutdown()
-                    except:
+                    except Exception:
                         pass
             
             duration_ms = (time.time() - start_time) * 1000
@@ -172,7 +172,7 @@ def stop_connection_exhaustion():
         try:
             session.shutdown()
             cluster.shutdown()
-        except:
+        except Exception:
             pass
     _active_connections = []
 

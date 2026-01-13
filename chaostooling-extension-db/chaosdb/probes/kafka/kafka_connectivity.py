@@ -130,7 +130,7 @@ def probe_kafka_connectivity(
                     if producer:
                         try:
                             producer.close()
-                        except:
+                        except Exception:
                             pass
 
             # Run in thread with timeout

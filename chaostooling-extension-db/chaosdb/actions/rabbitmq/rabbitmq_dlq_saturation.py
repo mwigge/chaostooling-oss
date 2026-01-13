@@ -5,8 +5,7 @@ import time
 from typing import Dict, Optional
 
 import pika
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
-                       get_tracer)
+from chaosotel import (ensure_initialized, flush, get_logger, get_tracer), get_metric_tags
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -105,12 +104,12 @@ def inject_dlq_saturation(
             if channel:
                 try:
                     channel.close()
-                except:
+                except Exception:
                     pass
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
     
     try:

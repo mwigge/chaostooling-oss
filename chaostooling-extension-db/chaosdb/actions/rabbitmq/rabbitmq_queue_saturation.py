@@ -123,12 +123,12 @@ def inject_queue_saturation(
             if channel:
                 try:
                     channel.close()
-                except:
+                except Exception:
                     pass
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
     
     try:

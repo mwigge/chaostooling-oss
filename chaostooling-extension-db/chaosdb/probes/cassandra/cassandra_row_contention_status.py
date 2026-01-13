@@ -114,7 +114,7 @@ def probe_row_contention_status(
 
                 hints_pending = hints_result.one()[0] if hints_result else 0
 
-            except:
+            except Exception:
                 hints_pending = 0
 
             session.shutdown()

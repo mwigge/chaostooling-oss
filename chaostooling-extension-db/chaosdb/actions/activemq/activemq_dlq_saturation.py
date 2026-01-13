@@ -5,8 +5,8 @@ import time
 from typing import Dict, Optional
 
 import stomp
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
-                       get_tracer)
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags,
+                       get_metrics_core, get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -80,8 +80,13 @@ def inject_dlq_saturation(
                         message_count += 1
                         
                         tags = get_metric_tags(db_name=dlq_queue, db_system="activemq", db_operation="dlq_send")
-                        if metrics_module.activemq_messages_enqueued_counter:
-                            metrics_module.activemq_messages_enqueued_counter.add(1, tags)
+                        metrics = get_metrics_core()
+                        metrics.record_messaging_operation_count(
+                            count=1,
+                            mq_system="activemq",
+                            mq_destination=dlq_queue,
+                            tags=tags,
+                        )
                         
                         span.set_status(StatusCode.OK)
                         time.sleep(0.01)
@@ -97,7 +102,7 @@ def inject_dlq_saturation(
             if conn:
                 try:
                     conn.disconnect()
-                except:
+                except Exception:
                     pass
     
     try:

@@ -131,7 +131,7 @@ def inject_lock_storm(
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
 
     try:

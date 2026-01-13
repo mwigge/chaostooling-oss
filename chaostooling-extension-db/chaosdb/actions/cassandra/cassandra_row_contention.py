@@ -151,12 +151,12 @@ def inject_row_contention(
             if session:
                 try:
                     session.shutdown()
-                except:
+                except Exception:
                     pass
             if cluster:
                 try:
                     cluster.shutdown()
-                except:
+                except Exception:
                     pass
     
     try:

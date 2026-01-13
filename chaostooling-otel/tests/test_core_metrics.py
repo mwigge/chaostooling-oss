@@ -4,7 +4,6 @@ Tests for MetricsCore.
 Tests action, probe, recovery, compliance, and custom metrics.
 """
 
-import pytest
 from chaosotel.core.metrics_core import MetricsCore
 
 

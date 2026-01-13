@@ -5,8 +5,7 @@ import time
 from typing import Dict, Optional
 
 import pyodbc
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
-                       get_tracer)
+from chaosotel import (ensure_initialized, flush, get_logger, get_tracer), get_metric_tags
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -144,7 +143,7 @@ def inject_deadlock(
                         
                         try:
                             conn.rollback()
-                        except:
+                        except Exception:
                             pass
                         time.sleep(0.1)
                         
@@ -155,7 +154,7 @@ def inject_deadlock(
                         span.set_status(StatusCode.ERROR, str(e))
                         try:
                             conn.rollback()
-                        except:
+                        except Exception:
                             pass
                         time.sleep(0.1)
                         
@@ -166,7 +165,7 @@ def inject_deadlock(
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
     
     try:

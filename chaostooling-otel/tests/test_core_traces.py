@@ -4,7 +4,6 @@ Tests for TraceCore.
 Tests span creation, attributes, events, exceptions, and status.
 """
 
-import pytest
 from chaosotel.core.trace_core import TraceCore
 
 

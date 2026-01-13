@@ -4,8 +4,6 @@
 Tests for LogCore class.
 """
 
-import pytest
-import json
 
 from chaosotel.core import LogCore
 

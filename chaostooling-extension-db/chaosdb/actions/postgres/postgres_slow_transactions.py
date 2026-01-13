@@ -7,7 +7,7 @@ import time
 from typing import Optional
 
 import psycopg2
-from chaosotel import (
+from chaosotel import ( get_metric_tags, get_metrics_core
     ensure_initialized,
     flush,
     get_metric_tags,
@@ -195,7 +195,7 @@ def inject_slow_transactions(
                         if conn:
                             try:
                                 conn.rollback()
-                            except:
+                            except Exception:
                                 pass
                         time.sleep(0.1)
 
@@ -206,7 +206,7 @@ def inject_slow_transactions(
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
 
     try:

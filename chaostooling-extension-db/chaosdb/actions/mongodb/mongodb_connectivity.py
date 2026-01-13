@@ -3,7 +3,7 @@ import os
 import time
 from typing import Optional
 
-from chaosotel import (
+from chaosotel import ( get_metric_tags, get_metrics_core
     ensure_initialized,
     flush,
     get_metric_tags,

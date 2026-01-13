@@ -6,7 +6,8 @@ import time
 from typing import Optional
 
 import stomp
-from chaosotel import ensure_initialized, flush, get_logger, get_tracer
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags,
+                       get_metrics_core, get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_consumers = []
@@ -34,7 +35,8 @@ def inject_rebalancing_storm(
     queue = queue or os.getenv("ACTIVEMQ_QUEUE", "chaos.test")
 
     ensure_initialized()
-    get_metrics_core()
+    db_system = os.getenv("DB_SYSTEM", "activemq")
+    metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
@@ -93,19 +95,20 @@ def inject_rebalancing_storm(
 
                     except Exception as e:
                         errors += 1
-                        if metrics_module.error_counter:
-                            metrics_module.error_counter.add(
-                                1,
-                                get_metric_tags(
-                                    db_name=queue, error_type=type(e).__name__
-                                ),
-                            )
+                        tags = get_metric_tags(
+                            db_name=queue, error_type=type(e).__name__
+                        )
+                        metrics.record_db_error(
+                            db_system=db_system,
+                            error_type=type(e).__name__,
+                            db_name=queue,
+                        )
                         logger.warning(f"Rebalancing consumer {consumer_id} error: {e}")
                         span.set_status(StatusCode.ERROR, str(e))
                         if conn:
                             try:
                                 conn.disconnect()
-                            except:
+                            except Exception:
                                 pass
                         time.sleep(0.5)
 
@@ -116,7 +119,7 @@ def inject_rebalancing_storm(
             if conn:
                 try:
                     conn.disconnect()
-                except:
+                except Exception:
                     pass
 
     try:
@@ -157,7 +160,7 @@ def inject_rebalancing_storm(
             for conn in _active_consumers:
                 try:
                     conn.disconnect()
-                except:
+                except Exception:
                     pass
 
             duration_ms = (time.time() - start_time) * 1000
@@ -178,10 +181,11 @@ def inject_rebalancing_storm(
             return result
     except Exception as e:
         _stop_event.set()
-        if metrics_module.error_counter:
-            metrics_module.error_counter.add(
-                1, get_metric_tags(db_name=queue, error_type=type(e).__name__)
-            )
+        metrics.record_db_error(
+            db_system=db_system,
+            error_type=type(e).__name__,
+            db_name=queue,
+        )
         logger.error(f"ActiveMQ rebalancing storm failed: {e}")
         flush()
         raise
@@ -193,6 +197,6 @@ def stop_rebalancing_storm():
     for conn in _active_consumers:
         try:
             conn.disconnect()
-        except:
+        except Exception:
             pass
     _active_consumers = []

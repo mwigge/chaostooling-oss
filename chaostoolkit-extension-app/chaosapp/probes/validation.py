@@ -1,8 +1,6 @@
 import os
 import psycopg2
-from psycopg2.extras import RealDictCursor
-from typing import List, Dict, Any
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush
+from chaosotel import ensure_initialized, get_tracer, get_logger
 from opentelemetry.trace import StatusCode
 
 def get_db_connection():
