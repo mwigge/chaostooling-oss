@@ -76,16 +76,18 @@ def inject_slow_transactions(
             with tracer.start_as_current_span(
                 f"slow_transaction.worker.{thread_id}"
             ) as span:
-                span.set_attribute("db.system", "mssql")
-                span.set_attribute("db.name", database)
-                span.set_attribute("network.peer.address", host)
-                span.set_attribute("network.peer.port", port)
-                span.set_attribute("chaos.thread_id", thread_id)
-                span.set_attribute("chaos.action", "slow_transactions")
-                span.set_attribute("chaos.activity", "mssql_slow_transactions")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "mssql")
-                span.set_attribute("chaos.operation", "slow_transactions")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system="mssql",
+                    db_name=database,
+                    host=host,
+                    port=port,
+                    chaos_activity="mssql_slow_transactions",
+                    chaos_action="slow_transactions",
+                    chaos_operation="slow_transactions",
+                    chaos_thread_id=thread_id
+                )
 
                 conn = pyodbc.connect(connection_string, timeout=5)
                 conn.autocommit = False

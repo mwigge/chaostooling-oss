@@ -52,10 +52,18 @@ def inject_lock_storm(
         conn = None
         try:
             with tracer.start_as_current_span(f"lock_storm.worker.{thread_id}") as span:
-                span.set_attribute("db.system", "mssql")
-                span.set_attribute("db.name", database)
-                span.set_attribute("chaos.thread_id", thread_id)
-                span.set_attribute("chaos.action", "lock_storm")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system="mssql",
+                    db_name=database,
+                    host=host,
+                    port=port,
+                    chaos_activity="mssql_lock_storm",
+                    chaos_action="lock_storm",
+                    chaos_operation="lock_storm",
+                    chaos_thread_id=thread_id
+                )
                 
                 conn = pyodbc.connect(connection_string, timeout=5)
                 conn.autocommit = False

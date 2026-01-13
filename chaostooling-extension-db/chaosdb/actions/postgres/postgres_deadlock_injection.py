@@ -77,14 +77,18 @@ def inject_deadlock(
             with tracer.start_as_current_span(
                 f"deadlock_injection.worker.{thread_id}"
             ) as span:
-                span.set_attribute("db.system", "postgresql")
-                span.set_attribute("db.name", database)
-                span.set_attribute("chaos.thread_id", thread_id)
-                span.set_attribute("chaos.action", "deadlock_injection")
-                span.set_attribute("chaos.activity", "postgresql_deadlock_injection")
-                span.set_attribute("chaos.activity.type", "action")
-                span.set_attribute("chaos.system", "postgresql")
-                span.set_attribute("chaos.operation", "deadlock_injection")
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system="postgresql",
+                    db_name=database,
+                    host=host,
+                    port=port,
+                    chaos_activity="postgresql_deadlock_injection",
+                    chaos_action="deadlock_injection",
+                    chaos_operation="deadlock_injection",
+                    chaos_thread_id=thread_id
+                )
 
                 conn = psycopg2.connect(
                     host=host,
