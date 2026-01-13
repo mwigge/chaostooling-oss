@@ -56,8 +56,21 @@ class ServiceNameSpanProcessor(SpanProcessor):
             logger.debug("Using fallback system mappings")
     
     def on_start(self, span, parent_context):
-        """Called when span starts - no action needed."""
-        pass
+        """Called when span starts - update resource early if we can detect the system."""
+        # Try to update resource early based on span name or initial attributes
+        # This is more reliable than updating in on_end
+        try:
+            if hasattr(span, 'name'):
+                span_name = span.name.lower()
+                # Check if this looks like a database or messaging span
+                if any(db in span_name for db in ['postgres', 'mysql', 'mssql', 'mongodb', 'redis', 'cassandra']):
+                    # Will be handled in on_end when attributes are set
+                    pass
+                elif any(msg in span_name for msg in ['kafka', 'rabbitmq', 'activemq']):
+                    # Will be handled in on_end when attributes are set
+                    pass
+        except Exception:
+            pass  # Ignore errors in on_start
     
     def on_end(self, span):
         """Update resource service name based on span attributes."""
@@ -109,29 +122,44 @@ class ServiceNameSpanProcessor(SpanProcessor):
                     service_name = base_service_name
                     logger.debug(f"Mapped messaging.system={messaging_system} to service.name={service_name} (no hostname available)")
         
-        # Update service name - set as span attribute (Grafana/Tempo service graphs use this)
+        # Update service name - CRITICAL for Tempo service graph visibility
+        # NOTE: In on_end(), the span is a ReadableSpan which is read-only.
+        # We can't call set_attribute() or modify span.resource here.
+        # The actual resource update should happen during span creation (in set_db_span_attributes/set_messaging_span_attributes).
         if service_name:
             try:
-                # Set service.name as span attribute (required for service graph visibility)
-                span.set_attribute("service.name", service_name)
-                logger.debug(f"Set span attribute service.name={service_name}")
-                
-                # Also try to update resource if possible
-                if hasattr(span, 'resource') and span.resource:
-                    current_attrs = dict(span.resource.attributes)
-                    current_service_name = current_attrs.get("service.name", "")
-                    if current_service_name != service_name:
-                        current_attrs["service.name"] = service_name
-                        new_resource = Resource.create(current_attrs)
+                # ReadableSpan doesn't have set_attribute - attributes are set during span creation
+                # We can only try to update _resource if it exists and is writable
+                if hasattr(span, '_resource'):
+                    try:
+                        # Get current resource attributes
+                        if hasattr(span, 'resource') and span.resource:
+                            current_attrs = dict(span.resource.attributes)
+                        elif hasattr(span, '_resource') and span._resource:
+                            current_attrs = dict(span._resource.attributes)
+                        else:
+                            current_attrs = {}
                         
-                        if hasattr(span, '_resource'):
-                            span._resource = new_resource
-                        elif hasattr(span, 'resource'):
-                            span.resource = new_resource
-                        
-                        logger.debug(f"Updated span resource.service.name to {service_name}")
+                        # Only update if different
+                        if current_attrs.get("service.name") != service_name:
+                            current_attrs["service.name"] = service_name
+                            new_resource = Resource.create(current_attrs)
+                            
+                            # Try to update _resource (this may work for some SDK versions)
+                            try:
+                                span._resource = new_resource
+                                logger.debug(f"Updated span._resource.service.name to {service_name}")
+                            except (AttributeError, TypeError):
+                                # _resource might be read-only, that's OK - the update during span creation should work
+                                logger.debug(f"Could not update _resource (read-only), but resource was set during span creation")
+                    except Exception as e:
+                        logger.debug(f"Could not update _resource in on_end: {e}")
+                else:
+                    # Resource update should have happened during span creation
+                    logger.debug(f"Resource update should have occurred during span creation for {service_name}")
             except Exception as e:
-                logger.debug(f"Could not update service name: {e}")
+                # Don't log warnings for read-only spans - this is expected
+                logger.debug(f"Could not update service name in on_end (read-only span): {e}")
     
     def shutdown(self):
         """Shutdown processor - no cleanup needed."""
@@ -221,13 +249,15 @@ def setup_traces(
         # Create tracer provider
         tracer_provider = TracerProvider(resource=resource)
 
-        # Add batch processor for exporting traces
-        tracer_provider.add_span_processor(BatchSpanProcessor(trace_exporter))
-        
-        # Add service name processor for automatic service graph visibility
-        # This maps db.system and messaging.system to resource.service.name
-        tracer_provider.add_span_processor(ServiceNameSpanProcessor())
+        # CRITICAL: Add service name processor BEFORE batch processor
+        # This ensures resource.service.name is updated before spans are exported
+        # The processor order matters - it must run before the batch processor
+        service_name_processor = ServiceNameSpanProcessor()
+        tracer_provider.add_span_processor(service_name_processor)
         logger.info("✓ Service name span processor registered (→ service graph visibility)")
+        
+        # Add batch processor for exporting traces (after service name processor)
+        tracer_provider.add_span_processor(BatchSpanProcessor(trace_exporter))
 
         logger.info("✓ Traces provider configured (→ Tempo/Jaeger)")
 

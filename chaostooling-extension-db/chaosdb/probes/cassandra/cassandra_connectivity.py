@@ -77,34 +77,96 @@ def probe_cassandra_connectivity(
     with span_context as span:
         try:
             if span:
-                span.set_attribute("db.system", db_system)
+                # Use span helper for consistent attribute setting and resource updates
+                # This matches Redis pattern - clean, simple, no duplicate attributes
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system=db_system,
+                    db_name=database,
+                    host=host,
+                    port=port,
+                    db_operation="probe",
+                    chaos_activity="cassandra_connectivity_probe",
+                    chaos_action="connectivity_probe",
+                    chaos_operation="probe",
+                )
 
-                span.set_attribute("db.name", database)
-
-                span.set_attribute("network.peer.address", host)
-
-                span.set_attribute("network.peer.port", port)
-                span.set_attribute("service.name", host)
-
-                span.set_attribute("db.operation", "probe")
-
-                span.set_attribute("chaos.activity", "cassandra_connectivity_probe")
-
-                span.set_attribute("chaos.activity.type", "probe")
-
-                span.set_attribute("chaos.system", "cassandra")
-
-                span.set_attribute("chaos.operation", "connectivity")
-
-            cluster = Cluster([host], port=port, connect_timeout=30)
-
-            session = cluster.connect(keyspace)
-
-            session.execute("SELECT release_version FROM system.local")
-
-            session.shutdown()
-
-            cluster.shutdown()
+            # Retry logic for detached runs and slow startup (similar to MySQL)
+            # Increased retries and delays for Cassandra which can be slow to start
+            max_retries = 5
+            retry_delay = 5  # seconds - increased for Cassandra startup time
+            cluster = None
+            session = None
+            last_error = None
+            
+            for attempt in range(max_retries):
+                try:
+                    # Increased connect_timeout for Cassandra which can be slow
+                    # Use protocol version 4 for Cassandra 4.x compatibility
+                    cluster = Cluster(
+                        [host], 
+                        port=port, 
+                        connect_timeout=90,  # Increased to 90 seconds for slow startup
+                        control_connection_timeout=90,
+                        protocol_version=4,  # Use protocol version 4 for Cassandra 4.x
+                        # Add connection pooling settings for better reliability
+                        max_connections_per_host=2,
+                        # Disable metadata refresh on connect to speed up initial connection
+                        metadata_refresh_on_connect=False
+                    )
+                    # Connect to cluster first, then to keyspace
+                    # If keyspace doesn't exist, try connecting without it and use system keyspace
+                    try:
+                        session = cluster.connect(keyspace)
+                    except Exception as keyspace_error:
+                        # If keyspace doesn't exist, try system keyspace as fallback
+                        logger.warning(f"Could not connect to keyspace '{keyspace}': {keyspace_error}. Trying system keyspace...")
+                        try:
+                            session = cluster.connect('system')
+                        except Exception as system_error:
+                            logger.warning(f"Could not connect to system keyspace either: {system_error}. Trying without keyspace...")
+                            # Last resort: connect without specifying keyspace
+                            session = cluster.connect()
+                    
+                    # Execute a simple query to verify connectivity with timeout
+                    # Use a simple query that works in any keyspace
+                    # Increase query timeout for slow systems
+                    result = session.execute("SELECT release_version FROM system.local", timeout=60)
+                    result.one()  # Fetch the result to ensure query completed
+                    # Success, exit retry loop
+                    break
+                except Exception as e:
+                    last_error = e
+                    # Clean up on error
+                    if session:
+                        try:
+                            session.shutdown()
+                        except Exception:
+                            pass
+                    if cluster:
+                        try:
+                            cluster.shutdown()
+                        except Exception:
+                            pass
+                    session = None
+                    cluster = None
+                    
+                    if attempt < max_retries - 1:
+                        logger.warning(
+                            f"Cassandra connection attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {retry_delay}s..."
+                        )
+                        time.sleep(retry_delay)
+                    else:
+                        # Final attempt failed, log the error and raise
+                        logger.error(f"All {max_retries} Cassandra connection attempts failed. Last error: {e}")
+                        raise
+            
+            # Clean up after successful connection
+            if session:
+                session.shutdown()
+            if cluster:
+                cluster.shutdown()
 
             probe_time_ms = (time.time() - start) * 1000
 

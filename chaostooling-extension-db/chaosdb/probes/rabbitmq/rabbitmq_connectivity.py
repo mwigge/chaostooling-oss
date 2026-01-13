@@ -58,14 +58,18 @@ def probe_rabbitmq_connectivity(
     with span_context as span:
         try:
             if span:
-                span.set_attribute("chaos.activity", "rabbitmq_connectivity_probe")
-                span.set_attribute("chaos.system", "rabbitmq")
-                span.set_attribute("chaos.operation", "connectivity")
-                span.set_attribute("messaging.system", "rabbitmq")
-                span.set_attribute("messaging.destination", vhost)
-                span.set_attribute("network.peer.address", host)
-                span.set_attribute("network.peer.port", port)
-                span.set_attribute("service.name", host)
+                # Use span helper for consistent attribute setting and resource updates
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="rabbitmq",
+                    destination=vhost,
+                    host=host,
+                    port=port,
+                    chaos_activity="rabbitmq_connectivity_probe",
+                    chaos_action="connectivity_probe",
+                    chaos_operation="probe",
+                )
 
             credentials = pika.PlainCredentials(user, password)
             params = pika.ConnectionParameters(

@@ -74,26 +74,20 @@ def probe_mysql_connectivity(
     with span_context as span:
         try:
             if span:
-                span.set_attribute("db.system", DB_SYSTEM)
-
-                span.set_attribute("db.name", database)
-
-                span.set_attribute("db.user", user)
-
-                span.set_attribute("network.peer.address", host)
-
-                span.set_attribute("network.peer.port", port)
-                span.set_attribute("service.name", host)
-
-                span.set_attribute("db.operation", "probe")
-
-                span.set_attribute("chaos.activity", "mysql_connectivity_probe")
-
-                span.set_attribute("chaos.activity.type", "probe")
-
-                span.set_attribute("chaos.system", "mysql")
-
-                span.set_attribute("chaos.operation", "connectivity")
+                # Use span helper for consistent attribute setting and resource updates
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system=DB_SYSTEM,
+                    db_name=database,
+                    db_user=user,
+                    host=host,
+                    port=port,
+                    db_operation="probe",
+                    chaos_activity="mysql_connectivity_probe",
+                    chaos_action="connectivity_probe",
+                    chaos_operation="probe",
+                )
 
             # Retry logic for detached runs and slow startup
             max_retries = 3

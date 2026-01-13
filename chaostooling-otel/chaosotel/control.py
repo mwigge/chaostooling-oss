@@ -247,6 +247,44 @@ def before_experiment_control(
     root_span.set_attribute("experiment.num_probes", len(steady_state_probes))
     root_span.set_attribute("experiment.num_rollbacks", len(rollbacks))
 
+    # Count scenarios (method steps that are scenarios)
+    scenarios = [step for step in method_steps if step.get("name", "").startswith("SCENARIO-")]
+    num_scenarios = len(scenarios)
+    
+    # Count total activities (all method steps including scenarios and their actions)
+    total_activities = len(method_steps)
+    
+    # Record experiment metadata metrics for dashboard panels
+    metrics = get_metrics_core()
+    try:
+        # Record scenarios count
+        metrics.record_custom_metric(
+            "chaos_experiment_scenarios_total",
+            num_scenarios,
+            metric_type="gauge",
+            tags=tags,
+            description="Total number of scenarios in experiment",
+        )
+        # Record total activities count
+        metrics.record_custom_metric(
+            "chaos_experiment_activities_total",
+            total_activities,
+            metric_type="gauge",
+            tags=tags,
+            description="Total number of activities in experiment",
+        )
+        # Record validation probes count
+        metrics.record_custom_metric(
+            "chaos_experiment_probes_total",
+            len(steady_state_probes),
+            metric_type="gauge",
+            tags=tags,
+            description="Total number of validation probes in experiment",
+        )
+        logger.debug(f"Recorded experiment metrics: {num_scenarios} scenarios, {total_activities} activities, {len(steady_state_probes)} probes")
+    except Exception as e:
+        logger.warning(f"Failed to record experiment metadata metrics: {e}", exc_info=True)
+
     # Use use_span to make this span current and keep it in context
     # Store the context token to keep it active
     _experiment_context_token = trace.context_api.attach(

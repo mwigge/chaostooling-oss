@@ -74,33 +74,17 @@ def probe_kafka_connectivity(
     with span_context as span:
         try:
             if span:
-                span.set_attribute("chaos.activity", "kafka_connectivity_probe")
-
-                span.set_attribute("chaos.activity.type", "probe")
-
-                span.set_attribute("chaos.system", "kafka")
-
-                span.set_attribute("chaos.operation", "connectivity")
-
-                span.set_attribute("messaging.system", "kafka")
-
-                span.set_attribute("messaging.destination", topic)
-
-                # Parse bootstrap_servers to extract hostname
-                try:
-                    first_server = bootstrap_servers.split(',')[0]
-                    if ':' in first_server:
-                        bootstrap_host = first_server.split(':')[0]
-                        bootstrap_port = int(first_server.split(':')[1])
-                    else:
-                        bootstrap_host = first_server
-                        bootstrap_port = 9092
-                    span.set_attribute("network.peer.address", bootstrap_host)
-                    span.set_attribute("network.peer.port", bootstrap_port)
-                    span.set_attribute("service.name", bootstrap_host)
-                except Exception:
-                    span.set_attribute("network.peer.address", bootstrap_servers.split(',')[0])
-                    span.set_attribute("service.name", bootstrap_servers.split(',')[0])
+                # Use span helper for consistent attribute setting and resource updates
+                from chaosotel.core.trace_core import set_messaging_span_attributes
+                set_messaging_span_attributes(
+                    span,
+                    messaging_system="kafka",
+                    destination=topic,
+                    bootstrap_servers=bootstrap_servers,
+                    chaos_activity="kafka_connectivity_probe",
+                    chaos_action="connectivity_probe",
+                    chaos_operation="probe",
+                )
 
             # Use threading to enforce overall timeout
             max_probe_time = 10  # 10 seconds max for entire probe (increased for Kafka startup)
