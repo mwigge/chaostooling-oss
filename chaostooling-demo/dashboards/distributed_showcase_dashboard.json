@@ -669,7 +669,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count(count by (operation_name) (chaos_operation_success_total or chaos_operation_error_total))",
+          "expr": "chaos_experiment_scenarios_total or count(count by (operation_name) (chaos_operation_success_total or chaos_operation_error_total)) or vector(0)",
           "refId": "A"
         }
       ],
@@ -726,7 +726,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_operation_success_total) + sum(chaos_operation_error_total) or vector(0)",
+          "expr": "chaos_experiment_activities_total or (sum(chaos_operation_success_total) + sum(chaos_operation_error_total)) or vector(0)",
           "refId": "A"
         }
       ],
@@ -783,7 +783,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_probe_executions_total) or vector(0)",
+          "expr": "chaos_experiment_probes_total or sum(chaos_probe_executions_total) or vector(0)",
           "refId": "A"
         }
       ],

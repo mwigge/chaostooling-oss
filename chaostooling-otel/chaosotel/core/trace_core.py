@@ -140,22 +140,55 @@ def get_system_type(system_name: str) -> str:
 
 
 def _update_resource_service_name(span: trace.Span, service_name: str):
-    """Update span resource to set service.name for service graph."""
+    """Update span resource to set service.name for service graph.
+    
+    CRITICAL: Tempo service graphs use resource.service.name, not span attributes.
+    This must be called to ensure services appear in the service graph.
+    
+    Note: OpenTelemetry resources are technically immutable, but we can update
+    the internal _resource attribute which is used by exporters.
+    """
     try:
+        # Get current resource attributes
         if hasattr(span, 'resource') and span.resource:
             current_attrs = dict(span.resource.attributes)
+        elif hasattr(span, '_resource') and span._resource:
+            current_attrs = dict(span._resource.attributes)
         else:
             current_attrs = {}
         
+        # Only update if different to avoid unnecessary work
+        if current_attrs.get("service.name") == service_name:
+            return
+        
+        # Preserve all existing attributes and update service.name
         current_attrs["service.name"] = service_name
         new_resource = Resource.create(current_attrs)
         
+        # CRITICAL: Update the internal _resource attribute (used by exporters)
+        # This is the most reliable way to update the resource for service graphs
+        # Note: We can only update _resource, not the public resource property (it's read-only)
         if hasattr(span, '_resource'):
-            span._resource = new_resource
-        elif hasattr(span, 'resource'):
-            span.resource = new_resource
+            try:
+                span._resource = new_resource
+                logger.debug(f"Updated span._resource.service.name to {service_name}")
+            except (AttributeError, TypeError) as e:
+                # _resource might be read-only in some SDK versions, that's OK
+                logger.debug(f"Could not update _resource (may be read-only): {e}")
+        
+        # Don't try to set span.resource - it's a read-only property
+        # The resource is set when the span is created, and we update _resource above
+        
+        # Force span to recognize resource change (if method exists)
+        if hasattr(span, '_on_attributes_changed'):
+            try:
+                span._on_attributes_changed()
+            except Exception:
+                pass  # Method might not be callable
+        
+        logger.debug(f"Updated resource.service.name to {service_name} for service graph visibility")
     except Exception as e:
-        logger.debug(f"Could not update resource service name: {e}")
+        logger.warning(f"Could not update resource service name to {service_name}: {e}", exc_info=True)
 
 
 def create_instrumented_span(
@@ -372,9 +405,11 @@ def set_db_span_attributes(
     # Set network attributes (critical for service graph visibility)
     if host:
         span.set_attribute("network.peer.address", host)
-        # Set service.name directly for immediate service graph visibility
-        # Grafana/Tempo service graphs use service.name attribute
+        # Set service.name as span attribute (for peer attributes)
         span.set_attribute("service.name", host)
+        # CRITICAL: Also update resource.service.name (Tempo service graphs use this)
+        # This matches the pattern used in set_messaging_span_attributes()
+        _update_resource_service_name(span, host)
     if port:
         span.set_attribute("network.peer.port", port)
     
@@ -527,17 +562,23 @@ def set_messaging_span_attributes(
                 bootstrap_port = 9092  # Default Kafka port
             span.set_attribute("network.peer.address", bootstrap_host)
             span.set_attribute("network.peer.port", bootstrap_port)
-            # Set service.name directly for immediate service graph visibility
+            # Set service.name as span attribute (for peer attributes)
             span.set_attribute("service.name", bootstrap_host)
+            # CRITICAL: Also update resource.service.name (Tempo service graphs use this)
+            _update_resource_service_name(span, bootstrap_host)
         except Exception as e:
             logger.debug(f"Could not parse bootstrap_servers {bootstrap_servers}: {e}")
             bootstrap_host = bootstrap_servers.split(',')[0]
             span.set_attribute("network.peer.address", bootstrap_host)
             span.set_attribute("service.name", bootstrap_host)
+            # CRITICAL: Also update resource.service.name (Tempo service graphs use this)
+            _update_resource_service_name(span, bootstrap_host)
     elif host:
         span.set_attribute("network.peer.address", host)
-        # Set service.name directly for immediate service graph visibility
+        # Set service.name as span attribute (for peer attributes)
         span.set_attribute("service.name", host)
+        # CRITICAL: Also update resource.service.name (Tempo service graphs use this)
+        _update_resource_service_name(span, host)
         if port:
             span.set_attribute("network.peer.port", port)
     

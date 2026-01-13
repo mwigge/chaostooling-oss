@@ -106,18 +106,20 @@ def probe_mssql_connectivity(
     with span_context as span:
         try:
             if span:
-                span.set_attribute("db.system", db_system)
-
-                span.set_attribute("db.name", database)
-
-                span.set_attribute("network.peer.address", host)
-
-                span.set_attribute("network.peer.port", port)
-                span.set_attribute("service.name", host)
-
-                span.set_attribute("db.operation", "probe")
-
-                span.set_attribute("chaos.activity", "mssql_connectivity_probe")
+                # Use span helper for consistent attribute setting and resource updates
+                # This matches Redis pattern - clean, simple, no duplicate attributes
+                from chaosotel.core.trace_core import set_db_span_attributes
+                set_db_span_attributes(
+                    span,
+                    db_system=db_system,
+                    db_name=database,
+                    host=host,
+                    port=port,
+                    db_operation="probe",
+                    chaos_activity="mssql_connectivity_probe",
+                    chaos_action="connectivity_probe",
+                    chaos_operation="probe",
+                )
 
                 span.set_attribute("chaos.activity.type", "probe")
 
