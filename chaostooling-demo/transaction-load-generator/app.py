@@ -20,7 +20,6 @@ All transactions are instrumented with OpenTelemetry for distributed tracing.
 
 import os
 import time
-import json
 import logging
 import threading
 import requests
@@ -221,7 +220,7 @@ def get_load_stats():
 
 
 # Flask API for control
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request  # noqa: E402
 
 app = Flask(__name__)
 

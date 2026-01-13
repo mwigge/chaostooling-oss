@@ -71,7 +71,7 @@ def check_inventory():
             # Update cache
             try:
                 redis_client.set(cache_key, str(inventory['quantity']), ex=300)
-            except:
+            except Exception:
                 pass
             return jsonify({"status": "available", "source": "database"}), 200
         else:

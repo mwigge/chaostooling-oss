@@ -2,7 +2,7 @@ import os
 import logging
 import json
 from flask import Flask, request, jsonify
-from kafka import KafkaProducer, KafkaConsumer
+from kafka import KafkaProducer
 import pymysql
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider

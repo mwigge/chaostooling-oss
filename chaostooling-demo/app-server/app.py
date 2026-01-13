@@ -1,5 +1,4 @@
 import os
-import time
 import requests
 import psycopg2
 import logging

@@ -5,11 +5,10 @@ import time
 from typing import Any
 
 import psutil
+from chaosotel import ensure_initialized, flush, get_metric_tags, get_metrics_core
 
 # Metrics are emitted via chaosotel MetricsCore for Prometheus/OTEL.
 logger = logging.getLogger("chaostoolkit")
-
-from chaosotel import ensure_initialized, flush, get_metric_tags, get_metrics_core
 
 
 def get_cpu_usage(interval: int = 1) -> float:
