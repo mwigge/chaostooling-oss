@@ -30,6 +30,7 @@ def inject_dlq_saturation(
     
     ensure_initialized()
     mq_system = os.getenv("MQ_SYSTEM", "kafka")
+    metrics = get_metrics_core()
     tracer = get_tracer()
     logger = logging.getLogger("chaosdb.kafka.dlq_saturation")
     start_time = time.time()
@@ -42,7 +43,7 @@ def inject_dlq_saturation(
     errors = 0
     
     def dlq_producer(producer_id: int):
-        nonlocal total_messages_sent, errors
+        nonlocal total_messages_sent, errors, metrics
         producer = None
         try:
             with tracer.start_as_current_span(f"dlq_saturation.producer.{producer_id}") as span:
@@ -108,15 +109,23 @@ def inject_dlq_saturation(
     
     try:
         with tracer.start_as_current_span("chaos.kafka.dlq_saturation") as span:
-            span.set_attribute("messaging.system", "kafka")
-            span.set_attribute("messaging.destination", dlq_topic)
-            span.set_attribute("chaos.num_producers", num_producers)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "dlq_saturation")
-            span.set_attribute("chaos.activity", "kafka_dlq_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "kafka")
-            span.set_attribute("chaos.operation", "dlq_saturation")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            # Extract host/port from bootstrap_servers for network attributes
+            bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else "kafka"
+            bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else 9092
+            set_messaging_span_attributes(
+                span,
+                messaging_system="kafka",
+                destination=dlq_topic,
+                bootstrap_servers=bootstrap_servers,
+                host=bootstrap_host,
+                port=bootstrap_port,
+                chaos_activity="kafka_dlq_saturation",
+                chaos_action="dlq_saturation",
+                chaos_operation="dlq_saturation",
+                chaos_num_producers=num_producers,
+                chaos_duration_seconds=duration_seconds
+            )
             
             logger.info(f"Starting Kafka DLQ saturation with {num_producers} producers for {duration_seconds}s")
             

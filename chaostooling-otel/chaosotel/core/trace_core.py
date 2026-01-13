@@ -372,6 +372,9 @@ def set_db_span_attributes(
     # Set network attributes (critical for service graph visibility)
     if host:
         span.set_attribute("network.peer.address", host)
+        # Set service.name directly for immediate service graph visibility
+        # Grafana/Tempo service graphs use service.name attribute
+        span.set_attribute("service.name", host)
     if port:
         span.set_attribute("network.peer.port", port)
     
@@ -524,11 +527,17 @@ def set_messaging_span_attributes(
                 bootstrap_port = 9092  # Default Kafka port
             span.set_attribute("network.peer.address", bootstrap_host)
             span.set_attribute("network.peer.port", bootstrap_port)
+            # Set service.name directly for immediate service graph visibility
+            span.set_attribute("service.name", bootstrap_host)
         except Exception as e:
             logger.debug(f"Could not parse bootstrap_servers {bootstrap_servers}: {e}")
-            span.set_attribute("network.peer.address", bootstrap_servers.split(',')[0])
+            bootstrap_host = bootstrap_servers.split(',')[0]
+            span.set_attribute("network.peer.address", bootstrap_host)
+            span.set_attribute("service.name", bootstrap_host)
     elif host:
         span.set_attribute("network.peer.address", host)
+        # Set service.name directly for immediate service graph visibility
+        span.set_attribute("service.name", host)
         if port:
             span.set_attribute("network.peer.port", port)
     

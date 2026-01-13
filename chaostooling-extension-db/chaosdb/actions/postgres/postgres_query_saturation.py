@@ -230,17 +230,19 @@ def inject_query_saturation(
 
     try:
         with tracer.start_as_current_span("chaos.postgres.query_saturation") as span:
-            span.set_attribute("db.system", "postgresql")
-            span.set_attribute("db.name", database)
-            span.set_attribute("network.peer.address", host)
-            span.set_attribute("network.peer.port", port)
-            span.set_attribute("chaos.num_threads", num_threads)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "query_saturation")
-            span.set_attribute("chaos.activity", "postgresql_query_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "postgresql")
-            span.set_attribute("chaos.operation", "query_saturation")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="postgresql",
+                db_name=database,
+                host=host,
+                port=port,
+                chaos_activity="postgresql_query_saturation",
+                chaos_action="query_saturation",
+                chaos_operation="query_saturation",
+                chaos_num_threads=num_threads,
+                chaos_duration_seconds=duration_seconds
+            )
 
             logger.info(
                 f"Starting query saturation with {num_threads} threads for {duration_seconds}s"

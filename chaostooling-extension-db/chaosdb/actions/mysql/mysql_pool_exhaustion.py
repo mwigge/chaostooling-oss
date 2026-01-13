@@ -197,14 +197,20 @@ def inject_connection_pool_exhaustion(
         with tracer.start_as_current_span(
             "chaos.mysql.connection_pool_exhaustion"
         ) as span:
-            span.set_attribute("db.system", db_system)
-            span.set_attribute("db.name", database)
-            span.set_attribute("chaos.num_connections", num_connections)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.leak_connections", leak_connections)
-            span.set_attribute("chaos.action", "connection_pool_exhaustion")
-            span.set_attribute("chaos.activity", "mysql_connection_pool_exhaustion")
-            span.set_attribute("chaos.activity.type", "action")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system=db_system,
+                db_name=database,
+                host=host,
+                port=port,
+                chaos_activity="mysql_connection_pool_exhaustion",
+                chaos_action="connection_pool_exhaustion",
+                chaos_operation="connection_pool_exhaustion",
+                chaos_num_connections=num_connections,
+                chaos_duration_seconds=duration_seconds,
+                chaos_leak_connections=leak_connections
+            )
             span.set_attribute("chaos.system", "mysql")
             span.set_attribute("chaos.operation", "connection_pool_exhaustion")
 

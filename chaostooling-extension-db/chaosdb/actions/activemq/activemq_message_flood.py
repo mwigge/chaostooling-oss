@@ -139,15 +139,19 @@ def inject_message_flood(
     
     try:
         with tracer.start_as_current_span("chaos.activemq.message_flood") as span:
-            span.set_attribute("messaging.system", "activemq")
-            span.set_attribute("messaging.destination", queue)
-            span.set_attribute("network.peer.address", host)
-            span.set_attribute("network.peer.port", port)
-            span.set_attribute("chaos.num_producers", num_producers)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "message_flood")
-            span.set_attribute("chaos.activity", "activemq_message_flood")
-            span.set_attribute("chaos.activity.type", "action")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            set_messaging_span_attributes(
+                span,
+                messaging_system="activemq",
+                destination=queue,
+                host=host,
+                port=port,
+                chaos_activity="activemq_message_flood",
+                chaos_action="message_flood",
+                chaos_operation="message_flood",
+                chaos_num_producers=num_producers,
+                chaos_duration_seconds=duration_seconds
+            )
             span.set_attribute("chaos.system", "activemq")
             span.set_attribute("chaos.operation", "message_flood")
             

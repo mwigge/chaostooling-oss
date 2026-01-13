@@ -65,6 +65,7 @@ def probe_rabbitmq_connectivity(
                 span.set_attribute("messaging.destination", vhost)
                 span.set_attribute("network.peer.address", host)
                 span.set_attribute("network.peer.port", port)
+                span.set_attribute("service.name", host)
 
             credentials = pika.PlainCredentials(user, password)
             params = pika.ConnectionParameters(

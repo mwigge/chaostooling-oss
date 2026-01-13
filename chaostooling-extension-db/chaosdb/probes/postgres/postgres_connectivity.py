@@ -93,6 +93,7 @@ def probe_postgres_connectivity(
                 span.set_attribute("network.peer.address", host)
 
                 span.set_attribute("network.peer.port", port)
+                span.set_attribute("service.name", host)
 
                 span.set_attribute("db.operation", "probe")
 

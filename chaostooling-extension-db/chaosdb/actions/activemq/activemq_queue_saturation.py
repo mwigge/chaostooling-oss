@@ -31,6 +31,7 @@ def inject_queue_saturation(
     
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "activemq")
+    metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
@@ -43,7 +44,7 @@ def inject_queue_saturation(
     errors = 0
     
     def saturation_producer(producer_id: int):
-        nonlocal total_messages_sent, errors
+        nonlocal total_messages_sent, errors, metrics
         conn = None
         try:
             with tracer.start_as_current_span(f"queue_saturation.producer.{producer_id}") as span:
@@ -74,18 +75,22 @@ def inject_queue_saturation(
                         total_messages_sent += 1
                         message_count += 1
                         
-                        tags = get_metric_tags(db_name=queue, db_system="activemq", db_operation="saturation_send")
-                        if metrics_module.activemq_messages_enqueued_counter:
-                            metrics_module.activemq_messages_enqueued_counter.add(1, tags)
-                        if metrics_module.activemq_queue_size_gauge:
-                            metrics_module.activemq_queue_size_gauge.add(1, tags)
+                        metrics.record_messaging_operation_count(
+                            mq_system="activemq",
+                            mq_destination=queue,
+                            mq_operation="saturation_send"
+                        )
                         
                         span.set_status(StatusCode.OK)
                         time.sleep(0.01)
                     except Exception as e:
                         errors += 1
-                        metrics = get_metrics_core()
-                        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
+                        metrics.record_messaging_error(
+                            mq_system="activemq",
+                            error_type=type(e).__name__,
+                            mq_destination=queue,
+                            mq_operation="saturation_send"
+                        )
                         logger.warning(f"Saturation producer {producer_id} error: {e}")
         except Exception as e:
             errors += 1
@@ -99,15 +104,19 @@ def inject_queue_saturation(
     
     try:
         with tracer.start_as_current_span("chaos.activemq.queue_saturation") as span:
-            span.set_attribute("messaging.system", "activemq")
-            span.set_attribute("messaging.destination", queue)
-            span.set_attribute("chaos.num_producers", num_producers)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "queue_saturation")
-            span.set_attribute("chaos.activity", "activemq_queue_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "activemq")
-            span.set_attribute("chaos.operation", "queue_saturation")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            set_messaging_span_attributes(
+                span,
+                messaging_system="activemq",
+                destination=queue,
+                host=host,
+                port=port,
+                chaos_activity="activemq_queue_saturation",
+                chaos_action="queue_saturation",
+                chaos_operation="queue_saturation",
+                chaos_num_producers=num_producers,
+                chaos_duration_seconds=duration_seconds
+            )
             
             logger.info(f"Starting ActiveMQ queue saturation with {num_producers} producers for {duration_seconds}s")
             

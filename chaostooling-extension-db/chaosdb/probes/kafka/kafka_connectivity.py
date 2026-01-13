@@ -86,7 +86,21 @@ def probe_kafka_connectivity(
 
                 span.set_attribute("messaging.destination", topic)
 
-                span.set_attribute("network.peer.address", bootstrap_servers)
+                # Parse bootstrap_servers to extract hostname
+                try:
+                    first_server = bootstrap_servers.split(',')[0]
+                    if ':' in first_server:
+                        bootstrap_host = first_server.split(':')[0]
+                        bootstrap_port = int(first_server.split(':')[1])
+                    else:
+                        bootstrap_host = first_server
+                        bootstrap_port = 9092
+                    span.set_attribute("network.peer.address", bootstrap_host)
+                    span.set_attribute("network.peer.port", bootstrap_port)
+                    span.set_attribute("service.name", bootstrap_host)
+                except Exception:
+                    span.set_attribute("network.peer.address", bootstrap_servers.split(',')[0])
+                    span.set_attribute("service.name", bootstrap_servers.split(',')[0])
 
             # Use threading to enforce overall timeout
             max_probe_time = 10  # 10 seconds max for entire probe (increased for Kafka startup)

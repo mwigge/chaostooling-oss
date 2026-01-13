@@ -108,15 +108,23 @@ def inject_connection_exhaustion(
 
     with tracer.start_as_current_span("chaos.kafka.connection_exhaustion") as span:
         try:
-            span.set_attribute("messaging.system", mq_system)
-            span.set_attribute("messaging.destination", topic)
-            span.set_attribute("chaos.num_connections", num_connections)
-            span.set_attribute("chaos.hold_duration_seconds", hold_duration_seconds)
-            span.set_attribute("chaos.action", "connection_exhaustion")
-            span.set_attribute("chaos.activity", "kafka_connection_exhaustion")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "kafka")
-            span.set_attribute("chaos.operation", "connection_exhaustion")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            # Extract host/port from bootstrap_servers for network attributes
+            bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else "kafka"
+            bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else 9092
+            set_messaging_span_attributes(
+                span,
+                messaging_system=mq_system,
+                destination=topic,
+                bootstrap_servers=bootstrap_servers,
+                host=bootstrap_host,
+                port=bootstrap_port,
+                chaos_activity="kafka_connection_exhaustion",
+                chaos_action="connection_exhaustion",
+                chaos_operation="connection_exhaustion",
+                chaos_num_connections=num_connections,
+                chaos_hold_duration_seconds=hold_duration_seconds
+            )
 
             logger.info(
                 f"Starting Kafka connection exhaustion with {num_connections} connections"

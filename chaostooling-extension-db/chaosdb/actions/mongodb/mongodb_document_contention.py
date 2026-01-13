@@ -203,15 +203,19 @@ def inject_document_contention(
 
     try:
         with tracer.start_as_current_span("chaos.mongodb.document_contention") as span:
-            span.set_attribute("db.system", db_system)
-            span.set_attribute("db.name", database)
-            span.set_attribute("chaos.num_threads", num_threads)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "document_contention")
-            span.set_attribute("chaos.activity", "mongodb_document_contention")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "mongodb")
-            span.set_attribute("chaos.operation", "document_contention")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system=db_system,
+                db_name=database,
+                host=host,
+                port=port,
+                chaos_activity="mongodb_document_contention",
+                chaos_action="document_contention",
+                chaos_operation="document_contention",
+                chaos_num_threads=num_threads,
+                chaos_duration_seconds=duration_seconds
+            )
 
             logger.info(
                 f"Starting document contention with {num_threads} threads for {duration_seconds}s"

@@ -107,15 +107,19 @@ def inject_slow_operations(
     
     try:
         with tracer.start_as_current_span("chaos.redis.slow_operations") as span:
-            span.set_attribute("db.system", "redis")
-            span.set_attribute("chaos.num_threads", num_threads)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.operation_delay_ms", operation_delay_ms)
-            span.set_attribute("chaos.action", "slow_operations")
-            span.set_attribute("chaos.activity", "redis_slow_operations")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "redis")
-            span.set_attribute("chaos.operation", "slow_operations")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="redis",
+                host=host,
+                port=port,
+                chaos_activity="redis_slow_operations",
+                chaos_action="slow_operations",
+                chaos_operation="slow_operations",
+                chaos_num_threads=num_threads,
+                chaos_duration_seconds=duration_seconds,
+                chaos_operation_delay_ms=operation_delay_ms
+            )
             
             logger.info(f"Starting Redis slow operations with {num_threads} threads for {duration_seconds}s")
             

@@ -122,14 +122,18 @@ def inject_key_contention(
     
     try:
         with tracer.start_as_current_span("chaos.redis.key_contention") as span:
-            span.set_attribute("db.system", "redis")
-            span.set_attribute("chaos.num_threads", num_threads)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "key_contention")
-            span.set_attribute("chaos.activity", "redis_key_contention")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "redis")
-            span.set_attribute("chaos.operation", "key_contention")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="redis",
+                host=host,
+                port=port,
+                chaos_activity="redis_key_contention",
+                chaos_action="key_contention",
+                chaos_operation="key_contention",
+                chaos_num_threads=num_threads,
+                chaos_duration_seconds=duration_seconds
+            )
             
             logger.info(f"Starting Redis key contention with {num_threads} threads for {duration_seconds}s")
             

@@ -108,16 +108,20 @@ def inject_connection_pool_exhaustion(
     
     try:
         with tracer.start_as_current_span("chaos.mssql.connection_pool_exhaustion") as span:
-            span.set_attribute("db.system", "mssql")
-            span.set_attribute("db.name", database)
-            span.set_attribute("chaos.num_connections", num_connections)
-            span.set_attribute("chaos.hold_duration_seconds", hold_duration_seconds)
-            span.set_attribute("chaos.leak_connections", leak_connections)
-            span.set_attribute("chaos.action", "connection_pool_exhaustion")
-            span.set_attribute("chaos.activity", "mssql_connection_pool_exhaustion")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "mssql")
-            span.set_attribute("chaos.operation", "connection_pool_exhaustion")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system="mssql",
+                db_name=database,
+                host=host,
+                port=port,
+                chaos_activity="mssql_connection_pool_exhaustion",
+                chaos_action="connection_pool_exhaustion",
+                chaos_operation="connection_pool_exhaustion",
+                chaos_num_connections=num_connections,
+                chaos_hold_duration_seconds=hold_duration_seconds,
+                chaos_leak_connections=leak_connections
+            )
             
             logger.info(f"Starting MSSQL connection pool exhaustion with {num_connections} connections")
             

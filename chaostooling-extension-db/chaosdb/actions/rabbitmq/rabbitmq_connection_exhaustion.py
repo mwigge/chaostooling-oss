@@ -100,15 +100,20 @@ def inject_connection_exhaustion(
     
     try:
         with tracer.start_as_current_span("chaos.rabbitmq.connection_exhaustion") as span:
-            span.set_attribute("messaging.system", "rabbitmq")
-            span.set_attribute("chaos.num_connections", num_connections)
-            span.set_attribute("chaos.hold_duration_seconds", hold_duration_seconds)
-            span.set_attribute("chaos.leak_connections", leak_connections)
-            span.set_attribute("chaos.action", "connection_exhaustion")
-            span.set_attribute("chaos.activity", "rabbitmq_connection_exhaustion")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "rabbitmq")
-            span.set_attribute("chaos.operation", "connection_exhaustion")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            set_messaging_span_attributes(
+                span,
+                messaging_system="rabbitmq",
+                destination=None,
+                host=host,
+                port=port,
+                chaos_activity="rabbitmq_connection_exhaustion",
+                chaos_action="connection_exhaustion",
+                chaos_operation="connection_exhaustion",
+                chaos_num_connections=num_connections,
+                chaos_hold_duration_seconds=hold_duration_seconds,
+                chaos_leak_connections=leak_connections
+            )
             
             logger.info(f"Starting RabbitMQ connection exhaustion with {num_connections} connections")
             

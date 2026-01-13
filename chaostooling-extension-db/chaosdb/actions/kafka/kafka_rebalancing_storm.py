@@ -30,6 +30,8 @@ def inject_rebalancing_storm(
     consumer_group = consumer_group or os.getenv("KAFKA_CONSUMER_GROUP", "chaos_rebalancing_group")
     
     ensure_initialized()
+    mq_system = os.getenv("MQ_SYSTEM", "kafka")
+    metrics = get_metrics_core()
     tracer = get_tracer()
     logger = logging.getLogger("chaosdb.kafka.rebalancing_storm")
     start_time = time.time()
@@ -43,7 +45,7 @@ def inject_rebalancing_storm(
     
     def consumer_worker(consumer_id: int):
         """Consumer worker that joins and leaves the group rapidly."""
-        nonlocal rebalances_triggered, errors
+        nonlocal rebalances_triggered, errors, metrics
         consumer = None
         try:
             with tracer.start_as_current_span(f"rebalancing_storm.consumer.{consumer_id}") as span:
@@ -123,16 +125,24 @@ def inject_rebalancing_storm(
     
     try:
         with tracer.start_as_current_span("chaos.kafka.rebalancing_storm") as span:
-            span.set_attribute("messaging.system", "kafka")
-            span.set_attribute("messaging.destination", topic)
-            span.set_attribute("chaos.num_consumers", num_consumers)
-            span.set_attribute("chaos.rebalance_interval_seconds", rebalance_interval_seconds)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "rebalancing_storm")
-            span.set_attribute("chaos.activity", "kafka_rebalancing_storm")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "kafka")
-            span.set_attribute("chaos.operation", "rebalancing_storm")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            # Extract host/port from bootstrap_servers for network attributes
+            bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else "kafka"
+            bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else 9092
+            set_messaging_span_attributes(
+                span,
+                messaging_system="kafka",
+                destination=topic,
+                bootstrap_servers=bootstrap_servers,
+                host=bootstrap_host,
+                port=bootstrap_port,
+                chaos_activity="kafka_rebalancing_storm",
+                chaos_action="rebalancing_storm",
+                chaos_operation="rebalancing_storm",
+                chaos_num_consumers=num_consumers,
+                chaos_rebalance_interval_seconds=rebalance_interval_seconds,
+                chaos_duration_seconds=duration_seconds
+            )
             
             logger.info(f"Starting Kafka rebalancing storm with {num_consumers} consumers for {duration_seconds}s")
             

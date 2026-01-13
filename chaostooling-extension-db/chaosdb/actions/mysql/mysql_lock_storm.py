@@ -270,15 +270,19 @@ def inject_lock_storm(
 
     try:
         with tracer.start_as_current_span("chaos.mysql.lock_storm") as span:
-            span.set_attribute("db.system", db_system)
-            span.set_attribute("db.name", database)
-            span.set_attribute("chaos.num_threads", num_threads)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "lock_storm")
-            span.set_attribute("chaos.activity", "mysql_lock_storm")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "mysql")
-            span.set_attribute("chaos.operation", "lock_storm")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system=db_system,
+                db_name=database,
+                host=host,
+                port=port,
+                chaos_activity="mysql_lock_storm",
+                chaos_action="lock_storm",
+                chaos_operation="lock_storm",
+                chaos_num_threads=num_threads,
+                chaos_duration_seconds=duration_seconds
+            )
 
             logger.info(
                 f"Starting lock storm with {num_threads} threads for {duration_seconds}s"

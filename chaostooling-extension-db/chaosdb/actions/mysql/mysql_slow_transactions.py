@@ -256,15 +256,20 @@ def inject_slow_transactions(
 
     try:
         with tracer.start_as_current_span("chaos.mysql.slow_transactions") as span:
-            span.set_attribute("db.system", db_system)
-            span.set_attribute("db.name", database)
-            span.set_attribute("network.peer.address", host)
-            span.set_attribute("network.peer.port", port)
-            span.set_attribute("chaos.num_threads", num_threads)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.transaction_delay_ms", transaction_delay_ms)
-            span.set_attribute("chaos.action", "slow_transactions")
-            span.set_attribute("chaos.activity", "mysql_slow_transactions")
+            from chaosotel.core.trace_core import set_db_span_attributes
+            set_db_span_attributes(
+                span,
+                db_system=db_system,
+                db_name=database,
+                host=host,
+                port=port,
+                chaos_activity="mysql_slow_transactions",
+                chaos_action="slow_transactions",
+                chaos_operation="slow_transactions",
+                chaos_num_threads=num_threads,
+                chaos_duration_seconds=duration_seconds,
+                chaos_transaction_delay_ms=transaction_delay_ms
+            )
             span.set_attribute("chaos.activity.type", "action")
             span.set_attribute("chaos.system", "mysql")
             span.set_attribute("chaos.operation", "slow_transactions")

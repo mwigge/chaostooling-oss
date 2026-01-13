@@ -133,15 +133,19 @@ def inject_queue_saturation(
     
     try:
         with tracer.start_as_current_span("chaos.rabbitmq.queue_saturation") as span:
-            span.set_attribute("messaging.system", "rabbitmq")
-            span.set_attribute("messaging.destination", queue)
-            span.set_attribute("chaos.num_producers", num_producers)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "queue_saturation")
-            span.set_attribute("chaos.activity", "rabbitmq_queue_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "rabbitmq")
-            span.set_attribute("chaos.operation", "queue_saturation")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            set_messaging_span_attributes(
+                span,
+                messaging_system="rabbitmq",
+                destination=queue,
+                host=host,
+                port=port,
+                chaos_activity="rabbitmq_queue_saturation",
+                chaos_action="queue_saturation",
+                chaos_operation="queue_saturation",
+                chaos_num_producers=num_producers,
+                chaos_duration_seconds=duration_seconds
+            )
             
             logger.info(f"Starting RabbitMQ queue saturation with {num_producers} producers for {duration_seconds}s")
             

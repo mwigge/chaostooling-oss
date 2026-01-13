@@ -136,16 +136,20 @@ def inject_slow_consumer(
     
     try:
         with tracer.start_as_current_span("chaos.activemq.slow_consumer") as span:
-            span.set_attribute("messaging.system", "activemq")
-            span.set_attribute("messaging.destination", queue)
-            span.set_attribute("chaos.num_consumers", num_consumers)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.consume_delay_ms", consume_delay_ms)
-            span.set_attribute("chaos.action", "slow_consumer")
-            span.set_attribute("chaos.activity", "activemq_slow_consumer")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "activemq")
-            span.set_attribute("chaos.operation", "slow_consumer")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            set_messaging_span_attributes(
+                span,
+                messaging_system="activemq",
+                destination=queue,
+                host=host,
+                port=port,
+                chaos_activity="activemq_slow_consumer",
+                chaos_action="slow_consumer",
+                chaos_operation="slow_consumer",
+                chaos_num_consumers=num_consumers,
+                chaos_duration_seconds=duration_seconds,
+                chaos_consume_delay_ms=consume_delay_ms
+            )
             
             logger.info(f"Starting ActiveMQ slow consumers with {num_consumers} consumers for {duration_seconds}s")
             

@@ -115,15 +115,19 @@ def inject_dlq_saturation(
     
     try:
         with tracer.start_as_current_span("chaos.rabbitmq.dlq_saturation") as span:
-            span.set_attribute("messaging.system", "rabbitmq")
-            span.set_attribute("messaging.destination", dlq_queue)
-            span.set_attribute("chaos.num_producers", num_producers)
-            span.set_attribute("chaos.duration_seconds", duration_seconds)
-            span.set_attribute("chaos.action", "dlq_saturation")
-            span.set_attribute("chaos.activity", "rabbitmq_dlq_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "rabbitmq")
-            span.set_attribute("chaos.operation", "dlq_saturation")
+            from chaosotel.core.trace_core import set_messaging_span_attributes
+            set_messaging_span_attributes(
+                span,
+                messaging_system="rabbitmq",
+                destination=dlq_queue,
+                host=host,
+                port=port,
+                chaos_activity="rabbitmq_dlq_saturation",
+                chaos_action="dlq_saturation",
+                chaos_operation="dlq_saturation",
+                chaos_num_producers=num_producers,
+                chaos_duration_seconds=duration_seconds
+            )
             
             logger.info(f"Starting RabbitMQ DLQ saturation with {num_producers} producers for {duration_seconds}s")
             
