@@ -3,7 +3,8 @@ import time
 from typing import Optional
 
 import pyodbc  # pip install pyodbc -- requires system ODBC driver for MSSQL
-from chaosotel import ensure_initialized, flush, get_logger, get_tracer
+from chaosotel import ( get_metrics_core
+                       get_metrics_core, get_tracer)
 from opentelemetry.trace import StatusCode
 
 # Requires: pyodbc, and the system ODBC driver for SQL Server (ODBC Driver 17 or 18 for SQL Server)
@@ -55,10 +56,13 @@ def test_mssql_connection(
             tags = get_metric_tags(
                 db_name=database, db_system="mssql", db_operation="connectivity_test"
             )
-            if metrics_module.operation_duration_histogram:
-                metrics_module.operation_duration_histogram.record(
-                    connection_time_ms, tags
-                )
+            metrics.record_db_query_latency(
+                connection_time_ms,
+                db_system="mssql",
+                db_name=database,
+                db_operation="connectivity_test",
+                tags=tags,
+            )
             metrics.record_db_query_count(
                 db_system=db_system, db_name=database, count=1
             )
@@ -76,10 +80,11 @@ def test_mssql_connection(
             )
     except Exception as e:
         span.set_status(StatusCode.ERROR, str(e))
-        if metrics_module.error_counter:
-            metrics_module.error_counter.add(
-                1, get_metric_tags(db_name=database, error_type=type(e).__name__)
-            )
+        metrics.record_db_error(
+            db_system=db_system,
+            error_type=type(e).__name__,
+            db_name=database,
+        )
         logger.error(f"MSSQL connection failed: {e}", extra={"error": str(e)})
         flush()
         raise

@@ -7,7 +7,7 @@ import time
 from typing import Optional
 
 import mysql.connector
-from chaosotel import (
+from chaosotel import ( get_metric_tags, get_metrics_core
     ensure_initialized,
     flush,
     get_metric_tags,
@@ -231,7 +231,7 @@ def inject_deadlock(
 
                         try:
                             conn.rollback()
-                        except:
+                        except Exception:
                             pass
                         time.sleep(0.1)
 
@@ -246,7 +246,7 @@ def inject_deadlock(
                         span.set_status(StatusCode.ERROR, str(e))
                         try:
                             conn.rollback()
-                        except:
+                        except Exception:
                             pass
                         time.sleep(0.1)
 
@@ -257,7 +257,7 @@ def inject_deadlock(
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
 
     try:

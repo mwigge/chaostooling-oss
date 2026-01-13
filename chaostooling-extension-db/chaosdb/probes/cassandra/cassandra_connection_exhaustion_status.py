@@ -110,7 +110,7 @@ def probe_connection_exhaustion_status(
 
                 native_connections = result.one()[0] if result else 0
 
-            except:
+            except Exception:
                 native_connections = 0
 
             # Get client requests (indicates active connections)
@@ -120,7 +120,7 @@ def probe_connection_exhaustion_status(
 
                 client_requests = result.one()[0] if result else 0
 
-            except:
+            except Exception:
                 client_requests = 0
 
             session.shutdown()

@@ -6,7 +6,7 @@ import time
 from typing import Optional
 
 import psycopg2
-from chaosotel import ensure_initialized, flush, get_logger, get_tracer
+from chaosotel import ensure_initialized, flush, get_logger, get_tracer, get_metric_tags, get_metrics_core
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -161,7 +161,7 @@ def inject_query_timeout_storm(
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
 
     try:

@@ -117,7 +117,7 @@ def inject_key_contention(
             if r:
                 try:
                     r.close()
-                except:
+                except Exception:
                     pass
     
     try:

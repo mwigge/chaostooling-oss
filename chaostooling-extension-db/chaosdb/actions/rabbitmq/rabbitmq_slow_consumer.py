@@ -5,7 +5,7 @@ import time
 from typing import Dict, Optional
 
 import pika
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+from chaosotel import ( get_metric_tags
                        get_tracer)
 from opentelemetry.trace import StatusCode
 
@@ -82,7 +82,7 @@ def inject_slow_consumer(
                         
                         
                         ch.basic_ack(delivery_tag=method.delivery_tag)
-                    except Exception as e:
+                    except Exception:
                         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
                         raise
                 
@@ -108,12 +108,12 @@ def inject_slow_consumer(
                 try:
                     channel.stop_consuming()
                     channel.close()
-                except:
+                except Exception:
                     pass
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
     
     try:

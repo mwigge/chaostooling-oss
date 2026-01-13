@@ -1,8 +1,7 @@
 """Process kill chaos action for disaster recovery testing."""
 import os
 import signal
-import time
-from typing import Dict, List, Optional
+from typing import Dict
 
 import psutil
 from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,

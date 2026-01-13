@@ -6,7 +6,7 @@ import time
 from typing import Dict, Optional
 
 from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
-from kafka import KafkaConsumer, KafkaProducer
+from kafka import KafkaProducer
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -104,7 +104,7 @@ def inject_dlq_saturation(
             if producer:
                 try:
                     producer.close()
-                except:
+                except Exception:
                     pass
     
     try:

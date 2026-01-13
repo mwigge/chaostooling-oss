@@ -5,7 +5,7 @@ Pytest configuration and shared fixtures for ChaoSOTEL tests.
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.trace import TracerProvider
@@ -101,5 +101,5 @@ def initialized_chaosotel(mock_otel_setup):
         from chaosotel import shutdown
         try:
             shutdown()
-        except:
+        except Exception:
             pass

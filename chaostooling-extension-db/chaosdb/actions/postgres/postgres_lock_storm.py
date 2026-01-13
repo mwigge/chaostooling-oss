@@ -198,7 +198,7 @@ def inject_lock_storm(
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
             metrics.record_db_gauge(
                 "lock_storm_threads", -1, db_system=db_system, db_name=database

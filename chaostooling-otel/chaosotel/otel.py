@@ -61,7 +61,7 @@ def initialize(
         auto_instrument: Whether to auto-instrument popular frameworks
 
     Example:
-        from chaosotel import initialize
+        from chaosotel import initialize, get_metric_tags, get_metrics_core
 
         initialize(
             target_type="database",

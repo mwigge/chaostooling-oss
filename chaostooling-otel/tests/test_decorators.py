@@ -15,7 +15,6 @@ Tests all 7 decorators:
 
 import pytest
 import time
-from unittest.mock import MagicMock, patch
 
 from chaosotel import (
     instrument_action,
@@ -26,7 +25,6 @@ from chaosotel import (
     track_impact,
     instrumented_section,
 )
-from chaosotel.otel import ensure_initialized
 
 
 class TestInstrumentAction:

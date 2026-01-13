@@ -3,7 +3,6 @@ import psycopg2
 import time
 import json
 import logging
-from typing import Optional
 from kafka import KafkaProducer
 from chaosotel import ensure_initialized, get_tracer, flush
 from opentelemetry.trace import StatusCode

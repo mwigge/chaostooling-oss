@@ -7,7 +7,7 @@ import time
 from typing import Optional
 
 import psycopg2
-from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
+from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer, get_metric_tags
 from opentelemetry.trace import StatusCode
 
 _active_connections = []
@@ -182,7 +182,7 @@ def inject_connection_pool_exhaustion(
                     # Note: Gauges can't be decremented directly, we'd need a different approach
                     # For now, we'll track this via a separate metric or use a different method
                     conn.close()
-                except:
+                except Exception:
                     pass
             elif conn and leak_connections:
                 metrics = get_metrics_core()
@@ -245,7 +245,7 @@ def inject_connection_pool_exhaustion(
                                 ),
                             )
                         conn.close()
-                    except:
+                    except Exception:
                         pass
 
             duration_ms = (time.time() - start_time) * 1000
@@ -289,6 +289,6 @@ def stop_pool_exhaustion():
     for conn in _active_connections:
         try:
             conn.close()
-        except:
+        except Exception:
             pass
     _active_connections = []

@@ -172,8 +172,8 @@ def generate_experiment_reports(
             logger.error(f"  - CHAOSTOOLKIT_JOURNAL_PATH: {os.getenv('CHAOSTOOLKIT_JOURNAL_PATH', 'not set')}")
             logger.error(f"  - CHAOS_EXPERIMENT_DIR: {os.getenv('CHAOS_EXPERIMENT_DIR', 'not set')}")
             logger.error(f"  - Current working directory: {Path.cwd()}")
-            logger.error(f"  - Primary log directory: /var/log/chaostoolkit/journal.json")
-            logger.error(f"  - Experiments mount: /experiments/journal.json")
+            logger.error("  - Primary log directory: /var/log/chaostoolkit/journal.json")
+            logger.error("  - Experiments mount: /experiments/journal.json")
             
             # Try to list what's actually in the log directory
             log_dir = Path("/var/log/chaostoolkit")

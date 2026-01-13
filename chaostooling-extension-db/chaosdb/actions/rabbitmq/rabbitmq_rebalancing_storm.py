@@ -101,12 +101,12 @@ def inject_rebalancing_storm(
                         if channel:
                             try:
                                 channel.close()
-                            except:
+                            except Exception:
                                 pass
                         if conn:
                             try:
                                 conn.close()
-                            except:
+                            except Exception:
                                 pass
                         time.sleep(0.5)
                         
@@ -117,12 +117,12 @@ def inject_rebalancing_storm(
             if channel:
                 try:
                     channel.close()
-                except:
+                except Exception:
                     pass
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
     
     try:
@@ -160,7 +160,7 @@ def inject_rebalancing_storm(
                 try:
                     channel.close()
                     conn.close()
-                except:
+                except Exception:
                     pass
             
             duration_ms = (time.time() - start_time) * 1000
@@ -193,7 +193,7 @@ def stop_rebalancing_storm():
         try:
             channel.close()
             conn.close()
-        except:
+        except Exception:
             pass
     _active_consumers = []
 

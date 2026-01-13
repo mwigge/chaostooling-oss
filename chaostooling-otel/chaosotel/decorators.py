@@ -611,7 +611,7 @@ class instrumented_section:
     Context manager for instrumenting arbitrary code sections.
 
     Example:
-        from chaosotel import instrumented_section
+        from chaosotel import instrumented_section, get_metrics_core
 
         with instrumented_section("backup_validation"):
             validate_backup()

@@ -99,7 +99,7 @@ def inject_queue_saturation(
             if conn:
                 try:
                     conn.disconnect()
-                except:
+                except Exception:
                     pass
     
     try:

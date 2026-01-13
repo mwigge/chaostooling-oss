@@ -93,7 +93,7 @@ def inject_connection_exhaustion(
             if conn and not leak_connections:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
             elif conn and leak_connections:
                 logger.warning(f"Leaking connection {conn_id} (intentional)")
@@ -133,7 +133,7 @@ def inject_connection_exhaustion(
                 for conn in _active_connections:
                     try:
                         conn.close()
-                    except:
+                    except Exception:
                         pass
             
             duration_ms = (time.time() - start_time) * 1000
@@ -168,7 +168,7 @@ def stop_connection_exhaustion():
     for conn in _active_connections:
         try:
             conn.close()
-        except:
+        except Exception:
             pass
     _active_connections = []
 

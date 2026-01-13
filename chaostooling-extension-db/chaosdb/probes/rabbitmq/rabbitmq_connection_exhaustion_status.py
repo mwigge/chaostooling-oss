@@ -116,7 +116,7 @@ def probe_connection_exhaustion_status(
             try:
                 channel.queue_declare(queue="probe_test", passive=True, durable=False)
 
-            except:
+            except Exception:
                 pass  # Queue may not exist, that's OK
 
             channel.close()

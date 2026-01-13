@@ -5,8 +5,7 @@ import threading
 import time
 from typing import Dict, Optional
 
-from chaosotel import (ensure_initialized, flush, get_metric_tags,
-                       get_metrics_core, get_tracer)
+from chaosotel import (ensure_initialized, flush, get_metrics_core, get_tracer)
 from kafka import KafkaConsumer
 from opentelemetry.trace import StatusCode
 
@@ -109,7 +108,7 @@ def inject_rebalancing_storm(
                         if consumer:
                             try:
                                 consumer.close()
-                            except:
+                            except Exception:
                                 pass
                         time.sleep(0.5)
                         
@@ -120,7 +119,7 @@ def inject_rebalancing_storm(
             if consumer:
                 try:
                     consumer.close()
-                except:
+                except Exception:
                     pass
     
     try:
@@ -162,7 +161,7 @@ def inject_rebalancing_storm(
             for consumer in _active_consumers:
                 try:
                     consumer.close()
-                except:
+                except Exception:
                     pass
             
             duration_ms = (time.time() - start_time) * 1000
@@ -202,7 +201,7 @@ def stop_rebalancing_storm():
     for consumer in _active_consumers:
         try:
             consumer.close()
-        except:
+        except Exception:
             pass
     _active_consumers = []
 
