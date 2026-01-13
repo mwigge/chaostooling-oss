@@ -1,48 +1,30 @@
 """ActiveMQ message flood status probe."""
 
-import os
-
 import logging
-
-from contextlib import nullcontext
-
+import os
 import time
-
-from typing import Optional, Dict
+from contextlib import nullcontext
+from typing import Optional
 
 import stomp
-
-from chaosotel import get_tracer, get_metrics_core, get_metric_tags, flush
-
-from opentelemetry.sdk._logs import LoggingHandler
-
+from chaosotel import flush, get_metric_tags, get_metrics_core, get_tracer
 from opentelemetry._logs import get_logger_provider
-
-import logging
-
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 
-
 def probe_message_flood_status(
-
     host: Optional[str] = None,
-
     port: Optional[int] = None,
-
     user: Optional[str] = None,
-
     password: Optional[str] = None,
-
     queue: Optional[str] = None,
-
-) -> Dict:
-
+) -> dict:
     """
 
     Probe to check ActiveMQ message flood status.
 
-    
+
 
     Observability: Uses chaosotel (chaostooling-otel) as the central
 
@@ -62,8 +44,6 @@ def probe_message_flood_status(
 
     queue = queue or os.getenv("ACTIVEMQ_QUEUE", "chaos.test")
 
-    
-
     # chaosotel is initialized via chaosotel.control - use directly
 
     tracer = get_tracer()
@@ -73,7 +53,6 @@ def probe_message_flood_status(
     logger_provider = get_logger_provider()
 
     if logger_provider:
-
         handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 
         logger = logging.getLogger("chaosdb.activemq.activemq_message_flood_status")
@@ -83,12 +62,9 @@ def probe_message_flood_status(
         logger.setLevel(logging.INFO)
 
     else:
-
         logger = logging.getLogger("chaosdb.activemq.activemq_message_flood_status")
 
     metrics = get_metrics_core()
-
-    
 
     mq_system = "activemq"
 
@@ -96,32 +72,15 @@ def probe_message_flood_status(
 
     span = None
 
-    
-
     span_context = (
-
-            tracer.start_as_current_span("probe.activemq.message_flood_status")
-
-            if tracer
-
-            else nullcontext()
-
-        )
-
-        
+        tracer.start_as_current_span("probe.activemq.message_flood_status")
+        if tracer
+        else nullcontext()
+    )
 
     with span_context as span:
-
         try:
-
-
-
-
-
-        
-
             if span:
-
                 span.set_attribute("messaging.system", "activemq")
 
                 span.set_attribute("messaging.destination", queue)
@@ -136,13 +95,9 @@ def probe_message_flood_status(
 
                 span.set_attribute("chaos.operation", "message_flood_status")
 
-            
-
             conn = stomp.Connection([(host, port)])
 
             conn.connect(user, password, wait=True)
-
-            
 
             # Note: ActiveMQ STOMP doesn't provide direct queue stats
 
@@ -150,63 +105,32 @@ def probe_message_flood_status(
 
             conn.send(destination=f"/queue/{queue}", body="probe")
 
-            
-
             conn.disconnect()
-
-            
 
             probe_time_ms = (time.time() - start) * 1000
 
-            
-
             tags = get_metric_tags(
-
                 mq_system=mq_system,
-
                 mq_destination=queue,
-
                 mq_operation="probe",
-
             )
 
             metrics.record_messaging_dispatch_latency(
-
                 probe_time_ms,
-
                 mq_system=mq_system,
-
                 tags=tags,
-
             )
 
             metrics.record_messaging_operation_count(
-
                 mq_system=mq_system,
-
                 count=1,
-
                 tags=tags,
-
             )
 
-            
-
-            result = {
-
-                "success": True,
-
-                "probe_time_ms": probe_time_ms
-
-            }
-
-            
+            result = {"success": True, "probe_time_ms": probe_time_ms}
 
             if span:
-
                 span.set_status(StatusCode.OK)
-
-            
 
             logger.info(f"ActiveMQ message flood probe: {result}")
 
@@ -215,19 +139,19 @@ def probe_message_flood_status(
             return result
 
         except Exception as e:
-            mq_system=mq_system,
+            metrics.record_messaging_error(
+                mq_system=mq_system,
+                error_type=type(e).__name__,
+            )
 
-            error_type=type(e).__name__,
+            if span:
+                span.record_exception(e)
+                span.set_status(StatusCode.ERROR, str(e))
 
-        )
-
-        if span:
-
-            span.record_exception(e)
-
-            span.set_status(StatusCode.ERROR, str(e))
-
-        logger.error(f"ActiveMQ message flood probe failed: {str(e)}", extra={"error": str(e)})
+            logger.error(
+                f"ActiveMQ message flood probe failed: {str(e)}",
+                extra={"error": str(e)},
+            )
 
         flush()
 

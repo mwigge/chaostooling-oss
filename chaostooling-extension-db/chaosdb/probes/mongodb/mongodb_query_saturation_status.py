@@ -1,19 +1,17 @@
 """MongoDB query saturation status probe."""
-import os
+
 import logging
-from contextlib import nullcontext
+import os
 import time
-from typing import Optional, Dict
-from pymongo import MongoClient
-from chaosotel import (
-    flush,
-    get_metrics_core,
-    get_metric_tags,
-    get_tracer,
-)
-from opentelemetry.sdk._logs import LoggingHandler
+from contextlib import nullcontext
+from typing import Optional
+
+from chaosotel import flush, get_metric_tags, get_metrics_core, get_tracer
 from opentelemetry._logs import get_logger_provider
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
+from pymongo import MongoClient
+
 
 def probe_query_saturation_status(
     host: Optional[str] = None,
@@ -22,7 +20,7 @@ def probe_query_saturation_status(
     user: Optional[str] = None,
     password: Optional[str] = None,
     authSource: Optional[str] = None,
-) -> Dict:
+) -> dict:
     """
     Probe to check MongoDB query saturation status.
     Observability: Uses chaosotel (chaostooling-otel) as the central observability location. chaosotel must be initialized via chaosotel.control in the experiment configuration.
@@ -33,7 +31,7 @@ def probe_query_saturation_status(
     user = user or os.getenv("MONGO_USER")
     password = password or os.getenv("MONGO_PASSWORD")
     authSource = authSource or os.getenv("MONGO_AUTHSOURCE")
-    
+
     # chaosotel is initialized via chaosotel.control - use directly
     tracer = get_tracer()
     # Setup OpenTelemetry logger via LoggingHandler
@@ -46,22 +44,19 @@ def probe_query_saturation_status(
     else:
         logger = logging.getLogger("chaosdb.mongodb.mongodb_query_saturation_status")
     metrics = get_metrics_core()
-    
+
     db_system = "mongodb"
     start = time.time()
     span = None
-    
+
     span_context = (
-            tracer.start_as_current_span("probe.mongodb.query_saturation_status")
-            if tracer
-            else nullcontext()
-        )
-        
+        tracer.start_as_current_span("probe.mongodb.query_saturation_status")
+        if tracer
+        else nullcontext()
+    )
+
     with span_context as span:
         try:
-
-
-        
             if span:
                 span.set_attribute("db.system", db_system)
                 span.set_attribute("db.name", database)
@@ -70,34 +65,34 @@ def probe_query_saturation_status(
                 span.set_attribute("chaos.activity.type", "probe")
                 span.set_attribute("chaos.system", "mongodb")
                 span.set_attribute("chaos.operation", "query_saturation_status")
-            
+
             uri = f"mongodb://{host}:{port}/"
             if user and password:
                 uri = f"mongodb://{user}:{password}@{host}:{port}/"
                 if authSource:
                     uri += f"?authSource={authSource}"
-            
+
             client = MongoClient(uri)
             db = client[database]
-            
+
             # Get active operations
             current_ops = db.current_op({"active": True})
             active_operations = len(list(current_ops))
-            
+
             # Get connection stats
             server_status = db.command("serverStatus")
             conn_stats = server_status.get("connections", {})
             current_connections = conn_stats.get("current", 0)
             available_connections = conn_stats.get("available", 0)
-            
+
             # Get operation counters
             op_counters = server_status.get("opcounters", {})
             total_operations = sum(op_counters.values())
-            
+
             client.close()
-            
+
             probe_time_ms = (time.time() - start) * 1000
-            
+
             tags = get_metric_tags(
                 db_name=database,
                 db_system=db_system,
@@ -117,21 +112,21 @@ def probe_query_saturation_status(
                 count=1,
                 tags=tags,
             )
-            
+
             result = {
                 "success": True,
                 "active_operations": active_operations,
                 "current_connections": current_connections,
                 "available_connections": available_connections,
                 "total_operations": total_operations,
-                "probe_time_ms": probe_time_ms
+                "probe_time_ms": probe_time_ms,
             }
-            
+
             if span:
                 span.set_attribute("chaos.active_operations", active_operations)
                 span.set_attribute("chaos.current_connections", current_connections)
                 span.set_status(StatusCode.OK)
-            
+
             logger.info(f"MongoDB query saturation probe: {result}")
             flush()
             return result
@@ -144,6 +139,9 @@ def probe_query_saturation_status(
             if span:
                 span.record_exception(e)
                 span.set_status(StatusCode.ERROR, str(e))
-            logger.error(f"MongoDB query saturation probe failed: {str(e)}", extra={"error": str(e)})
+            logger.error(
+                f"MongoDB query saturation probe failed: {str(e)}",
+                extra={"error": str(e)},
+            )
             flush()
             raise

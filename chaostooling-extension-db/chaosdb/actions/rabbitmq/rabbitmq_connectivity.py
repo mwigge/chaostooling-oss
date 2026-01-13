@@ -1,15 +1,23 @@
 import os
 import time
+
 import pika
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
+
 
 def test_rabbitmq_connection(
     host=None, port=None, user=None, password=None, vhost=None
 ) -> dict:
     """
     Test RabbitMQ connection by establishing and closing a connection.
-    
+
     Records metrics:
     - rabbitmq_confirm_latency_histogram: Connection latency
     - operation_counter: Successful operations
@@ -35,22 +43,29 @@ def test_rabbitmq_connection(
             span.set_attribute("chaos.system", "rabbitmq")
             span.set_attribute("chaos.operation", "connectivity")
             credentials = pika.PlainCredentials(user, password)
-            params = pika.ConnectionParameters(host=host, port=port, virtual_host=vhost, credentials=credentials)
+            params = pika.ConnectionParameters(
+                host=host, port=port, virtual_host=vhost, credentials=credentials
+            )
             conn = pika.BlockingConnection(params)
             conn.close()
             connection_time_ms = (time.time() - start) * 1000
-            
+
             # Record metrics
-            tags = get_metric_tags(mq_system="rabbitmq", mq_vhost=vhost, mq_operation="connection_test")
-            
+            get_metric_tags(
+                mq_system="rabbitmq", mq_vhost=vhost, mq_operation="connection_test"
+            )
+
             metrics.record_messaging_operation_count(mq_system=mq_system, count=1)
-            
+
             span.set_status(StatusCode.OK)
-            logger.info(f"RabbitMQ connection OK: {connection_time_ms:.2f}ms", extra={"connection_time_ms": connection_time_ms})
+            logger.info(
+                f"RabbitMQ connection OK: {connection_time_ms:.2f}ms",
+                extra={"connection_time_ms": connection_time_ms},
+            )
             flush()
             return dict(success=True, connection_time_ms=connection_time_ms, host=host)
     except Exception as e:
-        tags = get_metric_tags(mq_system="rabbitmq", error_type=type(e).__name__)
+        get_metric_tags(mq_system="rabbitmq", error_type=type(e).__name__)
         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
         span.set_status(StatusCode.ERROR, str(e))
         logger.error(f"RabbitMQ connection failed: {e}", extra={"error": str(e)})

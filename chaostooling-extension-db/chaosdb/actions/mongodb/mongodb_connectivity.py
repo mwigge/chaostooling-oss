@@ -1,16 +1,18 @@
 import logging
 import os
 import time
-from typing import Optional, Dict
-from pymongo import MongoClient
+from typing import Optional
+
 from chaosotel import (
     ensure_initialized,
-    get_tracer,
     flush,
-    get_metrics_core,
     get_metric_tags,
+    get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
+from pymongo import MongoClient
+
 
 def test_mongodb_connection(
     host: Optional[str] = None,
@@ -19,21 +21,21 @@ def test_mongodb_connection(
     user: Optional[str] = None,
     password: Optional[str] = None,
     authSource: Optional[str] = None,
-) -> Dict:
+) -> dict:
     """
     Simple connectivity check against MongoDB with chaosotel tracing/metrics.
     """
     # Handle string input from Chaos Toolkit configuration
     if port is not None:
         port = int(port) if isinstance(port, str) else port
-    
+
     host = host or os.getenv("MONGO_HOST", "localhost")
     port = port or int(os.getenv("MONGO_PORT", "27017"))
     database = database or os.getenv("MONGO_DB", "test")
     user = user or os.getenv("MONGO_USER")
     password = password or os.getenv("MONGO_PASSWORD")
     authSource = authSource or os.getenv("MONGO_AUTHSOURCE")
-    
+
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "mongodb")
     metrics = get_metrics_core()
@@ -41,7 +43,7 @@ def test_mongodb_connection(
     logger = logging.getLogger("chaosdb.mongodb.connectivity")
     start = time.time()
     span = None
-    
+
     try:
         with tracer.start_as_current_span("test.mongodb.connection") as span:
             span.set_attribute("db.system", db_system)
@@ -55,20 +57,20 @@ def test_mongodb_connection(
             span.set_attribute("chaos.activity.type", "action")
             span.set_attribute("chaos.system", "mongodb")
             span.set_attribute("chaos.operation", "connectivity")
-            
+
             uri = f"mongodb://{host}:{port}/"
             if user and password:
                 uri = f"mongodb://{user}:{password}@{host}:{port}/"
                 if authSource:
                     uri += f"?authSource={authSource}"
-            
+
             client = MongoClient(uri, serverSelectionTimeoutMS=5000)
             db = client[database]
             query_start = time.time()
             db.command("ping")
             query_time_ms = (time.time() - query_start) * 1000
             client.close()
-            
+
             connection_time_ms = (time.time() - start) * 1000
             tags = get_metric_tags(
                 db_name=database,
@@ -89,7 +91,7 @@ def test_mongodb_connection(
                 count=1,
                 tags=tags,
             )
-            
+
             span.set_status(StatusCode.OK)
             logger.info(
                 f"MongoDB connection OK: {connection_time_ms:.2f}ms",

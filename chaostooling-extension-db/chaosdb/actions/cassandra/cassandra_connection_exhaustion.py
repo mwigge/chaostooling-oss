@@ -1,10 +1,12 @@
 """Cassandra connection exhaustion chaos action."""
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 from cassandra.cluster import Cluster
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_connections = []
@@ -51,20 +53,18 @@ def inject_connection_exhaustion(
                 span.set_attribute("db.name", keyspace)
                 span.set_attribute("chaos.connection_id", conn_id)
                 span.set_attribute("chaos.action", "connection_exhaustion")
-            span.set_attribute("chaos.activity", "cassandra_connection_exhaustion")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "cassandra")
-            span.set_attribute("chaos.operation", "connection_exhaustion")
-                
+                span.set_attribute("chaos.activity", "cassandra_connection_exhaustion")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "cassandra")
+                span.set_attribute("chaos.operation", "connection_exhaustion")
+
                 try:
                     cluster = Cluster([host], port=port)
                     session = cluster.connect(keyspace)
                     session.execute("SELECT release_version FROM system.local")
                     
                     connections_created += 1
-                    
-                    )
-                    
+
                     _active_connections.append((cluster, session))
                     
                     end_time = time.time() + hold_duration_seconds
@@ -89,7 +89,6 @@ def inject_connection_exhaustion(
             if not leak_connections:
                 if session:
                     try:
-                    )
                         session.shutdown()
                     except:
                         pass
@@ -131,7 +130,6 @@ def inject_connection_exhaustion(
             if not leak_connections:
                 for cluster, session in _active_connections:
                     try:
-                        )
                         session.shutdown()
                         cluster.shutdown()
                     except:

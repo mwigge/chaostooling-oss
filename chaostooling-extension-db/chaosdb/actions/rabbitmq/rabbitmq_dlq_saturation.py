@@ -1,17 +1,18 @@
 """RabbitMQ dead letter queue saturation chaos action."""
 import os
-import time
 import threading
+import time
+from typing import Dict, Optional
+
 import pika
-from typing import Optional, Dict
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
 _stop_event = threading.Event()
 
 def inject_dlq_saturation(
-    metrics = get_metrics_core()
     host: Optional[str] = None,
     port: Optional[int] = None,
     user: Optional[str] = None,
@@ -57,11 +58,11 @@ def inject_dlq_saturation(
                 span.set_attribute("messaging.destination", dlq_queue)
                 span.set_attribute("chaos.producer_id", producer_id)
                 span.set_attribute("chaos.action", "dlq_saturation")
-            span.set_attribute("chaos.activity", "rabbitmq_dlq_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "rabbitmq")
-            span.set_attribute("chaos.operation", "dlq_saturation")
-                
+                span.set_attribute("chaos.activity", "rabbitmq_dlq_saturation")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "rabbitmq")
+                span.set_attribute("chaos.operation", "dlq_saturation")
+
                 credentials = pika.PlainCredentials(user, password)
                 params = pika.ConnectionParameters(host=host, port=port, virtual_host=vhost, credentials=credentials)
                 conn = pika.BlockingConnection(params)

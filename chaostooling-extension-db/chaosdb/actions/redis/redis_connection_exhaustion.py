@@ -1,22 +1,23 @@
 """Redis connection exhaustion chaos action."""
+
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Optional
 
 import redis
-
 from chaosotel import (
     ensure_initialized,
-    get_tracer,
-    get_logger,
     flush,
+    get_logger,
     get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
 
 _active_connections = []
 _stop_event = threading.Event()
+
 
 def inject_connection_exhaustion(
     host: Optional[str] = None,
@@ -24,28 +25,28 @@ def inject_connection_exhaustion(
     password: Optional[str] = None,
     num_connections: int = 100,
     hold_duration_seconds: int = 60,
-    leak_connections: bool = False
-) -> Dict:
+    leak_connections: bool = False,
+) -> dict:
     """Exhaust Redis connection pool."""
     host = host or os.getenv("REDIS_HOST", "localhost")
     port = port or int(os.getenv("REDIS_PORT", "6379"))
     password = password or os.getenv("REDIS_PASSWORD", None)
-    
+
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "redis")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
-    
+
     global _active_connections, _stop_event
     _stop_event.clear()
     _active_connections = []
-    
+
     connections_created = 0
     connections_failed = 0
     errors = 0
-    
+
     def create_and_hold_connection(conn_id: int):
         nonlocal connections_created, connections_failed, errors
         r = None
@@ -103,7 +104,7 @@ def inject_connection_exhaustion(
                     pass
             elif r and leak_connections:
                 logger.warning(f"Leaking connection {conn_id} (intentional)")
-    
+
     try:
         with tracer.start_as_current_span("chaos.redis.connection_exhaustion") as span:
             span.set_attribute("db.system", db_system)
@@ -115,44 +116,50 @@ def inject_connection_exhaustion(
             span.set_attribute("chaos.activity.type", "action")
             span.set_attribute("chaos.system", "redis")
             span.set_attribute("chaos.operation", "connection_exhaustion")
-            
-            logger.info(f"Starting Redis connection exhaustion with {num_connections} connections")
-            
+
+            logger.info(
+                f"Starting Redis connection exhaustion with {num_connections} connections"
+            )
+
             threads = []
             for i in range(num_connections):
-                thread = threading.Thread(target=create_and_hold_connection, args=(i,), daemon=True)
+                thread = threading.Thread(
+                    target=create_and_hold_connection, args=(i,), daemon=True
+                )
                 thread.start()
                 threads.append(thread)
                 time.sleep(0.1)
-            
+
             time.sleep(hold_duration_seconds)
             _stop_event.set()
             for thread in threads:
                 thread.join(timeout=5)
-            
+
             if not leak_connections:
                 for r in _active_connections:
                     try:
                         r.close()
                     except Exception:
                         pass
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = {
                 "success": True,
                 "duration_ms": duration_ms,
                 "connections_created": connections_created,
                 "connections_failed": connections_failed,
-                "connections_leaked": len(_active_connections) if leak_connections else 0,
+                "connections_leaked": (
+                    len(_active_connections) if leak_connections else 0
+                ),
                 "errors": errors,
-                "target_connections": num_connections
+                "target_connections": num_connections,
             }
-            
+
             span.set_attribute("chaos.connections_created", connections_created)
             span.set_attribute("chaos.connections_failed", connections_failed)
             span.set_status(StatusCode.OK)
-            
+
             logger.info(f"Redis connection exhaustion completed: {result}")
             flush()
             return result
@@ -165,6 +172,7 @@ def inject_connection_exhaustion(
         flush()
         raise
 
+
 def stop_connection_exhaustion():
     global _stop_event, _active_connections
     _stop_event.set()
@@ -174,4 +182,3 @@ def stop_connection_exhaustion():
         except:
             pass
     _active_connections = []
-

@@ -213,18 +213,18 @@ services:
       - "5004:5000"
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
-      - POSTGRES_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
-      - POSTGRES_DB=${POSTGRES_DB:-testdb}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_DB=${MYSQL_DB:-testdb}
+      - MYSQL_USER=${MYSQL_USER:-root}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mysql}
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=order-service-site-a
     depends_on:
       - otel-collector
       - kafka
-      - postgres-primary-site-a
+      - mysql
 
   inventory-service-site-a:
     build:
@@ -512,6 +512,9 @@ services:
       MYSQL_DATABASE: testdb
     ports:
       - "3306:3306"
+    volumes:
+      - ./scripts/init-mysql-db.sh:/docker-entrypoint-initdb.d/init-mysql-db.sh:ro
+    # MySQL automatically runs scripts in /docker-entrypoint-initdb.d/ on first start
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -534,6 +537,10 @@ services:
     image: redis:7.0
     ports:
       - "6379:6379"
+    volumes:
+      - ./scripts/init-redis-data.sh:/docker-entrypoint-initdb.d/init-redis-data.sh:ro
+      - ./scripts/redis-entrypoint-wrapper.sh:/usr/local/bin/redis-entrypoint-wrapper.sh:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/redis-entrypoint-wrapper.sh"]
 
   cassandra:
     image: cassandra:4.1
@@ -541,6 +548,10 @@ services:
       - "9042:9042"
     environment:
       - CASSANDRA_CLUSTER_NAME=ChaosCluster
+    volumes:
+      - ./scripts/init-cassandra-keyspace.sh:/docker-entrypoint-initdb.d/init-cassandra-keyspace.sh:ro
+      - ./scripts/cassandra-entrypoint-wrapper.sh:/usr/local/bin/cassandra-entrypoint-wrapper.sh:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/cassandra-entrypoint-wrapper.sh"]
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -586,6 +597,10 @@ services:
       - "61616:61616"
       - "61613:61613" # STOMP
       - "8161:8161" # Web console
+    volumes:
+      - ./scripts/init-activemq-queues.sh:/docker-entrypoint-initdb.d/init-activemq-queues.sh:ro
+      - ./scripts/activemq-entrypoint-wrapper.sh:/usr/local/bin/activemq-entrypoint-wrapper.sh:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/activemq-entrypoint-wrapper.sh"]
 
   # --- Chaos Runner ---
   chaos-runner:
@@ -718,6 +733,32 @@ services:
     working_dir: /experiments
     command: tail -f /dev/null
 
+  # --- Background Transaction Load Generator ---
+  transaction-load-generator:
+    build: ./transaction-load-generator
+    container_name: transaction-load-generator
+    environment:
+      - API_URL=http://haproxy-site-a:80
+      - TRANSACTIONS_PER_SECOND=2.0
+      - AUTO_START=false  # Control via Chaos Toolkit actions
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=chaos
+      - RABBITMQ_PASSWORD=password
+      - ACTIVEMQ_HOST=activemq
+      - ACTIVEMQ_PORT=61616
+      - ACTIVEMQ_USER=admin
+      - ACTIVEMQ_PASSWORD=admin
+    ports:
+      - "6002:5001"
+    depends_on:
+      - haproxy-site-a
+      - app-server-1-site-a
+    networks:
+      - default
+    restart: unless-stopped
+
 volumes:
   postgres-primary-data:
   postgres-replica-data:
@@ -731,4 +772,4 @@ volumes:
 networks:
   default:
     driver: bridge
-    name: chaostoolkit-wl-demo-network
+    name: chaostooling-demo-network

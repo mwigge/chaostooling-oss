@@ -1,8 +1,9 @@
 from typing import List
 
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 
-def discover(discover_system: bool = True) -> List[dict]:
+
+def discover(discover_system: bool = True) -> list[dict]:
     """
     Discover capabilities from this extension.
     """
@@ -18,56 +19,50 @@ def discover(discover_system: bool = True) -> List[dict]:
                     "arguments": [
                         {"name": "duration", "type": "int", "default": 10},
                         {"name": "load", "type": "int", "default": 100},
-                        {"name": "cores", "type": "int", "default": 0}
-                    ]
+                        {"name": "cores", "type": "int", "default": 0},
+                    ],
                 },
                 {
                     "name": "chaoscompute.actions.compute_stress.stress_memory",
                     "type": "action",
                     "arguments": [
                         {"name": "duration", "type": "int", "default": 10},
-                        {"name": "amount", "type": "string", "default": "100M"}
-                    ]
+                        {"name": "amount", "type": "string", "default": "100M"},
+                    ],
                 },
                 {
                     "name": "chaoscompute.actions.compute_stress.fill_disk",
                     "type": "action",
                     "arguments": [
                         {"name": "path", "type": "string", "default": "/tmp"},
-                        {"name": "amount", "type": "string", "default": "100M"}
-                    ]
+                        {"name": "amount", "type": "string", "default": "100M"},
+                    ],
                 },
                 {
                     "name": "chaoscompute.probes.compute_system.get_cpu_usage",
                     "type": "probe",
-                    "arguments": [
-                        {"name": "interval", "type": "int", "default": 1}
-                    ]
+                    "arguments": [{"name": "interval", "type": "int", "default": 1}],
                 },
                 {
                     "name": "chaoscompute.probes.compute_system.get_memory_usage",
                     "type": "probe",
-                    "arguments": []
+                    "arguments": [],
                 },
                 {
                     "name": "chaoscompute.probes.compute_system.get_disk_usage",
                     "type": "probe",
-                    "arguments": [
-                        {"name": "path", "type": "string", "default": "/"}
-                    ]
+                    "arguments": [{"name": "path", "type": "string", "default": "/"}],
                 },
                 {
                     "name": "chaoscompute.probes.compute_system.process_exists",
                     "type": "probe",
-                    "arguments": [
-                        {"name": "process_name", "type": "string"}
-                    ]
+                    "arguments": [{"name": "process_name", "type": "string"}],
                 },
                 {
                     "name": "chaoscompute.probes.compute_system.get_uptime",
                     "type": "probe",
-                    "arguments": []
-                }
-            ]
+                    "arguments": [],
+                },
+            ],
         }
     ]

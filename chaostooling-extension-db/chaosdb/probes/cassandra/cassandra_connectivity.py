@@ -1,51 +1,25 @@
 """Cassandra connectivity probe."""
 
-import os
-
 import logging
-
-from contextlib import nullcontext
-
+import os
 import time
-
+from contextlib import nullcontext
 from typing import Optional
 
 from cassandra.cluster import Cluster
-
-from chaosotel import (
-
-    flush,
-
-    get_metrics_core,
-
-    get_metric_tags,
-
-    get_tracer,
-
-)
-
-from opentelemetry.sdk._logs import LoggingHandler
-
+from chaosotel import flush, get_metric_tags, get_metrics_core, get_tracer
 from opentelemetry._logs import get_logger_provider
-
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 
-
 def probe_cassandra_connectivity(
-
     host: Optional[str] = None,
-
     port: Optional[int] = None,
-
     keyspace: Optional[str] = None,
-
     user: Optional[str] = None,
-
     password: Optional[str] = None,
-
 ) -> bool:
-
     """
 
     Probe Cassandra connectivity.
@@ -64,8 +38,6 @@ def probe_cassandra_connectivity(
 
     password = password or os.getenv("CASSANDRA_PASSWORD")
 
-    
-
     # chaosotel is initialized via chaosotel.control - use directly
 
     tracer = get_tracer()
@@ -75,7 +47,6 @@ def probe_cassandra_connectivity(
     logger_provider = get_logger_provider()
 
     if logger_provider:
-
         handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 
         logger = logging.getLogger("chaosdb.cassandra.cassandra_connectivity")
@@ -85,12 +56,9 @@ def probe_cassandra_connectivity(
         logger.setLevel(logging.INFO)
 
     else:
-
         logger = logging.getLogger("chaosdb.cassandra.cassandra_connectivity")
 
     metrics = get_metrics_core()
-
-    
 
     db_system = "cassandra"
 
@@ -100,32 +68,15 @@ def probe_cassandra_connectivity(
 
     span = None
 
-    
-
     span_context = (
-
-            tracer.start_as_current_span("probe.cassandra.connectivity")
-
-            if tracer
-
-            else nullcontext()
-
-        )
-
-        
+        tracer.start_as_current_span("probe.cassandra.connectivity")
+        if tracer
+        else nullcontext()
+    )
 
     with span_context as span:
-
         try:
-
-
-
-
-
-        
-
             if span:
-
                 span.set_attribute("db.system", db_system)
 
                 span.set_attribute("db.name", database)
@@ -144,9 +95,7 @@ def probe_cassandra_connectivity(
 
                 span.set_attribute("chaos.operation", "connectivity")
 
-            
-
-            cluster = Cluster([host], port=port)
+            cluster = Cluster([host], port=port, connect_timeout=30)
 
             session = cluster.connect(keyspace)
 
@@ -156,81 +105,55 @@ def probe_cassandra_connectivity(
 
             cluster.shutdown()
 
-            
-
             probe_time_ms = (time.time() - start) * 1000
 
-            
-
             tags = get_metric_tags(
-
                 db_name=database,
-
                 db_system=db_system,
-
                 db_operation="probe",
-
             )
 
             metrics.record_db_query_latency(
-
                 probe_time_ms,
-
                 db_system=db_system,
-
                 db_name=database,
-
                 db_operation="probe",
-
                 tags=tags,
-
             )
 
             metrics.record_db_query_count(
-
                 db_system=db_system,
-
                 db_name=database,
-
                 count=1,
-
                 db_operation="probe",
-
                 tags=tags,
-
             )
 
-            
-
             if span:
-
                 span.set_status(StatusCode.OK)
 
-            
-
-            logger.info(f"Cassandra probe OK: {probe_time_ms:.2f}ms", extra={"probe_time_ms": probe_time_ms})
+            logger.info(
+                f"Cassandra probe OK: {probe_time_ms:.2f}ms",
+                extra={"probe_time_ms": probe_time_ms},
+            )
 
             flush()
 
             return True
 
-    except Exception as e:
-            db_system=db_system,
+        except Exception as e:
+            metrics.record_db_error(
+                db_system=db_system,
+                error_type=type(e).__name__,
+                db_name=database,
+            )
 
-            error_type=type(e).__name__,
+            if span:
+                span.record_exception(e)
+                span.set_status(StatusCode.ERROR, str(e))
 
-            db_name=database,
+            logger.error(f"Cassandra probe failed: {str(e)}", extra={"error": str(e)})
 
-        )
+            flush()
 
-        if span:
-
-            span.record_exception(e)
-
-            span.set_status(StatusCode.ERROR, str(e))
-
-        logger.error(f"Cassandra probe failed: {str(e)}", extra={"error": str(e)})
-
-        flush()
-
-        return False
+            return False

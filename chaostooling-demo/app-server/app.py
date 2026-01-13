@@ -4,6 +4,7 @@ import requests
 import psycopg2
 import logging
 import json
+import redis
 from flask import Flask, request, jsonify
 from kafka import KafkaProducer
 import pika
@@ -16,6 +17,7 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 from opentelemetry.instrumentation.pika import PikaInstrumentor
+from opentelemetry.instrumentation.redis import RedisInstrumentor
 
 # Setup OpenTelemetry with proper service name
 service_name = os.getenv("OTEL_SERVICE_NAME", "app-server")
@@ -32,6 +34,7 @@ FlaskInstrumentor().instrument_app(app)
 RequestsInstrumentor().instrument()
 Psycopg2Instrumentor().instrument()
 PikaInstrumentor().instrument()
+RedisInstrumentor().instrument()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -78,6 +81,11 @@ def get_rabbitmq_connection():
     parameters = pika.ConnectionParameters(host, port, '/', credentials)
     return pika.BlockingConnection(parameters)
 
+def get_redis_connection():
+    host = os.getenv("REDIS_HOST", "redis")
+    port = int(os.getenv("REDIS_PORT", "6379"))
+    return redis.Redis(host=host, port=port, db=0, decode_responses=True)
+
 @app.route('/purchase', methods=['POST'])
 def purchase():
     """
@@ -103,16 +111,20 @@ def purchase():
 
     # Hop 2: Call Payment Service
     payment_service_url = os.getenv("PAYMENT_SERVICE_URL", "http://payment-service:5000")
+    payment_data = None
     try:
         resp = requests.post(f"{payment_service_url}/process", json={"amount": amount, "user_id": user_id}, timeout=5)
         if resp.status_code != 200:
             return jsonify({"error": "Payment failed"}), 502
+        payment_data = resp.json()
+        payment_id = payment_data.get('payment_id')
     except requests.exceptions.RequestException as e:
         logger.error(f"Payment service failed: {e}")
         return jsonify({"error": "Payment service unavailable"}), 503
 
     # Hop 5: Call Order Service
     order_service_url = os.getenv("ORDER_SERVICE_URL", "http://order-service-site-a:5000")
+    order_data = None
     try:
         resp = requests.post(f"{order_service_url}/create", json={"user_id": user_id, "item_id": item_id, "quantity": 1}, timeout=5)
         if resp.status_code != 200:
@@ -122,6 +134,27 @@ def purchase():
     except requests.exceptions.RequestException as e:
         logger.error(f"Order service failed: {e}")
         return jsonify({"error": "Order service unavailable"}), 503
+
+    # NEW: Cache payment + order data in Redis
+    try:
+        redis_client = get_redis_connection()
+        cache_key = f"transaction:{user_id}:{order_id}"
+        cache_data = {
+            'payment_id': payment_id,
+            'order_id': order_id,
+            'user_id': user_id,
+            'amount': amount,
+            'item_id': item_id,
+            'status': 'pending'
+        }
+        redis_client.setex(
+            cache_key,
+            3600,  # TTL: 1 hour
+            json.dumps(cache_data)
+        )
+        logger.info(f"Cached payment+order data in Redis: {cache_key}")
+    except Exception as e:
+        logger.warning(f"Redis cache failed (non-critical): {e}")
 
     # Hop 8: Call Inventory Service
     inventory_service_url = os.getenv("INVENTORY_SERVICE_URL", "http://inventory-service-site-a:5000")

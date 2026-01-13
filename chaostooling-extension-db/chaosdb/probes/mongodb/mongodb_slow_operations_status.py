@@ -1,53 +1,26 @@
 """MongoDB slow operations status probe."""
 
-import os
-
 import logging
-
-from contextlib import nullcontext
-
+import os
 import time
+from contextlib import nullcontext
+from typing import Optional
 
-from typing import Optional, Dict
-
-from pymongo import MongoClient
-
-from chaosotel import (
-
-    flush,
-
-    get_metrics_core,
-
-    get_metric_tags,
-
-    get_tracer,
-
-)
-
-from opentelemetry.sdk._logs import LoggingHandler
-
+from chaosotel import flush, get_metric_tags, get_metrics_core, get_tracer
 from opentelemetry._logs import get_logger_provider
-
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
-
+from pymongo import MongoClient
 
 
 def probe_slow_operations_status(
-
     host: Optional[str] = None,
-
     port: Optional[int] = None,
-
     database: Optional[str] = None,
-
     user: Optional[str] = None,
-
     password: Optional[str] = None,
-
     authSource: Optional[str] = None,
-
-) -> Dict:
-
+) -> dict:
     """
 
     Probe to check MongoDB slow operations status.
@@ -68,8 +41,6 @@ def probe_slow_operations_status(
 
     authSource = authSource or os.getenv("MONGO_AUTHSOURCE")
 
-    
-
     # chaosotel is initialized via chaosotel.control - use directly
 
     tracer = get_tracer()
@@ -79,7 +50,6 @@ def probe_slow_operations_status(
     logger_provider = get_logger_provider()
 
     if logger_provider:
-
         handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 
         logger = logging.getLogger("chaosdb.mongodb.mongodb_slow_operations_status")
@@ -89,12 +59,9 @@ def probe_slow_operations_status(
         logger.setLevel(logging.INFO)
 
     else:
-
         logger = logging.getLogger("chaosdb.mongodb.mongodb_slow_operations_status")
 
     metrics = get_metrics_core()
-
-    
 
     db_system = "mongodb"
 
@@ -102,32 +69,15 @@ def probe_slow_operations_status(
 
     span = None
 
-    
-
     span_context = (
-
-            tracer.start_as_current_span("probe.mongodb.slow_operations_status")
-
-            if tracer
-
-            else nullcontext()
-
-        )
-
-        
+        tracer.start_as_current_span("probe.mongodb.slow_operations_status")
+        if tracer
+        else nullcontext()
+    )
 
     with span_context as span:
-
         try:
-
-
-
-
-
-        
-
             if span:
-
                 span.set_attribute("db.system", db_system)
 
                 span.set_attribute("db.name", database)
@@ -142,25 +92,17 @@ def probe_slow_operations_status(
 
                 span.set_attribute("chaos.operation", "slow_operations_status")
 
-            
-
             uri = f"mongodb://{host}:{port}/"
 
             if user and password:
-
                 uri = f"mongodb://{user}:{password}@{host}:{port}/"
 
                 if authSource:
-
                     uri += f"?authSource={authSource}"
-
-            
 
             client = MongoClient(uri)
 
             db = client[database]
-
-            
 
             # Get current operations with duration
 
@@ -169,104 +111,70 @@ def probe_slow_operations_status(
             slow_operations = []
 
             for op in current_ops:
-
                 duration_ms = op.get("secs_running", 0) * 1000
 
-                slow_operations.append({
-
-                    "opid": op.get("opid"),
-
-                    "duration_ms": duration_ms,
-
-                    "op": op.get("op", "unknown")
-
-                })
-
-            
+                slow_operations.append(
+                    {
+                        "opid": op.get("opid"),
+                        "duration_ms": duration_ms,
+                        "op": op.get("op", "unknown"),
+                    }
+                )
 
             # Get slow operation count
 
             slow_op_count = len(slow_operations)
 
-            avg_duration_ms = sum(op["duration_ms"] for op in slow_operations) / slow_op_count if slow_op_count > 0 else 0
+            avg_duration_ms = (
+                sum(op["duration_ms"] for op in slow_operations) / slow_op_count
+                if slow_op_count > 0
+                else 0
+            )
 
-            max_duration_ms = max((op["duration_ms"] for op in slow_operations), default=0)
-
-            
+            max_duration_ms = max(
+                (op["duration_ms"] for op in slow_operations), default=0
+            )
 
             client.close()
 
-            
-
             probe_time_ms = (time.time() - start) * 1000
 
-            
-
             tags = get_metric_tags(
-
                 db_name=database,
-
                 db_system=db_system,
-
                 db_operation="probe_slow_operations",
-
             )
 
             metrics.record_db_query_latency(
-
                 probe_time_ms,
-
                 db_system=db_system,
-
                 db_name=database,
-
                 db_operation="probe_slow_operations",
-
                 tags=tags,
-
             )
 
             metrics.record_db_query_count(
-
                 db_system=db_system,
-
                 db_name=database,
-
                 db_operation="probe_slow_operations",
-
                 count=1,
-
                 tags=tags,
-
             )
 
-            
-
             result = {
-
                 "success": True,
-
                 "slow_operations_count": slow_op_count,
-
                 "average_duration_ms": avg_duration_ms,
-
                 "max_duration_ms": max_duration_ms,
-
-                "probe_time_ms": probe_time_ms
-
+                "probe_time_ms": probe_time_ms,
             }
 
-            
-
             if span:
-
                 span.set_attribute("chaos.slow_operations_count", slow_op_count)
 
                 span.set_attribute("chaos.average_duration_ms", avg_duration_ms)
 
                 span.set_status(StatusCode.OK)
-
-            
 
             logger.info(f"MongoDB slow operations probe: {result}")
 
@@ -282,12 +190,14 @@ def probe_slow_operations_status(
             )
 
             if span:
-
                 span.record_exception(e)
 
                 span.set_status(StatusCode.ERROR, str(e))
 
-            logger.error(f"MongoDB slow operations probe failed: {str(e)}", extra={"error": str(e)})
+            logger.error(
+                f"MongoDB slow operations probe failed: {str(e)}",
+                extra={"error": str(e)},
+            )
 
             flush()
 

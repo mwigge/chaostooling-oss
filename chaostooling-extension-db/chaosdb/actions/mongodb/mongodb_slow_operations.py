@@ -1,21 +1,24 @@
 """MongoDB slow operations chaos action."""
-import os
-import time
-import threading
+
 import logging
-from typing import Optional, Dict
-from pymongo import MongoClient
+import os
+import threading
+import time
+from typing import Optional
+
 from chaosotel import (
     ensure_initialized,
-    get_tracer,
     flush,
-    get_metrics_core,
     get_metric_tags,
+    get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
+from pymongo import MongoClient
 
 _active_threads = []
 _stop_event = threading.Event()
+
 
 def inject_slow_operations(
     host: Optional[str] = None,
@@ -27,11 +30,11 @@ def inject_slow_operations(
     authSource: Optional[str] = None,
     num_threads: int = 5,
     duration_seconds: int = 60,
-    operation_delay_ms: int = 5000
-) -> Dict:
+    operation_delay_ms: int = 5000,
+) -> dict:
     """
     Inject slow operations by creating long-running operations that hold resources.
-    
+
     Args:
         host: MongoDB host
         port: MongoDB port
@@ -43,7 +46,7 @@ def inject_slow_operations(
         num_threads: Number of concurrent slow operations
         duration_seconds: How long to run slow operations
         operation_delay_ms: Delay inside each operation in milliseconds
-        
+
     Returns:
         Dict with results including operations created, average duration, etc.
     """
@@ -51,9 +54,15 @@ def inject_slow_operations(
     if port is not None:
         port = int(port) if isinstance(port, str) else port
     num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
-    duration_seconds = int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
-    operation_delay_ms = int(operation_delay_ms) if isinstance(operation_delay_ms, str) else operation_delay_ms
-    
+    duration_seconds = (
+        int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
+    )
+    operation_delay_ms = (
+        int(operation_delay_ms)
+        if isinstance(operation_delay_ms, str)
+        else operation_delay_ms
+    )
+
     host = host or os.getenv("MONGO_HOST", "localhost")
     port = port or int(os.getenv("MONGO_PORT", "27017"))
     database = database or os.getenv("MONGO_DB", "test")
@@ -61,34 +70,36 @@ def inject_slow_operations(
     user = user or os.getenv("MONGO_USER")
     password = password or os.getenv("MONGO_PASSWORD")
     authSource = authSource or os.getenv("MONGO_AUTHSOURCE")
-    
+
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "mongodb")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = logging.getLogger("chaosdb.mongodb.slow_operations")
     start_time = time.time()
-    
+
     uri = f"mongodb://{host}:{port}/"
     if user and password:
         uri = f"mongodb://{user}:{password}@{host}:{port}/"
         if authSource:
             uri += f"?authSource={authSource}"
-    
+
     global _active_threads, _stop_event
     _stop_event.clear()
     _active_threads = []
-    
+
     operations_completed = 0
     total_operation_time = 0
     errors = 0
-    
+
     def slow_operation_worker(thread_id: int):
         """Worker thread that creates slow operations."""
         nonlocal operations_completed, total_operation_time, errors
         client = None
         try:
-            with tracer.start_as_current_span(f"slow_operation.worker.{thread_id}") as span:
+            with tracer.start_as_current_span(
+                f"slow_operation.worker.{thread_id}"
+            ) as span:
                 span.set_attribute("db.system", db_system)
                 span.set_attribute("db.name", database)
                 span.set_attribute("chaos.thread_id", thread_id)
@@ -97,39 +108,43 @@ def inject_slow_operations(
                 span.set_attribute("chaos.activity.type", "action")
                 span.set_attribute("chaos.system", "mongodb")
                 span.set_attribute("chaos.operation", "slow_operations")
-                
+
                 client = MongoClient(uri, serverSelectionTimeoutMS=5000)
                 db = client[database]
                 coll = db[collection]
-                
+
                 # Ensure test document exists
                 try:
-                    coll.update_one({"_id": f"slow_test_{thread_id}"}, {"$set": {"value": 0}}, upsert=True)
+                    coll.update_one(
+                        {"_id": f"slow_test_{thread_id}"},
+                        {"$set": {"value": 0}},
+                        upsert=True,
+                    )
                 except Exception:
                     pass
-                
+
                 end_time = time.time() + duration_seconds
-                
+
                 while not _stop_event.is_set() and time.time() < end_time:
                     try:
                         op_start = time.time()
-                        
+
                         # Start a long-running operation
                         coll.find_one({"_id": f"slow_test_{thread_id}"})
-                        
+
                         # Simulate slow work
                         time.sleep(operation_delay_ms / 1000.0)
-                        
+
                         # Update
                         coll.update_one(
                             {"_id": f"slow_test_{thread_id}"},
-                            {"$inc": {"value": 1}, "$set": {"updated_at": time.time()}}
+                            {"$inc": {"value": 1}, "$set": {"updated_at": time.time()}},
                         )
-                        
+
                         op_duration_ms = (time.time() - op_start) * 1000
                         operations_completed += 1
                         total_operation_time += op_duration_ms
-                        
+
                         tags = get_metric_tags(
                             db_name=database,
                             db_system=db_system,
@@ -149,11 +164,11 @@ def inject_slow_operations(
                             count=1,
                             tags=tags,
                         )
-                        
+
                         # Mark as slow operation if exceeds threshold
                         if op_duration_ms > operation_delay_ms:
                             span.set_attribute("chaos.slow_operation_detected", True)
-                        
+
                         span.set_status(StatusCode.OK)
                     except Exception as e:
                         errors += 1
@@ -174,7 +189,7 @@ def inject_slow_operations(
                     client.close()
                 except:
                     pass
-    
+
     try:
         with tracer.start_as_current_span("chaos.mongodb.slow_operations") as span:
             span.set_attribute("db.system", db_system)
@@ -187,43 +202,51 @@ def inject_slow_operations(
             span.set_attribute("chaos.activity.type", "action")
             span.set_attribute("chaos.system", "mongodb")
             span.set_attribute("chaos.operation", "slow_operations")
-            
-            logger.info(f"Starting slow operations with {num_threads} threads for {duration_seconds}s")
-            
+
+            logger.info(
+                f"Starting slow operations with {num_threads} threads for {duration_seconds}s"
+            )
+
             # Start worker threads
             for i in range(num_threads):
-                thread = threading.Thread(target=slow_operation_worker, args=(i,), daemon=True)
+                thread = threading.Thread(
+                    target=slow_operation_worker, args=(i,), daemon=True
+                )
                 thread.start()
                 _active_threads.append(thread)
-            
+
             # Wait for duration
             time.sleep(duration_seconds)
-            
+
             # Stop all threads
             _stop_event.set()
             for thread in _active_threads:
                 thread.join(timeout=10)
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            avg_operation_time = total_operation_time / operations_completed if operations_completed > 0 else 0
-            
+            avg_operation_time = (
+                total_operation_time / operations_completed
+                if operations_completed > 0
+                else 0
+            )
+
             result = {
                 "success": True,
                 "duration_ms": duration_ms,
                 "operations_completed": operations_completed,
                 "average_operation_time_ms": avg_operation_time,
                 "errors": errors,
-                "threads_used": num_threads
+                "threads_used": num_threads,
             }
-            
+
             span.set_attribute("chaos.operations_completed", operations_completed)
             span.set_attribute("chaos.average_operation_time_ms", avg_operation_time)
             span.set_status(StatusCode.OK)
-            
+
             logger.info(f"Slow operations completed: {result}")
             flush()
             return result
-            
+
     except Exception as e:
         _stop_event.set()
         metrics.record_db_error(

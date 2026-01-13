@@ -1,10 +1,12 @@
 """Redis slow operations chaos action."""
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 import redis
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -45,11 +47,11 @@ def inject_slow_operations(
                 span.set_attribute("db.system", "redis")
                 span.set_attribute("chaos.thread_id", thread_id)
                 span.set_attribute("chaos.action", "slow_operations")
-            span.set_attribute("chaos.activity", "redis_slow_operations")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "redis")
-            span.set_attribute("chaos.operation", "slow_operations")
-                
+                span.set_attribute("chaos.activity", "redis_slow_operations")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "redis")
+                span.set_attribute("chaos.operation", "slow_operations")
+
                 r = redis.Redis(host=host, port=port, password=password, decode_responses=True)
                 
                 key = f"chaos:slow:{thread_id}"
@@ -77,11 +79,10 @@ def inject_slow_operations(
                         
                         tags = get_metric_tags(db_name="redis", db_system="redis", db_operation="slow_operation")
                         
-                        
-                        
+
                         if op_duration_ms > 1000:
-                            
-                        
+                            slow_operations += 1
+
                         span.set_status(StatusCode.OK)
                     except Exception as e:
                         errors += 1

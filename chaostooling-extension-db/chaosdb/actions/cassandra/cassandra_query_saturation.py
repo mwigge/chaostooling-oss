@@ -1,11 +1,13 @@
 """Cassandra query saturation chaos action."""
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -53,11 +55,11 @@ def inject_query_saturation(
                 span.set_attribute("db.name", keyspace)
                 span.set_attribute("chaos.thread_id", thread_id)
                 span.set_attribute("chaos.action", "query_saturation")
-            span.set_attribute("chaos.activity", "cassandra_query_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "cassandra")
-            span.set_attribute("chaos.operation", "query_saturation")
-                
+                span.set_attribute("chaos.activity", "cassandra_query_saturation")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "cassandra")
+                span.set_attribute("chaos.operation", "query_saturation")
+
                 cluster = Cluster([host], port=port)
                 session = cluster.connect(keyspace)
                 
@@ -92,10 +94,8 @@ def inject_query_saturation(
                         error_str = str(e).lower()
                         if "read timeout" in error_str:
                             read_timeouts += 1
-                            )
                         elif "write timeout" in error_str:
                             write_timeouts += 1
-                            )
                         errors += 1
                         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
                         logger.warning(f"Query worker {thread_id} error: {e}")

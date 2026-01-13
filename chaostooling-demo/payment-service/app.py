@@ -4,6 +4,7 @@ import json
 import psycopg2
 import pika
 from flask import Flask, request, jsonify
+from kafka import KafkaProducer
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -51,21 +52,37 @@ def get_rabbitmq_connection():
     parameters = pika.ConnectionParameters(host, port, '/', credentials)
     return pika.BlockingConnection(parameters)
 
+def get_kafka_producer():
+    bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
+    return KafkaProducer(
+        bootstrap_servers=bootstrap_servers.split(','),
+        value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    )
+
 @app.route('/process', methods=['POST'])
 def process_payment():
     """
     Payment processing with distributed transaction:
     1. Receive payment request
-    2. Write payment record to PostgreSQL (Hop 4)
-    3. Publish payment event to RabbitMQ (Hop 3)
+    2. Write payment record to PostgreSQL
+    3. Publish payment event to RabbitMQ
+    4. Publish payment event to Kafka (after PostgreSQL write)
     """
     data = request.json
     amount = data.get('amount')
-    user_id = data.get('user_id')
+    user_id_raw = data.get('user_id')
     
-    logger.info(f"Processing payment: {data}")
+    # Convert user_id to integer (handle both "user_123" and 123 formats)
+    if isinstance(user_id_raw, str) and user_id_raw.startswith('user_'):
+        user_id = int(user_id_raw.replace('user_', ''))
+    elif isinstance(user_id_raw, (int, float)):
+        user_id = int(user_id_raw)
+    else:
+        user_id = int(user_id_raw) if user_id_raw else 0
+    
+    logger.info(f"Processing payment: amount={amount}, user_id={user_id}")
 
-    # Hop 4: Write to PostgreSQL
+    # Write to PostgreSQL
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -77,11 +94,12 @@ def process_payment():
         conn.commit()
         cur.close()
         conn.close()
+        logger.info(f"Payment {payment_id} written to PostgreSQL")
     except Exception as e:
         logger.error(f"Database failed: {e}")
         return jsonify({"error": "Database error"}), 500
 
-    # Hop 3: Publish to RabbitMQ
+    # Publish to RabbitMQ
     try:
         connection = get_rabbitmq_connection()
         channel = connection.channel()
@@ -98,8 +116,25 @@ def process_payment():
             properties=pika.BasicProperties(delivery_mode=2)  # Make message persistent
         )
         connection.close()
+        logger.info(f"Payment {payment_id} published to RabbitMQ")
     except Exception as e:
         logger.warning(f"RabbitMQ publish failed (non-critical): {e}")
+
+    # NEW: Publish to Kafka after PostgreSQL write
+    try:
+        producer = get_kafka_producer()
+        producer.send('payment-events', {
+            'payment_id': payment_id,
+            'user_id': user_id,
+            'amount': amount,
+            'status': 'PROCESSED',
+            'source': 'postgresql'
+        })
+        producer.flush()
+        producer.close()
+        logger.info(f"Payment {payment_id} published to Kafka (from PostgreSQL)")
+    except Exception as e:
+        logger.warning(f"Kafka publish failed (non-critical): {e}")
 
     return jsonify({"status": "processed", "payment_id": payment_id}), 200
 

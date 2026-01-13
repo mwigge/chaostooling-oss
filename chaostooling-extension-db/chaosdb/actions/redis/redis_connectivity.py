@@ -1,15 +1,15 @@
 import os
-import redis
 import time
-from typing import Optional, Dict
+from typing import Optional
 
+import redis
 from chaosotel import (
     ensure_initialized,
-    get_tracer,
-    get_logger,
     flush,
-    get_metrics_core,
+    get_logger,
     get_metric_tags,
+    get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
 
@@ -18,7 +18,7 @@ def test_redis_connection(
     host: Optional[str] = None,
     port: Optional[int] = None,
     password: Optional[str] = None,
-) -> Dict:
+) -> dict:
     host = host or os.getenv("REDIS_HOST", "localhost")
     port = port or int(os.getenv("REDIS_PORT", "6379"))
     password = password or os.getenv("REDIS_PASSWORD", None)
@@ -87,4 +87,3 @@ def test_redis_connection(
         logger.error(f"Redis connection failed: {e}", extra={"error": str(e)})
         flush()
         raise
-

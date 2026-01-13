@@ -1,10 +1,12 @@
 """MSSQL connection pool exhaustion chaos action."""
 import os
-import pyodbc
-import time
 import threading
-from typing import Optional, Dict
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+import time
+from typing import Dict, Optional
+
+import pyodbc
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_connections = []
@@ -27,7 +29,7 @@ def inject_connection_pool_exhaustion(
     database = database or os.getenv("MSSQL_DB", "master")
     user = user or os.getenv("MSSQL_USER", "sa")
     password = password or os.getenv("MSSQL_PASSWORD", "")
-    driver = driver or os.getenv("MSSQL_DRIVER", "ODBC Driver 18 for SQL Server")
+    driver = driver or os.getenv("MSSQL_DRIVER", "FreeTDS")
     
     ensure_initialized()
     metrics = get_metrics_core()
@@ -54,26 +56,18 @@ def inject_connection_pool_exhaustion(
                 span.set_attribute("db.name", database)
                 span.set_attribute("chaos.connection_id", conn_id)
                 span.set_attribute("chaos.action", "connection_pool_exhaustion")
-            span.set_attribute("chaos.activity", "mssql_connection_pool_exhaustion")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "mssql")
-            span.set_attribute("chaos.operation", "connection_pool_exhaustion")
                 span.set_attribute("chaos.activity", "mssql_connection_pool_exhaustion")
                 span.set_attribute("chaos.activity.type", "action")
                 span.set_attribute("chaos.system", "mssql")
                 span.set_attribute("chaos.operation", "connection_pool_exhaustion")
-                
+
                 acquisition_start = time.time()
                 try:
                     conn = pyodbc.connect(connection_string, timeout=10)
-                    
+
                     acquisition_time_ms = (time.time() - acquisition_start) * 1000
                     connections_created += 1
-                    
-                    
-                        )
-                    )
-                    
+
                     _active_connections.append(conn)
                     
                     end_time = time.time() + hold_duration_seconds
@@ -92,9 +86,8 @@ def inject_connection_pool_exhaustion(
                 except pyodbc.Error as e:
                     connections_failed += 1
                     wait_time_ms = (time.time() - acquisition_start) * 1000
-                    
-                        )
-                    metrics.record_db_error(db_system=db_system, error_type=type(e).__name__))
+
+                    metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
                     logger.warning(f"Failed to create connection {conn_id}: {e}")
                     span.set_status(StatusCode.ERROR, str(e))
         except Exception as e:
@@ -103,12 +96,10 @@ def inject_connection_pool_exhaustion(
         finally:
             if conn and not leak_connections:
                 try:
-                    )
                     conn.close()
                 except:
                     pass
             elif conn and leak_connections:
-                )
                 logger.warning(f"Leaking connection {conn_id} (intentional)")
     
     try:
@@ -141,7 +132,6 @@ def inject_connection_pool_exhaustion(
             if not leak_connections:
                 for conn in _active_connections:
                     try:
-                        )
                         conn.close()
                     except:
                         pass

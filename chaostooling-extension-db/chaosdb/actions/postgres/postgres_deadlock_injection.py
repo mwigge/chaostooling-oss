@@ -1,22 +1,19 @@
 """PostgreSQL transaction deadlock injection chaos action."""
+
 import os
-import psycopg2
-import time
 import threading
-from typing import Optional, Dict
-from chaosotel import (
-    flush,
-    get_metrics_core,
-    get_metric_tags,
-    get_tracer,
-)
-from opentelemetry.sdk._logs import LoggingHandler
-from opentelemetry._logs import get_logger_provider
+import time
+from typing import Optional
+
+import psycopg2
+from chaosotel import flush, get_metric_tags, get_tracer
+
 # Import metrics module to access metrics dynamically after initialization
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
 _stop_event = threading.Event()
+
 
 def inject_deadlock(
     host: Optional[str] = None,
@@ -26,12 +23,12 @@ def inject_deadlock(
     password: Optional[str] = None,
     num_threads: int = 10,
     duration_seconds: int = 60,
-    table_name: str = "chaos_deadlock_table"
-) -> Dict:
+    table_name: str = "chaos_deadlock_table",
+) -> dict:
     """
     Inject transaction deadlocks by creating circular dependency deadlocks.
     Creates transactions that lock resources in opposite order, causing circular waits.
-    
+
     Args:
         host: PostgreSQL host (defaults to POSTGRES_HOST env var)
         port: PostgreSQL port (defaults to POSTGRES_PORT env var)
@@ -41,7 +38,7 @@ def inject_deadlock(
         num_threads: Number of concurrent threads creating deadlocks
         duration_seconds: How long to run the deadlock injection
         table_name: Table to use for deadlock scenarios
-        
+
     Returns:
         Dict with results including deadlocks created, transactions rolled back, etc.
     """
@@ -49,33 +46,37 @@ def inject_deadlock(
     if port is not None:
         port = int(port) if isinstance(port, str) else port
     num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
-    duration_seconds = int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
-    
+    duration_seconds = (
+        int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
+    )
+
     host = host or os.getenv("POSTGRES_HOST", "localhost")
     port = port or int(os.getenv("POSTGRES_PORT", "5432"))
     database = database or os.getenv("POSTGRES_DB", "testdb")
     user = user or os.getenv("POSTGRES_USER", "postgres")
     password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
-    
+
     ensure_initialized()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
-    
+
     global _active_threads, _stop_event
     _stop_event.clear()
     _active_threads = []
-    
+
     deadlocks_created = 0
     transactions_rolled_back = 0
     errors = 0
-    
+
     def deadlock_worker(thread_id: int):
         """Worker thread that creates deadlocks."""
         nonlocal deadlocks_created, transactions_rolled_back, errors
         conn = None
         try:
-            with tracer.start_as_current_span(f"deadlock_injection.worker.{thread_id}") as span:
+            with tracer.start_as_current_span(
+                f"deadlock_injection.worker.{thread_id}"
+            ) as span:
                 span.set_attribute("db.system", "postgresql")
                 span.set_attribute("db.name", database)
                 span.set_attribute("chaos.thread_id", thread_id)
@@ -84,94 +85,131 @@ def inject_deadlock(
                 span.set_attribute("chaos.activity.type", "action")
                 span.set_attribute("chaos.system", "postgresql")
                 span.set_attribute("chaos.operation", "deadlock_injection")
-                
+
                 conn = psycopg2.connect(
-                    host=host, port=port, database=database,
-                    user=user, password=password, connect_timeout=5
+                    host=host,
+                    port=port,
+                    database=database,
+                    user=user,
+                    password=password,
+                    connect_timeout=5,
                 )
                 conn.autocommit = False
                 cursor = conn.cursor()
-                
+
                 # Create test table if it doesn't exist
-                cursor.execute(f"""
+                cursor.execute(
+                    f"""
                     CREATE TABLE IF NOT EXISTS {table_name} (
                         id SERIAL PRIMARY KEY,
                         value INTEGER,
                         data TEXT
                     )
-                """)
+                """
+                )
                 conn.commit()
-                
+
                 # Insert test data if needed
                 cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
                 if cursor.fetchone()[0] < 5:
-                    cursor.execute(f"INSERT INTO {table_name} (value, data) VALUES (1, 'data1'), (2, 'data2'), (3, 'data3'), (4, 'data4'), (5, 'data5')")
+                    cursor.execute(
+                        f"INSERT INTO {table_name} (value, data) VALUES (1, 'data1'), (2, 'data2'), (3, 'data3'), (4, 'data4'), (5, 'data5')"
+                    )
                     conn.commit()
-                
+
                 end_time = time.time() + duration_seconds
-                
+
                 while not _stop_event.is_set() and time.time() < end_time:
                     try:
                         txn_start = time.time()
-                        
+
                         # Create circular dependency: thread 0 locks id=1 then id=2,
                         # thread 1 locks id=2 then id=1, causing deadlock
                         first_id = (thread_id % 2) + 1
                         second_id = ((thread_id + 1) % 2) + 1
-                        
+
                         cursor.execute("BEGIN")
-                        
+
                         # Lock first resource
-                        cursor.execute(f"SELECT * FROM {table_name} WHERE id = %s FOR UPDATE", (first_id,))
+                        cursor.execute(
+                            f"SELECT * FROM {table_name} WHERE id = %s FOR UPDATE",
+                            (first_id,),
+                        )
                         cursor.fetchone()
-                        
+
                         # Small delay to increase chance of deadlock
                         time.sleep(0.1)
-                        
+
                         # Try to lock second resource (will cause deadlock if another thread has it)
-                        cursor.execute(f"SELECT * FROM {table_name} WHERE id = %s FOR UPDATE", (second_id,))
+                        cursor.execute(
+                            f"SELECT * FROM {table_name} WHERE id = %s FOR UPDATE",
+                            (second_id,),
+                        )
                         cursor.fetchone()
-                        
+
                         # Update both rows
-                        cursor.execute(f"UPDATE {table_name} SET value = value + 1 WHERE id = %s", (first_id,))
-                        cursor.execute(f"UPDATE {table_name} SET value = value + 1 WHERE id = %s", (second_id,))
-                        
+                        cursor.execute(
+                            f"UPDATE {table_name} SET value = value + 1 WHERE id = %s",
+                            (first_id,),
+                        )
+                        cursor.execute(
+                            f"UPDATE {table_name} SET value = value + 1 WHERE id = %s",
+                            (second_id,),
+                        )
+
                         conn.commit()
-                        
-                        txn_duration_ms = (time.time() - txn_start) * 1000
-                        tags = get_metric_tags(db_name=database, db_system="postgresql", db_operation="deadlock_txn")
-                        
-                        metrics.record_db_query_count(db_system=db_system, db_name=database, count=1)
-                        
+
+                        (time.time() - txn_start) * 1000
+                        get_metric_tags(
+                            db_name=database,
+                            db_system="postgresql",
+                            db_operation="deadlock_txn",
+                        )
+
+                        metrics.record_db_query_count(
+                            db_system=db_system, db_name=database, count=1
+                        )
+
                         span.set_status(StatusCode.OK)
                         time.sleep(0.2)
-                        
+
                     except psycopg2.extensions.TransactionRollbackError as e:
                         if "deadlock" in str(e).lower():
                             deadlocks_created += 1
                             transactions_rolled_back += 1
-                            
-                            tags = get_metric_tags(db_name=database, db_system="postgresql", db_operation="deadlock")
-                            
-                            
-                            logger.debug(f"Deadlock detected in thread {thread_id}: {e}")
+
+                            get_metric_tags(
+                                db_name=database,
+                                db_system="postgresql",
+                                db_operation="deadlock",
+                            )
+
+                            logger.debug(
+                                f"Deadlock detected in thread {thread_id}: {e}"
+                            )
                             span.set_attribute("chaos.deadlock_detected", True)
                             span.set_status(StatusCode.OK)
                         else:
                             errors += 1
-                            metrics.record_db_error(db_system="postgresql", error_type=type(e).__name__)
-                            logger.warning(f"Transaction rollback in thread {thread_id}: {e}")
+                            metrics.record_db_error(
+                                db_system="postgresql", error_type=type(e).__name__
+                            )
+                            logger.warning(
+                                f"Transaction rollback in thread {thread_id}: {e}"
+                            )
                             span.set_status(StatusCode.ERROR, str(e))
-                        
+
                         try:
                             conn.rollback()
                         except:
                             pass
                         time.sleep(0.1)
-                        
+
                     except Exception as e:
                         errors += 1
-                        metrics.record_db_error(db_system="postgresql", error_type=type(e).__name__)
+                        metrics.record_db_error(
+                            db_system="postgresql", error_type=type(e).__name__
+                        )
                         logger.warning(f"Error in deadlock worker {thread_id}: {e}")
                         span.set_status(StatusCode.ERROR, str(e))
                         try:
@@ -179,7 +217,7 @@ def inject_deadlock(
                         except:
                             pass
                         time.sleep(0.1)
-                        
+
         except Exception as e:
             errors += 1
             logger.error(f"Deadlock worker {thread_id} failed: {e}")
@@ -189,7 +227,7 @@ def inject_deadlock(
                     conn.close()
                 except:
                     pass
-    
+
     try:
         with tracer.start_as_current_span("chaos.postgres.deadlock_injection") as span:
             span.set_attribute("db.system", "postgresql")
@@ -201,34 +239,40 @@ def inject_deadlock(
             span.set_attribute("chaos.activity.type", "action")
             span.set_attribute("chaos.system", "postgresql")
             span.set_attribute("chaos.operation", "deadlock_injection")
-            
-            logger.info(f"Starting PostgreSQL deadlock injection with {num_threads} threads for {duration_seconds}s")
-            
+
+            logger.info(
+                f"Starting PostgreSQL deadlock injection with {num_threads} threads for {duration_seconds}s"
+            )
+
             for i in range(num_threads):
-                thread = threading.Thread(target=deadlock_worker, args=(i,), daemon=True)
+                thread = threading.Thread(
+                    target=deadlock_worker, args=(i,), daemon=True
+                )
                 thread.start()
                 _active_threads.append(thread)
-            
+
             time.sleep(duration_seconds)
             _stop_event.set()
             for thread in _active_threads:
                 thread.join(timeout=10)
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = {
                 "success": True,
                 "duration_ms": duration_ms,
                 "deadlocks_created": deadlocks_created,
                 "transactions_rolled_back": transactions_rolled_back,
                 "errors": errors,
-                "threads_used": num_threads
+                "threads_used": num_threads,
             }
-            
+
             span.set_attribute("chaos.deadlocks_created", deadlocks_created)
-            span.set_attribute("chaos.transactions_rolled_back", transactions_rolled_back)
+            span.set_attribute(
+                "chaos.transactions_rolled_back", transactions_rolled_back
+            )
             span.set_status(StatusCode.OK)
-            
+
             logger.info(f"PostgreSQL deadlock injection completed: {result}")
             flush()
             return result
@@ -239,6 +283,7 @@ def inject_deadlock(
         flush()
         raise
 
+
 def stop_deadlock():
     """Stop deadlock injection."""
     global _stop_event, _active_threads
@@ -246,4 +291,3 @@ def stop_deadlock():
     for thread in _active_threads:
         thread.join(timeout=5)
     _active_threads = []
-

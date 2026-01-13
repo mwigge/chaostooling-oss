@@ -1,10 +1,12 @@
 """MSSQL lock storm chaos action."""
 import os
-import pyodbc
-import time
 import threading
-from typing import Optional, Dict
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+import time
+from typing import Dict, Optional
+
+import pyodbc
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -27,7 +29,7 @@ def inject_lock_storm(
     database = database or os.getenv("MSSQL_DB", "master")
     user = user or os.getenv("MSSQL_USER", "sa")
     password = password or os.getenv("MSSQL_PASSWORD", "")
-    driver = driver or os.getenv("MSSQL_DRIVER", "ODBC Driver 18 for SQL Server")
+    driver = driver or os.getenv("MSSQL_DRIVER", "FreeTDS")
     
     ensure_initialized()
     metrics = get_metrics_core()
@@ -80,11 +82,9 @@ def inject_lock_storm(
                         cursor.execute("BEGIN TRANSACTION")
                         cursor.execute(f"SELECT * FROM {table_name} WITH (UPDLOCK, ROWLOCK) WHERE id = 1")
                         cursor.fetchone()
-                        
+
                         locks_created += 1
-                        
-                            ))
-                        
+
                         time.sleep(0.5)
                         
                         try:
@@ -93,14 +93,11 @@ def inject_lock_storm(
                         except pyodbc.Error as e:
                             if "deadlock" in str(e).lower() or "1205" in str(e):
                                 deadlocks_detected += 1
-                                )
                                 logger.warning(f"Deadlock detected in thread {thread_id}: {e}")
                             conn.rollback()
-                        
+
                         txn_duration = (time.time() - txn_start) * 1000
-                        
-                            )
-                        
+
                         span.set_status(StatusCode.OK)
                     except Exception as e:
                         errors += 1
@@ -118,9 +115,7 @@ def inject_lock_storm(
                     conn.close()
                 except:
                     pass
-            
-                ))
-    
+
     try:
         with tracer.start_as_current_span("chaos.mssql.lock_storm") as span:
             span.set_attribute("db.system", "mssql")

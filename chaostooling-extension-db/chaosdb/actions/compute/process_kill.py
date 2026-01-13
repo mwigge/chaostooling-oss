@@ -1,11 +1,14 @@
 """Process kill chaos action for disaster recovery testing."""
 import os
-import psutil
 import signal
 import time
-from typing import Optional, Dict, List
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from typing import Dict, List, Optional
+
+import psutil
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
+
 
 def kill_process_by_name(
     process_name: str,
@@ -98,9 +101,7 @@ def kill_process_by_name(
                         "name": proc_name,
                         "signal": signal_type
                     })
-                    
-                    )
-                    
+
                 except psutil.NoSuchProcess:
                     logger.warning(f"Process {pid} already terminated")
                 except psutil.AccessDenied:
@@ -112,8 +113,7 @@ def kill_process_by_name(
                     error_msg = f"Error killing process {pid}: {e}"
                     errors.append(error_msg)
                     logger.error(error_msg)
-                    metrics.record_db_error(db_system=db_system, error_type=type(e).__name__).__name__, process_name=process_name
-                        ))
+                    metrics.record_db_error(db_system=db_system, error_type=type(e).__name__, process_name=process_name)
             
             result = {
                 "success": len(killed_processes) > 0,
@@ -131,8 +131,7 @@ def kill_process_by_name(
             return result
             
     except Exception as e:
-        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__).__name__, process_name=process_name
-            ))
+        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__, process_name=process_name)
         logger.error(f"Process kill failed: {e}")
         flush()
         raise
@@ -189,9 +188,7 @@ def kill_process_by_pid(
                 logger.warning(f"Process {pid} did not terminate, force killing")
                 proc.kill()
                 proc.wait(timeout=5)
-            
-            )
-            
+
             result = {
                 "success": True,
                 "pid": pid,
@@ -216,13 +213,11 @@ def kill_process_by_pid(
     except psutil.AccessDenied:
         error_msg = f"Access denied when killing process {pid}"
         logger.error(error_msg)
-        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-            ))
+        metrics.record_db_error(db_system=db_system, error_type="AccessDenied")
         flush()
         raise
     except Exception as e:
-        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__).__name__, pid=str(pid)
-            ))
+        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__, pid=str(pid))
         logger.error(f"Process kill failed: {e}")
         flush()
         raise

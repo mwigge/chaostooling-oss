@@ -63,7 +63,7 @@ class MetricsCore:
         """Record action count."""
         try:
             counter = self._get_or_create_counter(
-                f"operation.{status}",
+                f"chaos.operation.{status}",
                 description=f"Count of {status} operations",
             )
             attributes = {"operation.name": str(name)}

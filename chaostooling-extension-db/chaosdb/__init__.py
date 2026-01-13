@@ -7,13 +7,7 @@ except ImportError:
     __version__ = "0.0.0.dev0"
 
 # Re-export common utilities
-from chaosotel import (
-    initialize,
-    ensure_initialized,
-    get_tracer,
-    get_logger,
-    flush,
-)
+from chaosotel import ensure_initialized, flush, get_logger, get_tracer, initialize
 
 __all__ = [
     "initialize",

@@ -1,10 +1,12 @@
 """ActiveMQ slow consumer chaos action."""
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 import stomp
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -87,15 +89,11 @@ def inject_slow_consumer(
                 span.set_attribute("messaging.destination", queue)
                 span.set_attribute("chaos.consumer_id", consumer_id)
                 span.set_attribute("chaos.action", "slow_consumer")
-            span.set_attribute("chaos.activity", "activemq_slow_consumer")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "activemq")
-            span.set_attribute("chaos.operation", "slow_consumer")
                 span.set_attribute("chaos.activity", "activemq_slow_consumer")
                 span.set_attribute("chaos.activity.type", "action")
                 span.set_attribute("chaos.system", "activemq")
                 span.set_attribute("chaos.operation", "slow_consumer")
-                
+
                 conn = stomp.Connection([(host, port)])
                 listener = SlowConsumerListener(consumer_id, consume_delay_ms, tracer, logger)
                 conn.set_listener('', listener)

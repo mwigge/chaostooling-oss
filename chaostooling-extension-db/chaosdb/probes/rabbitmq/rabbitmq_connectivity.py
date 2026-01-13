@@ -1,15 +1,17 @@
 """RabbitMQ connectivity probe."""
+
+import logging
 import os
-import logging
-from contextlib import nullcontext
 import time
-import pika
+from contextlib import nullcontext
 from typing import Optional
-from chaosotel import get_tracer, get_metrics_core, get_metric_tags, flush
-from opentelemetry.sdk._logs import LoggingHandler
+
+import pika
+from chaosotel import flush, get_metric_tags, get_metrics_core, get_tracer
 from opentelemetry._logs import get_logger_provider
-import logging
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
+
 
 def probe_rabbitmq_connectivity(
     host: Optional[str] = None,
@@ -20,7 +22,7 @@ def probe_rabbitmq_connectivity(
 ) -> bool:
     """
     Probe RabbitMQ connectivity by establishing a connection.
-    
+
     Observability: Uses chaosotel (chaostooling-otel) as the central
     observability location. chaosotel must be initialized via chaosotel.control in
     the experiment configuration.
@@ -30,7 +32,7 @@ def probe_rabbitmq_connectivity(
     user = user or os.getenv("RABBITMQ_USER", "guest")
     password = password or os.getenv("RABBITMQ_PASSWORD", "guest")
     vhost = vhost or os.getenv("RABBITMQ_VHOST", "/")
-    
+
     # chaosotel is initialized via chaosotel.control - use directly
     tracer = get_tracer()
     # Setup OpenTelemetry logger via LoggingHandler
@@ -43,21 +45,18 @@ def probe_rabbitmq_connectivity(
     else:
         logger = logging.getLogger("chaosdb.rabbitmq.rabbitmq_connectivity")
     metrics = get_metrics_core()
-    
+
     mq_system = "rabbitmq"
     start = time.time()
-    
+
     span_context = (
-            tracer.start_as_current_span("probe.rabbitmq.connectivity")
-            if tracer
-            else nullcontext()
-        )
-        
+        tracer.start_as_current_span("probe.rabbitmq.connectivity")
+        if tracer
+        else nullcontext()
+    )
+
     with span_context as span:
         try:
-
-
-        
             if span:
                 span.set_attribute("chaos.activity", "rabbitmq_connectivity_probe")
                 span.set_attribute("chaos.system", "rabbitmq")
@@ -66,16 +65,16 @@ def probe_rabbitmq_connectivity(
                 span.set_attribute("messaging.destination", vhost)
                 span.set_attribute("network.peer.address", host)
                 span.set_attribute("network.peer.port", port)
-            
+
             credentials = pika.PlainCredentials(user, password)
             params = pika.ConnectionParameters(
                 host=host, port=port, virtual_host=vhost, credentials=credentials
             )
             conn = pika.BlockingConnection(params)
             conn.close()
-            
+
             probe_time_ms = (time.time() - start) * 1000
-            
+
             tags = get_metric_tags(
                 mq_system=mq_system,
                 mq_vhost=vhost,
@@ -86,10 +85,13 @@ def probe_rabbitmq_connectivity(
                 count=1,
                 tags=tags,
             )
-            
+
             if span:
                 span.set_status(StatusCode.OK)
-            logger.info(f"RabbitMQ probe OK: {probe_time_ms:.2f}ms", extra={"probe_time_ms": probe_time_ms})
+            logger.info(
+                f"RabbitMQ probe OK: {probe_time_ms:.2f}ms",
+                extra={"probe_time_ms": probe_time_ms},
+            )
             flush()
             return True
         except Exception as e:

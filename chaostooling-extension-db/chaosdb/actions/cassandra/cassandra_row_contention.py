@@ -1,11 +1,16 @@
 """Cassandra row contention chaos action."""
+import logging
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core,
+                       get_tracer)
+from opentelemetry._logs import get_logger_provider
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -29,9 +34,20 @@ def inject_row_contention(
     password = password or os.getenv("CASSANDRA_PASSWORD")
     
     ensure_initialized()
+    db_system = "cassandra"
     metrics = get_metrics_core()
     tracer = get_tracer()
-    logger = get_logger()
+    
+    # Setup OpenTelemetry logger via LoggingHandler (OpenTelemetry standard)
+    logger_provider = get_logger_provider()
+    if logger_provider:
+        handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
+        logger = logging.getLogger("chaosdb.cassandra.row_contention")
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    else:
+        logger = logging.getLogger("chaosdb.cassandra.row_contention")
+    
     start_time = time.time()
     
     global _active_threads, _stop_event
@@ -51,13 +67,15 @@ def inject_row_contention(
             with tracer.start_as_current_span(f"row_contention.worker.{thread_id}") as span:
                 span.set_attribute("db.system", "cassandra")
                 span.set_attribute("db.name", keyspace)
+                span.set_attribute("network.peer.address", host)
+                span.set_attribute("network.peer.port", port)
                 span.set_attribute("chaos.thread_id", thread_id)
                 span.set_attribute("chaos.action", "row_contention")
-            span.set_attribute("chaos.activity", "cassandra_row_contention")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "cassandra")
-            span.set_attribute("chaos.operation", "row_contention")
-                
+                span.set_attribute("chaos.activity", "cassandra_row_contention")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "cassandra")
+                span.set_attribute("chaos.operation", "row_contention")
+
                 cluster = Cluster([host], port=port)
                 if user and password:
                     cluster = Cluster([host], port=port, auth_provider=None)
@@ -111,18 +129,22 @@ def inject_row_contention(
                         error_str = str(e).lower()
                         if "read timeout" in error_str:
                             read_timeouts += 1
-                            )
                         elif "write timeout" in error_str:
                             write_timeouts += 1
-                            )
                         errors += 1
                         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-                        logger.warning(f"Row contention worker {thread_id} error: {e}")
+                        logger.warning(
+                            f"Row contention worker {thread_id} error: {e}",
+                            exc_info=True,
+                        )
                         span.set_status(StatusCode.ERROR, str(e))
                         time.sleep(0.1)
         except Exception as e:
             errors += 1
-            logger.error(f"Row contention worker {thread_id} failed: {e}")
+            logger.error(
+                f"Row contention worker {thread_id} failed: {e}",
+                exc_info=True,
+            )
         finally:
             if session:
                 try:
@@ -139,6 +161,8 @@ def inject_row_contention(
         with tracer.start_as_current_span("chaos.cassandra.row_contention") as span:
             span.set_attribute("db.system", "cassandra")
             span.set_attribute("db.name", keyspace)
+            span.set_attribute("network.peer.address", host)
+            span.set_attribute("network.peer.port", port)
             span.set_attribute("chaos.num_threads", num_threads)
             span.set_attribute("chaos.duration_seconds", duration_seconds)
             span.set_attribute("chaos.action", "row_contention")
@@ -182,7 +206,10 @@ def inject_row_contention(
     except Exception as e:
         _stop_event.set()
         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-        logger.error(f"Cassandra row contention failed: {e}")
+        logger.error(
+            f"Cassandra row contention failed: {e}",
+            exc_info=True,
+        )
         flush()
         raise
 

@@ -1,14 +1,15 @@
 import os
-import mysql.connector
 import time
-from typing import Optional, Dict
+from typing import Optional
+
+import mysql.connector
 from chaosotel import (
     ensure_initialized,
-    get_tracer,
-    get_logger,
     flush,
-    get_metrics_core,
+    get_logger,
     get_metric_tags,
+    get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
 
@@ -19,14 +20,14 @@ def test_mysql_connection(
     database: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
-) -> Dict:
+) -> dict:
     """
     Simple connectivity check against MySQL with chaosotel tracing/metrics.
     """
     # Handle string input from Chaos Toolkit configuration
     if port is not None:
         port = int(port) if isinstance(port, str) else port
-    
+
     host = host or os.getenv("MYSQL_HOST", "localhost")
     port = port or int(os.getenv("MYSQL_PORT", "3306"))
     database = database or os.getenv("MYSQL_DB", "testdb")

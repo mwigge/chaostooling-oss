@@ -1,50 +1,31 @@
 """RabbitMQ message flood status probe."""
 
-import os
-
 import logging
-
-from contextlib import nullcontext
-
+import os
 import time
-
-from typing import Optional, Dict
+from contextlib import nullcontext
+from typing import Optional
 
 import pika
-
-from chaosotel import get_tracer, get_metrics_core, get_metric_tags, flush
-
-from opentelemetry.sdk._logs import LoggingHandler
-
+from chaosotel import flush, get_metric_tags, get_metrics_core, get_tracer
 from opentelemetry._logs import get_logger_provider
-
-import logging
-
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 
-
 def probe_message_flood_status(
-
     host: Optional[str] = None,
-
     port: Optional[int] = None,
-
     user: Optional[str] = None,
-
     password: Optional[str] = None,
-
     vhost: Optional[str] = None,
-
     queue: Optional[str] = None,
-
-) -> Dict:
-
+) -> dict:
     """
 
     Probe to check RabbitMQ message flood status.
 
-    
+
 
     Observability: Uses chaosotel (chaostooling-otel) as the central
 
@@ -66,8 +47,6 @@ def probe_message_flood_status(
 
     queue = queue or os.getenv("RABBITMQ_QUEUE", "chaos_test_queue")
 
-    
-
     # chaosotel is initialized via chaosotel.control - use directly
 
     tracer = get_tracer()
@@ -77,7 +56,6 @@ def probe_message_flood_status(
     logger_provider = get_logger_provider()
 
     if logger_provider:
-
         handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 
         logger = logging.getLogger("chaosdb.rabbitmq.rabbitmq_message_flood_status")
@@ -87,12 +65,9 @@ def probe_message_flood_status(
         logger.setLevel(logging.INFO)
 
     else:
-
         logger = logging.getLogger("chaosdb.rabbitmq.rabbitmq_message_flood_status")
 
     metrics = get_metrics_core()
-
-    
 
     mq_system = "rabbitmq"
 
@@ -100,32 +75,15 @@ def probe_message_flood_status(
 
     span = None
 
-    
-
     span_context = (
-
-            tracer.start_as_current_span("probe.rabbitmq.message_flood_status")
-
-            if tracer
-
-            else nullcontext()
-
-        )
-
-        
+        tracer.start_as_current_span("probe.rabbitmq.message_flood_status")
+        if tracer
+        else nullcontext()
+    )
 
     with span_context as span:
-
         try:
-
-
-
-
-
-        
-
             if span:
-
                 span.set_attribute("messaging.system", "rabbitmq")
 
                 span.set_attribute("messaging.destination", queue)
@@ -140,21 +98,15 @@ def probe_message_flood_status(
 
                 span.set_attribute("chaos.operation", "message_flood_status")
 
-            
-
             credentials = pika.PlainCredentials(user, password)
 
             params = pika.ConnectionParameters(
-
                 host=host, port=port, virtual_host=vhost, credentials=credentials
-
             )
 
             conn = pika.BlockingConnection(params)
 
             channel = conn.channel()
-
-            
 
             # Get queue info
 
@@ -164,63 +116,37 @@ def probe_message_flood_status(
 
             consumers = queue_info.method.consumer_count
 
-            
-
             channel.close()
 
             conn.close()
 
-            
-
             probe_time_ms = (time.time() - start) * 1000
 
-            
-
             tags = get_metric_tags(
-
                 mq_system=mq_system,
-
                 mq_destination=queue,
-
                 mq_operation="probe",
-
             )
 
             metrics.record_messaging_operation_count(
-
                 mq_system=mq_system,
-
                 count=1,
-
                 tags=tags,
-
             )
 
-            
-
             result = {
-
                 "success": True,
-
                 "queue_depth": queue_depth,
-
                 "consumers": consumers,
-
-                "probe_time_ms": probe_time_ms
-
+                "probe_time_ms": probe_time_ms,
             }
 
-            
-
             if span:
-
                 span.set_attribute("chaos.queue_depth", queue_depth)
 
                 span.set_attribute("chaos.consumers", consumers)
 
                 span.set_status(StatusCode.OK)
-
-            
 
             logger.info(f"RabbitMQ message flood probe: {result}")
 
@@ -230,20 +156,17 @@ def probe_message_flood_status(
 
         except Exception as e:
             metrics.record_messaging_error(
-            mq_system=mq_system,
-            error_type=type(e).__name__,
-        )
+                mq_system=mq_system,
+                error_type=type(e).__name__,
+            )
 
-        if span:
-
-            span.record_exception(e)
+            if span:
+                span.record_exception(e)
 
             span.set_status(StatusCode.ERROR, str(e))
 
         logger.error(
-
             f"RabbitMQ message flood probe failed: {e}", extra={"error": str(e)}
-
         )
 
         flush()

@@ -1,53 +1,26 @@
 """MongoDB connectivity probe."""
 
-import os
-
 import logging
-
-from contextlib import nullcontext
-
+import os
 import time
-
+from contextlib import nullcontext
 from typing import Optional
 
-from pymongo import MongoClient
-
-from chaosotel import (
-
-    flush,
-
-    get_metric_tags,
-
-    get_metrics_core,
-
-    get_tracer,
-
-)
-
-from opentelemetry.sdk._logs import LoggingHandler
-
+from chaosotel import flush, get_metric_tags, get_metrics_core, get_tracer
 from opentelemetry._logs import get_logger_provider
-
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
-
+from pymongo import MongoClient
 
 
 def probe_mongodb_connectivity(
-
     host: Optional[str] = None,
-
     port: Optional[int] = None,
-
     database: Optional[str] = None,
-
     user: Optional[str] = None,
-
     password: Optional[str] = None,
-
     authSource: Optional[str] = None,
-
 ) -> bool:
-
     """
 
     Probe MongoDB connectivity.
@@ -72,8 +45,6 @@ def probe_mongodb_connectivity(
 
     authSource = authSource or os.getenv("MONGO_AUTHSOURCE")
 
-    
-
     # chaosotel is initialized via chaosotel.control - use directly
 
     tracer = get_tracer()
@@ -83,7 +54,6 @@ def probe_mongodb_connectivity(
     logger_provider = get_logger_provider()
 
     if logger_provider:
-
         handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 
         logger = logging.getLogger("chaosdb.mongodb.mongodb_connectivity")
@@ -93,12 +63,9 @@ def probe_mongodb_connectivity(
         logger.setLevel(logging.INFO)
 
     else:
-
         logger = logging.getLogger("chaosdb.mongodb.mongodb_connectivity")
 
     metrics = get_metrics_core()
-
-    
 
     db_system = "mongodb"
 
@@ -106,36 +73,15 @@ def probe_mongodb_connectivity(
 
     span = None
 
-    
-
     span_context = (
-
         tracer.start_as_current_span("probe.mongodb.connectivity")
-
         if tracer
-
         else nullcontext()
-
     )
 
-    
-
     with span_context as span:
-
-
-
-    
-
         try:
-
-
-
-
-
-    
-
             if span:
-
                 span.set_attribute("db.system", db_system)
 
                 span.set_attribute("db.name", database)
@@ -154,19 +100,13 @@ def probe_mongodb_connectivity(
 
                 span.set_attribute("chaos.operation", "connectivity")
 
-            
-
             uri = f"mongodb://{host}:{port}/"
 
             if user and password:
-
                 uri = f"mongodb://{user}:{password}@{host}:{port}/"
 
                 if authSource:
-
                     uri += f"?authSource={authSource}"
-
-            
 
             client = MongoClient(uri, serverSelectionTimeoutMS=5000)
 
@@ -176,59 +116,37 @@ def probe_mongodb_connectivity(
 
             client.close()
 
-            
-
             probe_time_ms = (time.time() - start) * 1000
 
-            
-
             tags = get_metric_tags(
-
                 db_name=database,
-
                 db_system=db_system,
-
                 db_operation="probe",
-
             )
 
             metrics.record_db_query_latency(
-
                 probe_time_ms,
-
                 db_system=db_system,
-
                 db_name=database,
-
                 db_operation="probe",
-
                 tags=tags,
-
             )
 
             metrics.record_db_query_count(
-
                 db_system=db_system,
-
                 db_name=database,
-
                 count=1,
-
                 db_operation="probe",
-
                 tags=tags,
-
             )
 
-            
-
             if span:
-
                 span.set_status(StatusCode.OK)
 
-            
-
-            logger.info(f"MongoDB probe OK: {probe_time_ms:.2f}ms", extra={"probe_time_ms": probe_time_ms})
+            logger.info(
+                f"MongoDB probe OK: {probe_time_ms:.2f}ms",
+                extra={"probe_time_ms": probe_time_ms},
+            )
 
             flush()
 
@@ -242,7 +160,6 @@ def probe_mongodb_connectivity(
             )
 
             if span:
-
                 span.record_exception(e)
 
                 span.set_status(StatusCode.ERROR, str(e))

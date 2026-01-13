@@ -1,10 +1,12 @@
 """RabbitMQ consumer rebalancing storm chaos action."""
 import os
-import time
 import threading
+import time
+from typing import Dict, Optional
+
 import pika
-from typing import Optional, Dict
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_consumers = []
@@ -55,11 +57,11 @@ def inject_rebalancing_storm(
                 span.set_attribute("messaging.destination", queue)
                 span.set_attribute("chaos.consumer_id", consumer_id)
                 span.set_attribute("chaos.action", "rebalancing_storm")
-            span.set_attribute("chaos.activity", "rabbitmq_rebalancing_storm")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "rabbitmq")
-            span.set_attribute("chaos.operation", "rebalancing_storm")
-                
+                span.set_attribute("chaos.activity", "rabbitmq_rebalancing_storm")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "rabbitmq")
+                span.set_attribute("chaos.operation", "rebalancing_storm")
+
                 end_time = time.time() + duration_seconds
                 
                 while not _stop_event.is_set() and time.time() < end_time:

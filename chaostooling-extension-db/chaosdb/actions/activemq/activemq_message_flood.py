@@ -1,10 +1,15 @@
 """ActiveMQ message flood chaos action."""
+import logging
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 import stomp
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core,
+                       get_tracer)
+from opentelemetry._logs import get_logger_provider
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -28,9 +33,20 @@ def inject_message_flood(
     queue = queue or os.getenv("ACTIVEMQ_QUEUE", "chaos.test")
     
     ensure_initialized()
-    db_system = os.getenv("DB_SYSTEM", "activemq")
+    mq_system = "activemq"
+    metrics = get_metrics_core()
     tracer = get_tracer()
-    logger = get_logger()
+    
+    # Setup OpenTelemetry logger via LoggingHandler (OpenTelemetry standard)
+    logger_provider = get_logger_provider()
+    if logger_provider:
+        handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
+        logger = logging.getLogger("chaosdb.activemq.message_flood")
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    else:
+        logger = logging.getLogger("chaosdb.activemq.message_flood")
+    
     start_time = time.time()
     
     global _active_threads, _stop_event
@@ -41,19 +57,21 @@ def inject_message_flood(
     errors = 0
     
     def producer_worker(producer_id: int):
-        nonlocal total_messages_sent, errors
+        nonlocal total_messages_sent, errors, metrics
         conn = None
         try:
             with tracer.start_as_current_span(f"message_flood.producer.{producer_id}") as span:
                 span.set_attribute("messaging.system", "activemq")
                 span.set_attribute("messaging.destination", queue)
+                span.set_attribute("network.peer.address", host)
+                span.set_attribute("network.peer.port", port)
                 span.set_attribute("chaos.producer_id", producer_id)
                 span.set_attribute("chaos.action", "message_flood")
-            span.set_attribute("chaos.activity", "activemq_message_flood")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "activemq")
-            span.set_attribute("chaos.operation", "message_flood")
-                
+                span.set_attribute("chaos.activity", "activemq_message_flood")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "activemq")
+                span.set_attribute("chaos.operation", "message_flood")
+
                 conn = stomp.Connection([(host, port)])
                 conn.connect(user, password, wait=True)
                 
@@ -71,21 +89,45 @@ def inject_message_flood(
                         total_messages_sent += 1
                         message_count += 1
                         
-                        tags = get_metric_tags(db_name=queue, db_system="activemq", db_operation="message_send")
-                        if metrics_module.activemq_messages_enqueued_counter:
-                            metrics_module.activemq_messages_enqueued_counter.add(1, tags)
-                        metrics.record_messaging_dispatch_latency(send_duration_ms / 1000.0, mq_system=mq_system)
+                        tags = get_metric_tags(
+                            mq_system=mq_system,
+                            mq_destination=queue,
+                            mq_operation="message_send",
+                        )
+                        metrics.record_messaging_operation_count(
+                            mq_system=mq_system,
+                            mq_destination=queue,
+                            mq_operation="message_send",
+                            tags=tags,
+                        )
+                        metrics.record_messaging_operation_latency(
+                            duration_ms=send_duration_ms,
+                            mq_system=mq_system,
+                            mq_destination=queue,
+                            mq_operation="message_send",
+                            tags=tags,
+                        )
                         
                         span.set_status(StatusCode.OK)
                         time.sleep(0.01)
                     except Exception as e:
                         errors += 1
-                        metrics = get_metrics_core()
-            metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-                        logger.warning(f"Producer {producer_id} error: {e}")
+                        metrics.record_messaging_error(
+                            mq_system=mq_system,
+                            error_type=type(e).__name__,
+                            mq_destination=queue,
+                            mq_operation="message_send",
+                        )
+                        logger.warning(
+                            f"Producer {producer_id} error: {e}",
+                            exc_info=True,
+                        )
         except Exception as e:
             errors += 1
-            logger.error(f"Message flood producer {producer_id} failed: {e}")
+            logger.error(
+                f"Message flood producer {producer_id} failed: {e}",
+                exc_info=True,
+            )
         finally:
             if conn:
                 try:
@@ -97,6 +139,8 @@ def inject_message_flood(
         with tracer.start_as_current_span("chaos.activemq.message_flood") as span:
             span.set_attribute("messaging.system", "activemq")
             span.set_attribute("messaging.destination", queue)
+            span.set_attribute("network.peer.address", host)
+            span.set_attribute("network.peer.port", port)
             span.set_attribute("chaos.num_producers", num_producers)
             span.set_attribute("chaos.duration_seconds", duration_seconds)
             span.set_attribute("chaos.action", "message_flood")
@@ -136,9 +180,16 @@ def inject_message_flood(
             return result
     except Exception as e:
         _stop_event.set()
-        metrics = get_metrics_core()
-            metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-        logger.error(f"ActiveMQ message flood failed: {e}")
+        metrics.record_messaging_error(
+            mq_system=mq_system,
+            error_type=type(e).__name__,
+            mq_destination=queue,
+            mq_operation="message_flood",
+        )
+        logger.error(
+            f"ActiveMQ message flood failed: {e}",
+            exc_info=True,
+        )
         flush()
         raise
 

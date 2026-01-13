@@ -1,14 +1,15 @@
 import os
-import psycopg2
 import time
-from typing import Optional, Dict
+from typing import Optional
+
+import psycopg2
 from chaosotel import (
     ensure_initialized,
-    get_tracer,
-    get_logger,
     flush,
-    get_metrics_core,
+    get_logger,
     get_metric_tags,
+    get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
 
@@ -19,7 +20,7 @@ def test_postgres_connection(
     database: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
-) -> Dict:
+) -> dict:
     """
     Simple connectivity check against PostgreSQL with chaosotel tracing/metrics.
     """

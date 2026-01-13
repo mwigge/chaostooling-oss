@@ -1,10 +1,15 @@
 """Redis command saturation chaos action."""
+import logging
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 import redis
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core,
+                       get_tracer)
+from opentelemetry._logs import get_logger_provider
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -25,9 +30,20 @@ def inject_command_saturation(
     password = password or os.getenv("REDIS_PASSWORD", None)
     
     ensure_initialized()
+    db_system = "redis"
     metrics = get_metrics_core()
     tracer = get_tracer()
-    logger = get_logger()
+    
+    # Setup OpenTelemetry logger via LoggingHandler (OpenTelemetry standard)
+    logger_provider = get_logger_provider()
+    if logger_provider:
+        handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
+        logger = logging.getLogger("chaosdb.redis.command_saturation")
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    else:
+        logger = logging.getLogger("chaosdb.redis.command_saturation")
+    
     start_time = time.time()
     
     global _active_threads, _stop_event
@@ -46,11 +62,11 @@ def inject_command_saturation(
                 span.set_attribute("db.system", "redis")
                 span.set_attribute("chaos.thread_id", thread_id)
                 span.set_attribute("chaos.action", "command_saturation")
-            span.set_attribute("chaos.activity", "redis_command_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "redis")
-            span.set_attribute("chaos.operation", "command_saturation")
-                
+                span.set_attribute("chaos.activity", "redis_command_saturation")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "redis")
+                span.set_attribute("chaos.operation", "command_saturation")
+
                 r = redis.Redis(host=host, port=port, password=password, decode_responses=True)
                 
                 command_count = 0
@@ -85,12 +101,18 @@ def inject_command_saturation(
                     except Exception as e:
                         errors += 1
                         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-                        logger.warning(f"Command worker {thread_id} error: {e}")
+                        logger.warning(
+                            f"Command worker {thread_id} error: {e}",
+                            exc_info=True,
+                        )
                 
                 span.set_status(StatusCode.OK)
         except Exception as e:
             errors += 1
-            logger.error(f"Command saturation worker {thread_id} failed: {e}")
+            logger.error(
+                f"Command saturation worker {thread_id} failed: {e}",
+                exc_info=True,
+            )
         finally:
             if r:
                 try:
@@ -142,7 +164,10 @@ def inject_command_saturation(
     except Exception as e:
         _stop_event.set()
         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-        logger.error(f"Redis command saturation failed: {e}")
+        logger.error(
+            f"Redis command saturation failed: {e}",
+            exc_info=True,
+        )
         flush()
         raise
 

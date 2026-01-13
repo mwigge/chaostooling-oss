@@ -1,10 +1,12 @@
 """ActiveMQ dead letter queue saturation chaos action."""
 import os
-import time
 import threading
+import time
+from typing import Dict, Optional
+
 import stomp
-from typing import Optional, Dict
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -54,11 +56,11 @@ def inject_dlq_saturation(
                 span.set_attribute("messaging.destination", dlq_queue)
                 span.set_attribute("chaos.producer_id", producer_id)
                 span.set_attribute("chaos.action", "dlq_saturation")
-            span.set_attribute("chaos.activity", "activemq_dlq_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "activemq")
-            span.set_attribute("chaos.operation", "dlq_saturation")
-                
+                span.set_attribute("chaos.activity", "activemq_dlq_saturation")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "activemq")
+                span.set_attribute("chaos.operation", "dlq_saturation")
+
                 conn = stomp.Connection([(host, port)])
                 conn.connect(user, password, wait=True)
                 
@@ -82,7 +84,7 @@ def inject_dlq_saturation(
                     except Exception as e:
                         errors += 1
                         metrics = get_metrics_core()
-            metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
+                        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
                         logger.warning(f"DLQ producer {producer_id} error: {e}")
         except Exception as e:
             errors += 1
@@ -137,7 +139,7 @@ def inject_dlq_saturation(
     except Exception as e:
         _stop_event.set()
         metrics = get_metrics_core()
-            metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
+        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
         logger.error(f"ActiveMQ DLQ saturation failed: {e}")
         flush()
         raise

@@ -1,16 +1,15 @@
 import os
 import time
-from typing import Optional, Dict
+from typing import Optional
 
 from cassandra.cluster import Cluster
-
 from chaosotel import (
     ensure_initialized,
-    get_tracer,
-    get_logger,
     flush,
-    get_metrics_core,
+    get_logger,
     get_metric_tags,
+    get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
 
@@ -21,7 +20,7 @@ def test_cassandra_connection(
     keyspace: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
-) -> Dict:
+) -> dict:
     host = host or os.getenv("CASSANDRA_HOST", "localhost")
     port = port or int(os.getenv("CASSANDRA_PORT", "9042"))
     keyspace = keyspace or os.getenv("CASSANDRA_KEYSPACE", "system")

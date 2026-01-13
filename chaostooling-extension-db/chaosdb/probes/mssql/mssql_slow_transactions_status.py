@@ -1,50 +1,31 @@
 """MSSQL slow transactions status probe."""
 
-import os
-
 import logging
-
+import os
+import time
 from contextlib import nullcontext
+from typing import Optional
 
 import pyodbc
-
-import time
-
-from typing import Optional, Dict
-
-from chaosotel import get_tracer, get_metrics_core, get_metric_tags, flush
-
-from opentelemetry.sdk._logs import LoggingHandler
-
+from chaosotel import flush, get_metric_tags, get_metrics_core, get_tracer
 from opentelemetry._logs import get_logger_provider
-
-import logging
-
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 
-
 def probe_slow_transactions_status(
-
     host: Optional[str] = None,
-
     port: Optional[int] = None,
-
     database: Optional[str] = None,
-
     user: Optional[str] = None,
-
     password: Optional[str] = None,
-
     driver: Optional[str] = None,
-
-) -> Dict:
-
+) -> dict:
     """
 
     Probe to check MSSQL slow transactions status.
 
-    
+
 
     Observability: Uses chaosotel (chaostooling-otel) as the central
 
@@ -66,8 +47,6 @@ def probe_slow_transactions_status(
 
     driver = driver or os.getenv("MSSQL_DRIVER", "ODBC Driver 18 for SQL Server")
 
-    
-
     # chaosotel is initialized via chaosotel.control - use directly
 
     tracer = get_tracer()
@@ -77,7 +56,6 @@ def probe_slow_transactions_status(
     logger_provider = get_logger_provider()
 
     if logger_provider:
-
         handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 
         logger = logging.getLogger("chaosdb.mssql.mssql_slow_transactions_status")
@@ -87,12 +65,9 @@ def probe_slow_transactions_status(
         logger.setLevel(logging.INFO)
 
     else:
-
         logger = logging.getLogger("chaosdb.mssql.mssql_slow_transactions_status")
 
     metrics = get_metrics_core()
-
-    
 
     db_system = "mssql"
 
@@ -100,52 +75,26 @@ def probe_slow_transactions_status(
 
     span = None
 
-    
-
     # Build connection string
 
     connection_string = (
-
         f"DRIVER={{{driver}}};"
-
         f"SERVER={host},{port};"
-
         f"DATABASE={database};"
-
         f"UID={user};"
-
         f"PWD={password};"
-
         "TrustServerCertificate=yes;"
-
     )
 
-    
-
     span_context = (
-
-            tracer.start_as_current_span("probe.mssql.slow_transactions_status")
-
-            if tracer
-
-            else nullcontext()
-
-        )
-
-        
+        tracer.start_as_current_span("probe.mssql.slow_transactions_status")
+        if tracer
+        else nullcontext()
+    )
 
     with span_context as span:
-
         try:
-
-
-
-
-
-        
-
             if span:
-
                 span.set_attribute("db.system", db_system)
 
                 span.set_attribute("db.name", database)
@@ -160,17 +109,14 @@ def probe_slow_transactions_status(
 
                 span.set_attribute("chaos.operation", "slow_transactions_status")
 
-            
-
             conn = pyodbc.connect(connection_string, timeout=5)
 
             cursor = conn.cursor()
 
-            
-
             # Check for long-running transactions (> 1 second)
 
-            cursor.execute("""
+            cursor.execute(
+                """
 
                 SELECT COUNT(*),
 
@@ -184,7 +130,8 @@ def probe_slow_transactions_status(
 
                 WHERE DATEDIFF(ms, transaction_begin_time, GETDATE()) > 1000
 
-            """)
+            """
+            )
 
             result = cursor.fetchone()
 
@@ -194,93 +141,55 @@ def probe_slow_transactions_status(
 
             max_duration_ms = result[2] if result else 0
 
-            
-
             # Check total active transactions
 
             cursor.execute("SELECT COUNT(*) FROM sys.dm_tran_active_transactions")
 
             active_transactions = cursor.fetchone()[0]
 
-            
-
             cursor.close()
 
             conn.close()
 
-            
-
             probe_time_ms = (time.time() - start) * 1000
 
-            
-
             tags = get_metric_tags(
-
-            db_name=database,
-
-            db_system=db_system,
-
+                db_name=database,
+                db_system=db_system,
                 db_operation="probe_slow_transactions",
-
             )
 
             metrics.record_db_query_latency(
-
                 probe_time_ms,
-
-            db_system=db_system,
-
-            db_name=database,
-
+                db_system=db_system,
+                db_name=database,
                 db_operation="probe_slow_transactions",
-
                 tags=tags,
-
             )
 
             metrics.record_db_query_count(
-
-            db_system=db_system,
-
-            db_name=database,
-
+                db_system=db_system,
+                db_name=database,
                 db_operation="probe_slow_transactions",
-
                 count=1,
-
                 tags=tags,
-
             )
 
-            
-
             result = {
-
                 "success": True,
-
                 "long_running_transactions": long_running_txns,
-
                 "active_transactions": active_transactions,
-
                 "average_transaction_duration_ms": avg_duration_ms,
-
                 "max_transaction_duration_ms": max_duration_ms,
-
-                "probe_time_ms": probe_time_ms
-
+                "probe_time_ms": probe_time_ms,
             }
 
-            
-
             if span:
-
                 span.set_attribute("chaos.long_running_transactions", long_running_txns)
 
                 span.set_attribute("chaos.active_transactions", active_transactions)
 
                 span.set_status(StatusCode.OK)
-
-            
 
             logger.info(f"MSSQL slow transactions probe: {result}")
 
@@ -289,22 +198,21 @@ def probe_slow_transactions_status(
             return result
 
         except Exception as e:
-            db_system=db_system,
+            metrics.record_db_error(
+                db_system=db_system,
+                error_type=type(e).__name__,
+                db_name=database,
+            )
 
-            error_type=type(e).__name__,
+            if span:
+                span.record_exception(e)
+                span.set_status(StatusCode.ERROR, str(e))
 
-            db_name=database,
+            logger.error(
+                f"MSSQL slow transactions probe failed: {str(e)}",
+                extra={"error": str(e)},
+            )
 
-        )
+            flush()
 
-        if span:
-
-            span.record_exception(e)
-
-            span.set_status(StatusCode.ERROR, str(e))
-
-        logger.error(f"MSSQL slow transactions probe failed: {str(e)}", extra={"error": str(e)})
-
-        flush()
-
-        return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)}

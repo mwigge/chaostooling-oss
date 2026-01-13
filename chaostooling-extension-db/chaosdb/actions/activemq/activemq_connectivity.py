@@ -1,17 +1,25 @@
 import os
 import time
+
 import stomp  # pip install stomp.py
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metric_tags, get_metrics_core
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 # Requires: stomp.py for Python; ActiveMQ server must have STOMP support enabled (default).
+
 
 def test_activemq_connection(
     host=None, port=None, user=None, password=None, queue=None
 ) -> dict:
     """
     Test ActiveMQ connection by sending a test message via STOMP.
-    
+
     Records metrics:
     - activemq_dispatch_latency_histogram: Connection latency
     - operation_counter: Successful operations
@@ -42,20 +50,43 @@ def test_activemq_connection(
             conn.send(destination=f"/queue/{queue}", body="chaos-connectivity-test")
             conn.disconnect()
             connection_time_ms = (time.time() - start) * 1000
-            
+
             # Record metrics
             metrics = get_metrics_core()
-            metrics.record_messaging_dispatch_latency(connection_time_ms / 1000.0, mq_system=mq_system, mq_destination=queue, mq_operation="connection_test")
-            metrics.record_messaging_operation_count(mq_system=mq_system, mq_destination=queue, count=1, mq_operation="connection_test")
-            
+            metrics.record_messaging_dispatch_latency(
+                connection_time_ms / 1000.0,
+                mq_system=mq_system,
+                mq_destination=queue,
+                mq_operation="connection_test",
+            )
+            metrics.record_messaging_operation_count(
+                mq_system=mq_system,
+                mq_destination=queue,
+                count=1,
+                mq_operation="connection_test",
+            )
+
             span.set_status(StatusCode.OK)
-            logger.info(f"ActiveMQ connection OK: {connection_time_ms:.2f}ms", extra={"connection_time_ms": connection_time_ms})
+            logger.info(
+                f"ActiveMQ connection OK: {connection_time_ms:.2f}ms",
+                extra={"connection_time_ms": connection_time_ms},
+            )
             flush()
-            return dict(success=True, connection_time_ms=connection_time_ms, host=host, queue=queue)
+            return dict(
+                success=True,
+                connection_time_ms=connection_time_ms,
+                host=host,
+                queue=queue,
+            )
     except Exception as e:
         mq_system = os.getenv("MQ_SYSTEM", "activemq")
         metrics = get_metrics_core()
-        metrics.record_messaging_operation_count(mq_system=mq_system, count=1, mq_operation="connection_test", error_type=type(e).__name__)
+        metrics.record_messaging_operation_count(
+            mq_system=mq_system,
+            count=1,
+            mq_operation="connection_test",
+            error_type=type(e).__name__,
+        )
         span.set_status(StatusCode.ERROR, str(e))
         logger.error(f"ActiveMQ connection failed: {e}", extra={"error": str(e)})
         flush()

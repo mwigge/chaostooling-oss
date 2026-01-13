@@ -1,10 +1,15 @@
 """RabbitMQ queue saturation chaos action."""
+import logging
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 import pika
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core,
+                       get_tracer)
+from opentelemetry._logs import get_logger_provider
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -30,9 +35,20 @@ def inject_queue_saturation(
     queue = queue or os.getenv("RABBITMQ_QUEUE", "chaos_saturation_queue")
     
     ensure_initialized()
+    db_system = "rabbitmq"
     metrics = get_metrics_core()
     tracer = get_tracer()
-    logger = get_logger()
+    
+    # Setup OpenTelemetry logger via LoggingHandler (OpenTelemetry standard)
+    logger_provider = get_logger_provider()
+    if logger_provider:
+        handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
+        logger = logging.getLogger("chaosdb.rabbitmq.queue_saturation")
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    else:
+        logger = logging.getLogger("chaosdb.rabbitmq.queue_saturation")
+    
     start_time = time.time()
     
     global _active_threads, _stop_event
@@ -52,11 +68,11 @@ def inject_queue_saturation(
                 span.set_attribute("messaging.destination", queue)
                 span.set_attribute("chaos.producer_id", producer_id)
                 span.set_attribute("chaos.action", "queue_saturation")
-            span.set_attribute("chaos.activity", "rabbitmq_queue_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "rabbitmq")
-            span.set_attribute("chaos.operation", "queue_saturation")
-                
+                span.set_attribute("chaos.activity", "rabbitmq_queue_saturation")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "rabbitmq")
+                span.set_attribute("chaos.operation", "queue_saturation")
+
                 credentials = pika.PlainCredentials(user, password)
                 params = pika.ConnectionParameters(host=host, port=port, virtual_host=vhost, credentials=credentials)
                 conn = pika.BlockingConnection(params)
@@ -89,10 +105,16 @@ def inject_queue_saturation(
                     except Exception as e:
                         errors += 1
                         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-                        logger.warning(f"Saturation producer {producer_id} error: {e}")
+                        logger.warning(
+                            f"Saturation producer {producer_id} error: {e}",
+                            exc_info=True,
+                        )
         except Exception as e:
             errors += 1
-            logger.error(f"Queue saturation producer {producer_id} failed: {e}")
+            logger.error(
+                f"Queue saturation producer {producer_id} failed: {e}",
+                exc_info=True,
+            )
         finally:
             if channel:
                 try:
@@ -149,7 +171,10 @@ def inject_queue_saturation(
     except Exception as e:
         _stop_event.set()
         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-        logger.error(f"RabbitMQ queue saturation failed: {e}")
+        logger.error(
+            f"RabbitMQ queue saturation failed: {e}",
+            exc_info=True,
+        )
         flush()
         raise
 

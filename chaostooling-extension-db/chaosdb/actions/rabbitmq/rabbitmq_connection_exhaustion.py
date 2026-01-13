@@ -1,10 +1,12 @@
 """RabbitMQ connection exhaustion chaos action."""
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 import pika
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_connections = []
@@ -49,11 +51,11 @@ def inject_connection_exhaustion(
                 span.set_attribute("messaging.system", "rabbitmq")
                 span.set_attribute("chaos.connection_id", conn_id)
                 span.set_attribute("chaos.action", "connection_exhaustion")
-            span.set_attribute("chaos.activity", "rabbitmq_connection_exhaustion")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "rabbitmq")
-            span.set_attribute("chaos.operation", "connection_exhaustion")
-                
+                span.set_attribute("chaos.activity", "rabbitmq_connection_exhaustion")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "rabbitmq")
+                span.set_attribute("chaos.operation", "connection_exhaustion")
+
                 try:
                     credentials = pika.PlainCredentials(user, password)
                     params = pika.ConnectionParameters(host=host, port=port, virtual_host=vhost, credentials=credentials)
@@ -61,9 +63,7 @@ def inject_connection_exhaustion(
                     conn.process_data_events(time_limit=0.1)
                     
                     connections_created += 1
-                    
-                    )
-                    
+
                     _active_connections.append(conn)
                     
                     end_time = time.time() + hold_duration_seconds
@@ -78,7 +78,6 @@ def inject_connection_exhaustion(
                     span.set_status(StatusCode.OK)
                 except Exception as e:
                     connections_failed += 1
-                    )
                     metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
                     logger.warning(f"Failed to create connection {conn_id}: {e}")
                     span.set_status(StatusCode.ERROR, str(e))
@@ -88,7 +87,6 @@ def inject_connection_exhaustion(
         finally:
             if conn and not leak_connections:
                 try:
-                    )
                     conn.close()
                 except:
                     pass
@@ -124,7 +122,6 @@ def inject_connection_exhaustion(
             if not leak_connections:
                 for conn in _active_connections:
                     try:
-                        )
                         conn.close()
                     except:
                         pass

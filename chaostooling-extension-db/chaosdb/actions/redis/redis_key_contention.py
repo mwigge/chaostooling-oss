@@ -1,10 +1,15 @@
 """Redis key contention chaos action."""
+import logging
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 import redis
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core,
+                       get_tracer)
+from opentelemetry._logs import get_logger_provider
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -24,9 +29,20 @@ def inject_key_contention(
     password = password or os.getenv("REDIS_PASSWORD", None)
     
     ensure_initialized()
+    db_system = "redis"
     metrics = get_metrics_core()
     tracer = get_tracer()
-    logger = get_logger()
+    
+    # Setup OpenTelemetry logger via LoggingHandler (OpenTelemetry standard)
+    logger_provider = get_logger_provider()
+    if logger_provider:
+        handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
+        logger = logging.getLogger("chaosdb.redis.key_contention")
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    else:
+        logger = logging.getLogger("chaosdb.redis.key_contention")
+    
     start_time = time.time()
     
     global _active_threads, _stop_event
@@ -34,21 +50,22 @@ def inject_key_contention(
     _active_threads = []
     
     operations_completed = 0
+    slow_operations = 0
     errors = 0
     
     def contention_worker(thread_id: int):
-        nonlocal operations_completed, errors
+        nonlocal operations_completed, slow_operations, errors
         r = None
         try:
             with tracer.start_as_current_span(f"key_contention.worker.{thread_id}") as span:
                 span.set_attribute("db.system", "redis")
                 span.set_attribute("chaos.thread_id", thread_id)
                 span.set_attribute("chaos.action", "key_contention")
-            span.set_attribute("chaos.activity", "redis_key_contention")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "redis")
-            span.set_attribute("chaos.operation", "key_contention")
-                
+                span.set_attribute("chaos.activity", "redis_key_contention")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "redis")
+                span.set_attribute("chaos.operation", "key_contention")
+
                 r = redis.Redis(host=host, port=port, password=password, decode_responses=True)
                 
                 # Initialize key
@@ -70,22 +87,27 @@ def inject_key_contention(
                         
                         tags = get_metric_tags(db_name="redis", db_system="redis", db_operation="contention")
                         
-                        
-                        
+
                         if cmd_duration_ms > 1000:
-                            
-                        
+                            slow_operations += 1
+
                         span.set_status(StatusCode.OK)
                         time.sleep(0.1)
                     except Exception as e:
                         errors += 1
                         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-                        logger.warning(f"Key contention worker {thread_id} error: {e}")
+                        logger.warning(
+                            f"Key contention worker {thread_id} error: {e}",
+                            exc_info=True,
+                        )
                         span.set_status(StatusCode.ERROR, str(e))
                         time.sleep(0.1)
         except Exception as e:
             errors += 1
-            logger.error(f"Key contention worker {thread_id} failed: {e}")
+            logger.error(
+                f"Key contention worker {thread_id} failed: {e}",
+                exc_info=True,
+            )
         finally:
             if r:
                 try:
@@ -136,7 +158,10 @@ def inject_key_contention(
     except Exception as e:
         _stop_event.set()
         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-        logger.error(f"Redis key contention failed: {e}")
+        logger.error(
+            f"Redis key contention failed: {e}",
+            exc_info=True,
+        )
         flush()
         raise
 

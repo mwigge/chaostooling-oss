@@ -1,17 +1,18 @@
 """MSSQL transaction deadlock injection chaos action."""
 import os
-import pyodbc
-import time
 import threading
-from typing import Optional, Dict
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+import time
+from typing import Dict, Optional
+
+import pyodbc
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
 _stop_event = threading.Event()
 
 def inject_deadlock(
-    metrics = get_metrics_core()
     host: Optional[str] = None,
     port: Optional[int] = None,
     database: Optional[str] = None,
@@ -31,7 +32,7 @@ def inject_deadlock(
     database = database or os.getenv("MSSQL_DB", "master")
     user = user or os.getenv("MSSQL_USER", "sa")
     password = password or os.getenv("MSSQL_PASSWORD", "")
-    driver = driver or os.getenv("MSSQL_DRIVER", "ODBC Driver 18 for SQL Server")
+    driver = driver or os.getenv("MSSQL_DRIVER", "FreeTDS")
     
     ensure_initialized()
     tracer = get_tracer()

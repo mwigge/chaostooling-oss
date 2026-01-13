@@ -1,45 +1,21 @@
-import os
-
 import logging
-
-from contextlib import nullcontext
-
-import redis
-
+import os
 import time
-
+from contextlib import nullcontext
 from typing import Optional
 
-from chaosotel import (
-
-    flush,
-
-    get_metrics_core,
-
-    get_metric_tags,
-
-    get_tracer,
-
-)
-
-from opentelemetry.sdk._logs import LoggingHandler
-
+import redis
+from chaosotel import flush, get_metric_tags, get_metrics_core, get_tracer
 from opentelemetry._logs import get_logger_provider
-
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 
-
 def probe_redis_connectivity(
-
     host: Optional[str] = None,
-
     port: Optional[int] = None,
-
     password: Optional[str] = None,
-
 ) -> bool:
-
     """
 
     Probe Redis connectivity. Observability: Uses chaosotel (chaostooling-otel) as the central observability location. chaosotel must be initialized via chaosotel.control in the experiment configuration.
@@ -52,8 +28,6 @@ def probe_redis_connectivity(
 
     password = password or os.getenv("REDIS_PASSWORD", None)
 
-    
-
     # chaosotel is initialized via chaosotel.control - use directly
 
     tracer = get_tracer()
@@ -63,7 +37,6 @@ def probe_redis_connectivity(
     logger_provider = get_logger_provider()
 
     if logger_provider:
-
         handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
 
         logger = logging.getLogger("chaosdb.redis.redis_connectivity")
@@ -73,12 +46,9 @@ def probe_redis_connectivity(
         logger.setLevel(logging.INFO)
 
     else:
-
         logger = logging.getLogger("chaosdb.redis.redis_connectivity")
 
     metrics = get_metrics_core()
-
-    
 
     db_system = "redis"
 
@@ -88,36 +58,15 @@ def probe_redis_connectivity(
 
     span = None
 
-    
-
     span_context = (
-
         tracer.start_as_current_span("probe.redis.connectivity")
-
         if tracer
-
         else nullcontext()
-
     )
 
-    
-
     with span_context as span:
-
-
-
-    
-
         try:
-
-
-
-
-
-    
-
             if span:
-
                 span.set_attribute("db.system", db_system)
 
                 span.set_attribute("db.name", database)
@@ -136,53 +85,39 @@ def probe_redis_connectivity(
 
                 span.set_attribute("chaos.operation", "connectivity")
 
-            
-
             r = redis.Redis(host=host, port=port, password=password)
 
             r.ping()
 
             probe_time_ms = (time.time() - start) * 1000
 
-            
-
-            tags = get_metric_tags(db_name=database, db_system=db_system, db_operation="probe")
+            tags = get_metric_tags(
+                db_name=database, db_system=db_system, db_operation="probe"
+            )
 
             metrics.record_db_query_latency(
-
                 probe_time_ms,
-
                 db_system=db_system,
-
                 db_name=database,
-
                 db_operation="probe",
-
                 tags=tags,
-
             )
 
             metrics.record_db_query_count(
-
                 db_system=db_system,
-
                 db_name=database,
-
                 db_operation="probe",
-
                 count=1,
-
                 tags=tags,
-
             )
 
-            
-
             if span:
-
                 span.set_status(StatusCode.OK)
 
-            logger.info(f"Redis probe OK: {probe_time_ms:.2f}ms", extra={"probe_time_ms": probe_time_ms})
+            logger.info(
+                f"Redis probe OK: {probe_time_ms:.2f}ms",
+                extra={"probe_time_ms": probe_time_ms},
+            )
 
             flush()
 
@@ -196,7 +131,6 @@ def probe_redis_connectivity(
             )
 
             if span:
-
                 span.record_exception(e)
 
                 span.set_status(StatusCode.ERROR, str(e))

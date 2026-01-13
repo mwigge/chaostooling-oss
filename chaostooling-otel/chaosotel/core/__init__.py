@@ -6,12 +6,22 @@ Unified interfaces for:
 - Logging (LogCore) → Loki
 - Tracing (TraceCore) → Tempo/Jaeger
 - Compliance (ComplianceCore) → SOX, GDPR, PCI-DSS, HIPAA
+- Span Helpers (in trace_core) → Modular tracing instrumentation
 """
 
 from .compliance_core import ComplianceCore, Regulation
 from .log_core import LogCore
 from .metrics_core import MetricsCore
-from .trace_core import TraceCore
+from .trace_core import (
+    TraceCore,
+    instrument_db_span,
+    instrument_messaging_span,
+    create_instrumented_span,
+    InstrumentedSpan,
+    get_system_name_from_module,
+    DB_SYSTEM_MAP,
+    MESSAGING_SYSTEM_MAP,
+)
 
 __all__ = [
     "MetricsCore",
@@ -19,4 +29,12 @@ __all__ = [
     "TraceCore",
     "ComplianceCore",
     "Regulation",
+    # Span helpers (from trace_core)
+    "instrument_db_span",
+    "instrument_messaging_span",
+    "create_instrumented_span",
+    "InstrumentedSpan",
+    "get_system_name_from_module",
+    "DB_SYSTEM_MAP",
+    "MESSAGING_SYSTEM_MAP",
 ]

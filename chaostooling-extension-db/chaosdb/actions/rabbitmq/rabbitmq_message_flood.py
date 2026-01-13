@@ -1,10 +1,15 @@
 """RabbitMQ message flood chaos action."""
+import logging
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 import pika
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core,
+                       get_tracer)
+from opentelemetry._logs import get_logger_provider
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -30,9 +35,20 @@ def inject_message_flood(
     queue = queue or os.getenv("RABBITMQ_QUEUE", "chaos_test_queue")
     
     ensure_initialized()
+    db_system = "rabbitmq"
     metrics = get_metrics_core()
     tracer = get_tracer()
-    logger = get_logger()
+    
+    # Setup OpenTelemetry logger via LoggingHandler (OpenTelemetry standard)
+    logger_provider = get_logger_provider()
+    if logger_provider:
+        handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
+        logger = logging.getLogger("chaosdb.rabbitmq.message_flood")
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    else:
+        logger = logging.getLogger("chaosdb.rabbitmq.message_flood")
+    
     start_time = time.time()
     
     global _active_threads, _stop_event
@@ -50,13 +66,15 @@ def inject_message_flood(
             with tracer.start_as_current_span(f"message_flood.producer.{producer_id}") as span:
                 span.set_attribute("messaging.system", "rabbitmq")
                 span.set_attribute("messaging.destination", queue)
+                span.set_attribute("network.peer.address", host)
+                span.set_attribute("network.peer.port", port)
                 span.set_attribute("chaos.producer_id", producer_id)
                 span.set_attribute("chaos.action", "message_flood")
-            span.set_attribute("chaos.activity", "rabbitmq_message_flood")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "rabbitmq")
-            span.set_attribute("chaos.operation", "message_flood")
-                
+                span.set_attribute("chaos.activity", "rabbitmq_message_flood")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "rabbitmq")
+                span.set_attribute("chaos.operation", "message_flood")
+
                 credentials = pika.PlainCredentials(user, password)
                 params = pika.ConnectionParameters(host=host, port=port, virtual_host=vhost, credentials=credentials)
                 conn = pika.BlockingConnection(params)
@@ -94,10 +112,16 @@ def inject_message_flood(
                     except Exception as e:
                         errors += 1
                         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-                        logger.warning(f"Producer {producer_id} error: {e}")
+                        logger.warning(
+                            f"Producer {producer_id} error: {e}",
+                            exc_info=True,
+                        )
         except Exception as e:
             errors += 1
-            logger.error(f"Message flood producer {producer_id} failed: {e}")
+            logger.error(
+                f"Message flood producer {producer_id} failed: {e}",
+                exc_info=True,
+            )
         finally:
             if channel:
                 try:
@@ -114,6 +138,8 @@ def inject_message_flood(
         with tracer.start_as_current_span("chaos.rabbitmq.message_flood") as span:
             span.set_attribute("messaging.system", "rabbitmq")
             span.set_attribute("messaging.destination", queue)
+            span.set_attribute("network.peer.address", host)
+            span.set_attribute("network.peer.port", port)
             span.set_attribute("chaos.num_producers", num_producers)
             span.set_attribute("chaos.duration_seconds", duration_seconds)
             span.set_attribute("chaos.action", "message_flood")
@@ -154,7 +180,10 @@ def inject_message_flood(
     except Exception as e:
         _stop_event.set()
         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
-        logger.error(f"RabbitMQ message flood failed: {e}")
+        logger.error(
+            f"RabbitMQ message flood failed: {e}",
+            exc_info=True,
+        )
         flush()
         raise
 

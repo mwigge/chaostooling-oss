@@ -1,10 +1,12 @@
 """RabbitMQ slow consumer chaos action."""
 import os
-import time
 import threading
-from typing import Optional, Dict
+import time
+from typing import Dict, Optional
+
 import pika
-from chaosotel import ensure_initialized, get_tracer, get_logger, flush, get_metrics_core
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -52,11 +54,11 @@ def inject_slow_consumer(
                 span.set_attribute("messaging.destination", queue)
                 span.set_attribute("chaos.consumer_id", consumer_id)
                 span.set_attribute("chaos.action", "slow_consumer")
-            span.set_attribute("chaos.activity", "rabbitmq_slow_consumer")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "rabbitmq")
-            span.set_attribute("chaos.operation", "slow_consumer")
-                
+                span.set_attribute("chaos.activity", "rabbitmq_slow_consumer")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "rabbitmq")
+                span.set_attribute("chaos.operation", "slow_consumer")
+
                 credentials = pika.PlainCredentials(user, password)
                 params = pika.ConnectionParameters(host=host, port=port, virtual_host=vhost, credentials=credentials)
                 conn = pika.BlockingConnection(params)

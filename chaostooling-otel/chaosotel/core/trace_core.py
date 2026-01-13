@@ -7,15 +7,639 @@ Records:
 - Events within spans
 - Exception tracking
 - Span status
+
+Also provides span instrumentation helpers for database and messaging systems.
 """
 
+import os
+import json
 import logging
+import inspect
 from typing import Any, Dict, Optional
 
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import Status, StatusCode
 
 logger = logging.getLogger("chaosotel.trace_core")
+
+# ============================================================================
+# SPAN INSTRUMENTATION HELPERS
+# ============================================================================
+
+# System name mappings - easily extensible for new databases/messaging systems
+DB_SYSTEM_MAP = {
+    "postgresql": "postgresql",
+    "postgres": "postgresql",  # alias
+    "mysql": "mysql",
+    "mariadb": "mysql",  # alias
+    "mssql": "mssql",
+    "sqlserver": "mssql",  # alias
+    "mongodb": "mongodb",
+    "mongo": "mongodb",  # alias
+    "redis": "redis",
+    "cassandra": "cassandra",
+    "duckdb": "duckdb",  # Future-proof: already supported!
+    "sqlite": "sqlite",
+    "oracle": "oracle",
+    # Add new databases here - no code changes needed elsewhere
+}
+
+MESSAGING_SYSTEM_MAP = {
+    "kafka": "kafka",
+    "rabbitmq": "rabbitmq",
+    "activemq": "activemq",
+    "nats": "nats",  # Future-proof
+    "pulsar": "pulsar",  # Future-proof
+    "sqs": "sqs",  # Future-proof
+    # Add new messaging systems here
+}
+
+# Environment variable override for custom mappings
+CUSTOM_DB_MAP = os.getenv("CHAOS_DB_SYSTEM_MAP", "")
+CUSTOM_MESSAGING_MAP = os.getenv("CHAOS_MESSAGING_SYSTEM_MAP", "")
+
+
+def _load_custom_mappings():
+    """Load custom mappings from environment variables (JSON format)."""
+    global DB_SYSTEM_MAP, MESSAGING_SYSTEM_MAP
+    
+    if CUSTOM_DB_MAP:
+        try:
+            custom_db = json.loads(CUSTOM_DB_MAP)
+            DB_SYSTEM_MAP.update(custom_db)
+            logger.info(f"Loaded custom DB system mappings: {list(custom_db.keys())}")
+        except json.JSONDecodeError:
+            logger.warning(f"Invalid CHAOS_DB_SYSTEM_MAP format: {CUSTOM_DB_MAP}")
+    
+    if CUSTOM_MESSAGING_MAP:
+        try:
+            custom_messaging = json.loads(CUSTOM_MESSAGING_MAP)
+            MESSAGING_SYSTEM_MAP.update(custom_messaging)
+            logger.info(f"Loaded custom messaging system mappings: {list(custom_messaging.keys())}")
+        except json.JSONDecodeError:
+            logger.warning(f"Invalid CHAOS_MESSAGING_SYSTEM_MAP format: {CUSTOM_MESSAGING_MAP}")
+
+
+# Load custom mappings at module import
+_load_custom_mappings()
+
+
+def get_system_name_from_module(module_name: str) -> Optional[str]:
+    """
+    Extract system name from module path.
+    
+    Examples:
+        "chaosdb.actions.postgres.postgres_slow_transactions" -> "postgresql"
+        "chaosdb.actions.kafka.kafka_message_flood" -> "kafka"
+        "chaosdb.actions.duckdb.duckdb_query" -> "duckdb"
+    
+    Args:
+        module_name: Full module path (e.g., "chaosdb.actions.postgres.query")
+    
+    Returns:
+        System name (e.g., "postgresql", "kafka") or None if not found
+    """
+    parts = module_name.split(".")
+    if len(parts) >= 3:
+        system_part = parts[2]  # e.g., "postgres", "kafka", "duckdb"
+        system_normalized = system_part.lower()
+        
+        if system_normalized in DB_SYSTEM_MAP:
+            return DB_SYSTEM_MAP[system_normalized]
+        if system_normalized in MESSAGING_SYSTEM_MAP:
+            return MESSAGING_SYSTEM_MAP[system_normalized]
+        if system_normalized in DB_SYSTEM_MAP.values():
+            return system_normalized
+        if system_normalized in MESSAGING_SYSTEM_MAP.values():
+            return system_normalized
+    
+    return None
+
+
+def get_system_type(system_name: str) -> str:
+    """
+    Determine if system is database or messaging.
+    
+    Args:
+        system_name: System name (e.g., "postgresql", "kafka")
+    
+    Returns:
+        "database", "messaging", or "unknown"
+    """
+    if not system_name:
+        return "unknown"
+    
+    system_lower = system_name.lower()
+    if system_lower in DB_SYSTEM_MAP or system_lower in DB_SYSTEM_MAP.values():
+        return "database"
+    if system_lower in MESSAGING_SYSTEM_MAP or system_lower in MESSAGING_SYSTEM_MAP.values():
+        return "messaging"
+    return "unknown"
+
+
+def _update_resource_service_name(span: trace.Span, service_name: str):
+    """Update span resource to set service.name for service graph."""
+    try:
+        if hasattr(span, 'resource') and span.resource:
+            current_attrs = dict(span.resource.attributes)
+        else:
+            current_attrs = {}
+        
+        current_attrs["service.name"] = service_name
+        new_resource = Resource.create(current_attrs)
+        
+        if hasattr(span, '_resource'):
+            span._resource = new_resource
+        elif hasattr(span, 'resource'):
+            span.resource = new_resource
+    except Exception as e:
+        logger.debug(f"Could not update resource service name: {e}")
+
+
+def create_instrumented_span(
+    span_name: str,
+    system_name: Optional[str] = None,
+    system_type: Optional[str] = None,
+    **attributes
+) -> trace.Span:
+    """
+    Create a span with automatic system instrumentation.
+    
+    Automatically sets db.system/messaging.system attributes and resource.service.name.
+    
+    Args:
+        span_name: Name of the span
+        system_name: Explicit system name (e.g., "postgresql", "kafka")
+                    If None, will be inferred from calling module
+        system_type: "database" or "messaging" (auto-detected if None)
+        **attributes: Additional span attributes
+    
+    Returns:
+        OpenTelemetry span with proper instrumentation
+    """
+    tracer = trace.get_tracer(__name__)
+    
+    # Auto-detect system name from calling module if not provided
+    if system_name is None:
+        try:
+            frame = inspect.currentframe()
+            if frame and frame.f_back:
+                caller_frame = frame.f_back
+                module_name = caller_frame.f_globals.get("__name__", "")
+                system_name = get_system_name_from_module(module_name)
+        except Exception as e:
+            logger.debug(f"Could not auto-detect system name: {e}")
+    
+    # Auto-detect system type if not provided
+    if system_type is None and system_name:
+        system_type = get_system_type(system_name)
+    
+    # Create span
+    span = tracer.start_span(span_name)
+    
+    # Set system-specific attributes
+    if system_type == "database" and system_name:
+        normalized_system = DB_SYSTEM_MAP.get(system_name.lower(), system_name)
+        span.set_attribute("db.system", normalized_system)
+    elif system_type == "messaging" and system_name:
+        normalized_system = MESSAGING_SYSTEM_MAP.get(system_name.lower(), system_name)
+        span.set_attribute("messaging.system", normalized_system)
+    
+    # Set standard chaos attributes
+    if system_name:
+        span.set_attribute("chaos.system", system_name)
+    if system_type:
+        span.set_attribute("chaos.system_type", system_type)
+    
+    # Set additional attributes
+    for key, value in attributes.items():
+        if value is not None:
+            try:
+                span.set_attribute(key, value)
+            except Exception as e:
+                logger.debug(f"Could not set attribute {key}: {e}")
+    
+    # Update resource service name for service graph visibility
+    if system_name:
+        if system_type == "database":
+            service_name = DB_SYSTEM_MAP.get(system_name.lower(), system_name)
+        elif system_type == "messaging":
+            service_name = MESSAGING_SYSTEM_MAP.get(system_name.lower(), system_name)
+        else:
+            service_name = system_name
+        
+        _update_resource_service_name(span, service_name)
+    
+    return span
+
+
+def set_db_span_attributes(
+    span: trace.Span,
+    db_system: str,
+    db_name: Optional[str] = None,
+    db_user: Optional[str] = None,
+    db_operation: Optional[str] = None,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    chaos_activity: Optional[str] = None,
+    chaos_action: Optional[str] = None,
+    chaos_operation: Optional[str] = None,
+    **additional_attributes
+) -> None:
+    """
+    Set standard database span attributes on an existing span.
+    
+    This is a modular helper that works with any database system and can be used
+    with context managers like `tracer.start_as_current_span()`.
+    
+    Args:
+        span: OpenTelemetry span (from tracer.start_as_current_span())
+        db_system: Database system name (e.g., "postgresql", "mysql", "mssql", "cassandra", "redis")
+        db_name: Database name (optional)
+        db_user: Database user (optional)
+        db_operation: Database operation (e.g., "connect", "query", "slow_transaction")
+        host: Database host address
+        port: Database port
+        chaos_activity: Chaos activity name (e.g., "postgresql_slow_transactions")
+        chaos_action: Chaos action type (e.g., "slow_transactions", "lock_storm")
+        chaos_operation: Chaos operation name (e.g., "slow_transactions")
+        **additional_attributes: Additional span attributes (e.g., chaos.thread_id, chaos.num_threads)
+    
+    Example:
+        from opentelemetry import trace
+        from chaosotel.core.trace_core import set_db_span_attributes
+        
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span("slow_transaction.worker.1") as span:
+            set_db_span_attributes(
+                span,
+                db_system="postgresql",
+                db_name="testdb",
+                host="postgres-primary-site-a",
+                port=5432,
+                chaos_activity="postgresql_slow_transactions",
+                chaos_action="slow_transactions",
+                chaos_operation="slow_transactions",
+                chaos_thread_id=1
+            )
+            # ... your database code here ...
+    """
+    # Normalize db_system
+    normalized_db_system = DB_SYSTEM_MAP.get(db_system.lower(), db_system.lower())
+    
+    # Set standard database attributes
+    span.set_attribute("db.system", normalized_db_system)
+    if db_name:
+        span.set_attribute("db.name", db_name)
+    if db_user:
+        span.set_attribute("db.user", db_user)
+    if db_operation:
+        span.set_attribute("db.operation", db_operation)
+    
+    # Set network attributes (critical for service graph visibility)
+    if host:
+        span.set_attribute("network.peer.address", host)
+    if port:
+        span.set_attribute("network.peer.port", port)
+    
+    # Set chaos-specific attributes
+    span.set_attribute("chaos.system", normalized_db_system)
+    if chaos_activity:
+        span.set_attribute("chaos.activity", chaos_activity)
+    if chaos_action:
+        span.set_attribute("chaos.action", chaos_action)
+    if chaos_operation:
+        span.set_attribute("chaos.operation", chaos_operation)
+    span.set_attribute("chaos.activity.type", "action")
+    
+    # Set additional attributes
+    for key, value in additional_attributes.items():
+        if value is not None:
+            try:
+                span.set_attribute(key, value)
+            except Exception as e:
+                logger.debug(f"Could not set attribute {key}: {e}")
+
+
+def set_messaging_span_attributes(
+    span: trace.Span,
+    messaging_system: str,
+    destination: Optional[str] = None,
+    destination_kind: Optional[str] = None,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    bootstrap_servers: Optional[str] = None,  # For Kafka-style systems
+    chaos_activity: Optional[str] = None,
+    chaos_action: Optional[str] = None,
+    chaos_operation: Optional[str] = None,
+    **additional_attributes
+) -> None:
+    """
+    Set standard messaging span attributes on an existing span.
+    
+    This is a modular helper that works with any messaging system (Kafka, RabbitMQ, ActiveMQ, etc.)
+    and can be used with context managers like `tracer.start_as_current_span()`.
+    
+    Args:
+        span: OpenTelemetry span (from tracer.start_as_current_span())
+        messaging_system: Messaging system name (e.g., "kafka", "rabbitmq", "activemq")
+        destination: Topic/queue name
+        destination_kind: "topic" or "queue" (auto-detected if None)
+        host: Messaging host address (for non-Kafka systems)
+        port: Messaging port (for non-Kafka systems)
+        bootstrap_servers: Bootstrap servers string (for Kafka, format: "host:port" or "host1:port1,host2:port2")
+        chaos_activity: Chaos activity name (e.g., "kafka_message_flood")
+        chaos_action: Chaos action type (e.g., "message_flood", "topic_saturation")
+        chaos_operation: Chaos operation name (e.g., "message_flood")
+        **additional_attributes: Additional span attributes (e.g., chaos.producer_id, chaos.num_producers)
+    
+    Example:
+        from opentelemetry import trace
+        from chaosotel.core.trace_core import set_messaging_span_attributes
+        
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span("message_flood.producer.1") as span:
+            set_messaging_span_attributes(
+                span,
+                messaging_system="kafka",
+                destination="test-topic",
+                bootstrap_servers="kafka:9092",
+                chaos_activity="kafka_message_flood",
+                chaos_action="message_flood",
+                chaos_operation="message_flood",
+                chaos_producer_id=1
+            )
+            # ... your messaging code here ...
+    """
+    # Normalize messaging_system
+    normalized_messaging_system = MESSAGING_SYSTEM_MAP.get(messaging_system.lower(), messaging_system.lower())
+    
+    # Set standard messaging attributes
+    span.set_attribute("messaging.system", normalized_messaging_system)
+    if destination:
+        span.set_attribute("messaging.destination", destination)
+    if destination_kind:
+        span.set_attribute("messaging.destination_kind", destination_kind)
+    elif destination:
+        # Auto-detect destination kind based on system
+        if normalized_messaging_system == "kafka":
+            span.set_attribute("messaging.destination_kind", "topic")
+        else:
+            span.set_attribute("messaging.destination_kind", "queue")
+    
+    # Set network attributes (critical for service graph visibility)
+    if bootstrap_servers:
+        # Parse bootstrap_servers for Kafka-style systems
+        # Format: "host:port" or "host1:port1,host2:port2"
+        try:
+            first_server = bootstrap_servers.split(',')[0]
+            if ':' in first_server:
+                bootstrap_host = first_server.split(':')[0]
+                bootstrap_port = int(first_server.split(':')[1])
+            else:
+                bootstrap_host = first_server
+                bootstrap_port = 9092  # Default Kafka port
+            span.set_attribute("network.peer.address", bootstrap_host)
+            span.set_attribute("network.peer.port", bootstrap_port)
+        except Exception as e:
+            logger.debug(f"Could not parse bootstrap_servers {bootstrap_servers}: {e}")
+            span.set_attribute("network.peer.address", bootstrap_servers.split(',')[0])
+    elif host:
+        span.set_attribute("network.peer.address", host)
+        if port:
+            span.set_attribute("network.peer.port", port)
+    
+    # Set chaos-specific attributes
+    span.set_attribute("chaos.system", normalized_messaging_system)
+    if chaos_activity:
+        span.set_attribute("chaos.activity", chaos_activity)
+    if chaos_action:
+        span.set_attribute("chaos.action", chaos_action)
+    if chaos_operation:
+        span.set_attribute("chaos.operation", chaos_operation)
+    span.set_attribute("chaos.activity.type", "action")
+    
+    # Set additional attributes
+    for key, value in additional_attributes.items():
+        if value is not None:
+            try:
+                span.set_attribute(key, value)
+            except Exception as e:
+                logger.debug(f"Could not set attribute {key}: {e}")
+
+
+def set_api_span_attributes(
+    span: trace.Span,
+    http_method: Optional[str] = None,
+    http_url: Optional[str] = None,
+    http_status_code: Optional[int] = None,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    chaos_activity: Optional[str] = None,
+    chaos_action: Optional[str] = None,
+    chaos_operation: Optional[str] = None,
+    **additional_attributes
+) -> None:
+    """
+    Set standard API/HTTP span attributes on an existing span.
+    
+    This is a modular helper for HTTP/API operations and can be used
+    with context managers like `tracer.start_as_current_span()`.
+    
+    Args:
+        span: OpenTelemetry span (from tracer.start_as_current_span())
+        http_method: HTTP method (e.g., "GET", "POST", "PUT")
+        http_url: Full HTTP URL
+        http_status_code: HTTP status code
+        host: API host address
+        port: API port
+        chaos_activity: Chaos activity name
+        chaos_action: Chaos action type
+        chaos_operation: Chaos operation name
+        **additional_attributes: Additional span attributes
+    
+    Example:
+        from opentelemetry import trace
+        from chaosotel.core.trace_core import set_api_span_attributes
+        
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span("api.request") as span:
+            set_api_span_attributes(
+                span,
+                http_method="POST",
+                http_url="http://api.example.com/v1/transactions",
+                host="api.example.com",
+                port=80,
+                chaos_activity="api_transaction_flow",
+                chaos_action="transaction_flow"
+            )
+            # ... your API code here ...
+    """
+    # Set standard HTTP attributes
+    if http_method:
+        span.set_attribute("http.method", http_method)
+    if http_url:
+        span.set_attribute("http.url", http_url)
+    if http_status_code:
+        span.set_attribute("http.status_code", http_status_code)
+    
+    # Set network attributes (critical for service graph visibility)
+    if host:
+        span.set_attribute("network.peer.address", host)
+    if port:
+        span.set_attribute("network.peer.port", port)
+    
+    # Set chaos-specific attributes
+    if chaos_activity:
+        span.set_attribute("chaos.activity", chaos_activity)
+    if chaos_action:
+        span.set_attribute("chaos.action", chaos_action)
+    if chaos_operation:
+        span.set_attribute("chaos.operation", chaos_operation)
+    if chaos_activity or chaos_action:
+        span.set_attribute("chaos.activity.type", "action")
+    
+    # Set additional attributes
+    for key, value in additional_attributes.items():
+        if value is not None:
+            try:
+                span.set_attribute(key, value)
+            except Exception as e:
+                logger.debug(f"Could not set attribute {key}: {e}")
+
+
+def instrument_db_span(
+    span_name: str,
+    db_system: str,
+    db_name: Optional[str] = None,
+    db_user: Optional[str] = None,
+    db_host: Optional[str] = None,
+    db_port: Optional[int] = None,
+    **additional_attributes
+) -> trace.Span:
+    """
+    Create an instrumented span for database operations.
+    
+    Convenience function that sets all standard database attributes.
+    
+    Args:
+        span_name: Name of the span
+        db_system: Database system name (e.g., "postgresql", "mysql", "duckdb")
+        db_name: Database name
+        db_user: Database user
+        db_host: Database host
+        db_port: Database port
+        **additional_attributes: Additional span attributes
+    
+    Returns:
+        Instrumented span
+    """
+    attributes = {
+        "db.name": db_name,
+        "db.user": db_user,
+        "net.peer.name": db_host,
+        "net.peer.port": db_port,
+        **additional_attributes
+    }
+    
+    # Remove None values
+    attributes = {k: v for k, v in attributes.items() if v is not None}
+    
+    return create_instrumented_span(
+        span_name,
+        system_name=db_system,
+        system_type="database",
+        **attributes
+    )
+
+
+def instrument_messaging_span(
+    span_name: str,
+    messaging_system: str,
+    destination: Optional[str] = None,
+    destination_kind: Optional[str] = None,
+    **additional_attributes
+) -> trace.Span:
+    """
+    Create an instrumented span for messaging operations.
+    
+    Convenience function that sets all standard messaging attributes.
+    
+    Args:
+        span_name: Name of the span
+        messaging_system: Messaging system name (e.g., "kafka", "rabbitmq")
+        destination: Topic/queue name
+        destination_kind: "topic" or "queue"
+        **additional_attributes: Additional span attributes
+    
+    Returns:
+        Instrumented span
+    """
+    attributes = {
+        "messaging.destination": destination,
+        "messaging.destination_kind": destination_kind,
+        **additional_attributes
+    }
+    
+    # Remove None values
+    attributes = {k: v for k, v in attributes.items() if v is not None}
+    
+    return create_instrumented_span(
+        span_name,
+        system_name=messaging_system,
+        system_type="messaging",
+        **attributes
+    )
+
+
+class InstrumentedSpan:
+    """
+    Context manager for instrumented spans.
+    
+    Automatically handles span lifecycle: status setting and ending.
+    
+    Example:
+        from chaosotel.core.trace_core import instrument_db_span, InstrumentedSpan
+        
+        with InstrumentedSpan(instrument_db_span(
+            "query.execute",
+            db_system="postgresql",
+            db_name="mydb"
+        )) as span:
+            # Your code here
+            # Span automatically gets OK status and ends
+    """
+    
+    def __init__(self, span: trace.Span):
+        """Initialize context manager with a span."""
+        self.span = span
+    
+    def __enter__(self):
+        """Enter context - return the span."""
+        return self.span
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context - set status and end span."""
+        if exc_type:
+            try:
+                self.span.record_exception(exc_val)
+            except Exception:
+                pass
+            self.span.set_status(StatusCode.ERROR, str(exc_val) if exc_val else "Unknown error")
+        else:
+            self.span.set_status(StatusCode.OK)
+        
+        try:
+            self.span.end()
+        except Exception:
+            pass
+
+
+# ============================================================================
+# TRACE CORE CLASS
+# ============================================================================
 
 
 class TraceCore:

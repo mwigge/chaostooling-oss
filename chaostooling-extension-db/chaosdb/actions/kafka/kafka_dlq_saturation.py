@@ -1,11 +1,12 @@
 """Kafka dead letter queue saturation chaos action."""
 import logging
 import os
-import time
 import threading
-from typing import Optional, Dict
-from kafka import KafkaProducer, KafkaConsumer
-from chaosotel import ensure_initialized, get_tracer, flush, get_metrics_core
+import time
+from typing import Dict, Optional
+
+from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
+from kafka import KafkaConsumer, KafkaProducer
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -49,11 +50,11 @@ def inject_dlq_saturation(
                 span.set_attribute("messaging.destination", dlq_topic)
                 span.set_attribute("chaos.producer_id", producer_id)
                 span.set_attribute("chaos.action", "dlq_saturation")
-            span.set_attribute("chaos.activity", "kafka_dlq_saturation")
-            span.set_attribute("chaos.activity.type", "action")
-            span.set_attribute("chaos.system", "kafka")
-            span.set_attribute("chaos.operation", "dlq_saturation")
-                
+                span.set_attribute("chaos.activity", "kafka_dlq_saturation")
+                span.set_attribute("chaos.activity.type", "action")
+                span.set_attribute("chaos.system", "kafka")
+                span.set_attribute("chaos.operation", "dlq_saturation")
+
                 producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
                 
                 message_count = 0

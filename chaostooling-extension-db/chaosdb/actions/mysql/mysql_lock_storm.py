@@ -1,56 +1,76 @@
 """MySQL lock storm chaos action."""
-import os
-import mysql.connector
-import time
-import threading
+
 import logging
-from typing import Optional, Dict
+import os
+import threading
+import time
+from typing import Optional
+
+import mysql.connector
 from chaosotel import (
     ensure_initialized,
-    get_tracer,
     flush,
-    get_metrics_core,
     get_metric_tags,
+    get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
 _stop_event = threading.Event()
 
-def _prepare_table(host: str, port: int, database: str, user: str, password: str, table_name: str, logger):
+
+def _prepare_table(
+    host: str,
+    port: int,
+    database: str,
+    user: str,
+    password: str,
+    table_name: str,
+    logger,
+):
     """Prepare test table if it doesn't exist."""
     try:
         conn = mysql.connector.connect(
-            host=host, port=port, database=database,
-            user=user, password=password, connect_timeout=5
+            host=host,
+            port=port,
+            database=database,
+            user=user,
+            password=password,
+            connect_timeout=5,
         )
         conn.autocommit = True
         cursor = conn.cursor()
-        
-        cursor.execute(f"""
+
+        cursor.execute(
+            f"""
             CREATE TABLE IF NOT EXISTS {table_name} (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 value INT,
                 locked_by INT
             )
-        """)
-        
+        """
+        )
+
         # Ensure locked_by column exists
         try:
             cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN locked_by INT")
         except mysql.connector.errors.ProgrammingError:
             # Column already exists
             pass
-        
+
         cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
         if cursor.fetchone()[0] < 2:
             cursor.execute(f"TRUNCATE TABLE {table_name}")
-            cursor.execute(f"INSERT INTO {table_name} (value) VALUES (1), (2), (3), (4), (5)")
-        
+            cursor.execute(
+                f"INSERT INTO {table_name} (value) VALUES (1), (2), (3), (4), (5)"
+            )
+
         cursor.close()
         conn.close()
     except Exception as e:
         logger.warning(f"Failed to prepare table {table_name}: {e}")
+
 
 def inject_lock_storm(
     host: Optional[str] = None,
@@ -60,12 +80,12 @@ def inject_lock_storm(
     password: Optional[str] = None,
     num_threads: int = 10,
     duration_seconds: int = 60,
-    table_name: str = "chaos_test_table"
-) -> Dict:
+    table_name: str = "chaos_test_table",
+) -> dict:
     """
     Inject a database lock storm by creating multiple concurrent transactions
     that lock the same rows, causing contention.
-    
+
     Args:
         host: MySQL host
         port: MySQL port
@@ -75,7 +95,7 @@ def inject_lock_storm(
         num_threads: Number of concurrent threads creating locks
         duration_seconds: How long to run the lock storm
         table_name: Table to use for lock contention
-        
+
     Returns:
         Dict with results including locks created, deadlocks detected, etc.
     """
@@ -83,15 +103,17 @@ def inject_lock_storm(
     if port is not None:
         port = int(port) if isinstance(port, str) else port
     num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
-    duration_seconds = int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
-    
+    duration_seconds = (
+        int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
+    )
+
     host = host or os.getenv("MYSQL_HOST", "localhost")
     port = port or int(os.getenv("MYSQL_PORT", "3306"))
     database = database or os.getenv("MYSQL_DB", "testdb")
     user = user or os.getenv("MYSQL_USER", "root")
     password = password or os.getenv("MYSQL_PASSWORD", "")
     db_system = os.getenv("DB_SYSTEM", "mysql")
-    
+
     ensure_initialized()
     tracer = get_tracer()
     logger = logging.getLogger("chaosdb.mysql.lock_storm")
@@ -100,15 +122,15 @@ def inject_lock_storm(
 
     # Prepare table once to ensure schema contains locked_by column
     _prepare_table(host, port, database, user, password, table_name, logger)
-    
+
     global _active_threads, _stop_event
     _stop_event.clear()
     _active_threads = []
-    
+
     locks_created = 0
     deadlocks_detected = 0
     errors = 0
-    
+
     def lock_worker(thread_id: int):
         """Worker thread that creates and holds locks."""
         nonlocal locks_created, deadlocks_detected, errors
@@ -123,14 +145,18 @@ def inject_lock_storm(
                 span.set_attribute("chaos.activity.type", "action")
                 span.set_attribute("chaos.system", "mysql")
                 span.set_attribute("chaos.operation", "lock_storm")
-                
+
                 conn = mysql.connector.connect(
-                    host=host, port=port, database=database,
-                    user=user, password=password, connect_timeout=5
+                    host=host,
+                    port=port,
+                    database=database,
+                    user=user,
+                    password=password,
+                    connect_timeout=5,
                 )
                 conn.autocommit = False
                 cursor = conn.cursor()
-                
+
                 primary_id = 1 if (thread_id % 2) == 0 else 2
                 secondary_id = 2 if primary_id == 1 else 1
 
@@ -147,7 +173,9 @@ def inject_lock_storm(
                         )
                         cursor.fetchone()
 
-                        time.sleep(0.2)  # give other threads time to grab the opposite row
+                        time.sleep(
+                            0.2
+                        )  # give other threads time to grab the opposite row
 
                         # Lock the second row (opposite order for half the threads)
                         cursor.execute(
@@ -215,7 +243,7 @@ def inject_lock_storm(
                             except:
                                 pass
                         time.sleep(0.1)  # Brief pause before retry
-                        
+
         except Exception as e:
             errors += 1
             logger.error(f"Lock storm worker {thread_id} failed: {e}")
@@ -225,7 +253,7 @@ def inject_lock_storm(
                     conn.close()
                 except:
                     pass
-    
+
     try:
         with tracer.start_as_current_span("chaos.mysql.lock_storm") as span:
             span.set_attribute("db.system", db_system)
@@ -237,43 +265,45 @@ def inject_lock_storm(
             span.set_attribute("chaos.activity.type", "action")
             span.set_attribute("chaos.system", "mysql")
             span.set_attribute("chaos.operation", "lock_storm")
-            
-            logger.info(f"Starting lock storm with {num_threads} threads for {duration_seconds}s")
-            
+
+            logger.info(
+                f"Starting lock storm with {num_threads} threads for {duration_seconds}s"
+            )
+
             # Start worker threads
             for i in range(num_threads):
                 thread = threading.Thread(target=lock_worker, args=(i,), daemon=True)
                 thread.start()
                 _active_threads.append(thread)
-            
+
             # Wait for duration
             time.sleep(duration_seconds)
-            
+
             # Stop all threads
             _stop_event.set()
             for thread in _active_threads:
                 thread.join(timeout=5)
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = {
                 "success": True,
                 "duration_ms": duration_ms,
                 "locks_created": locks_created,
                 "deadlocks_detected": deadlocks_detected,
                 "errors": errors,
-                "threads_used": num_threads
+                "threads_used": num_threads,
             }
-            
+
             span.set_attribute("chaos.locks_created", locks_created)
             span.set_attribute("chaos.deadlocks_detected", deadlocks_detected)
             span.set_attribute("chaos.errors", errors)
             span.set_status(StatusCode.OK)
-            
+
             logger.info(f"Lock storm completed: {result}")
             flush()
             return result
-            
+
     except Exception as e:
         _stop_event.set()
         metrics.record_db_error(
