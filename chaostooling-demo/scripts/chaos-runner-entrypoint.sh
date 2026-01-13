@@ -9,8 +9,13 @@ chmod 777 /var/log/chaostoolkit
 cd /var/log/chaostoolkit
 
 # Run setup-extensions.sh first (from original entrypoint)
+# Source the script to preserve PYTHONPATH
 if [ -f /setup-extensions.sh ]; then
-    /setup-extensions.sh
+    source /setup-extensions.sh || /setup-extensions.sh
+    # Also source the PYTHONPATH file if it exists
+    if [ -f /etc/profile.d/chaostooling-pythonpath.sh ]; then
+        source /etc/profile.d/chaostooling-pythonpath.sh
+    fi
 fi
 
 # Execute the original command (chaos run, bash, etc.)
