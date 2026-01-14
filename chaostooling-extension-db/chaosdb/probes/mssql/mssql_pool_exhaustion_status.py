@@ -188,7 +188,7 @@ def probe_pool_exhaustion_status(
                 count=1,
                 tags=tags,
             )
-            
+
             # Record connection pool utilization metric
             metrics.record_db_connection_pool_utilization(
                 db_system=db_system,

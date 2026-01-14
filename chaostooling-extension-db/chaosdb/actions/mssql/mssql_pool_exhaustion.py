@@ -1,16 +1,23 @@
 """MSSQL connection pool exhaustion chaos action."""
+
 import os
 import threading
 import time
 from typing import Dict, Optional
 
 import pyodbc
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
-                       get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 _active_connections = []
 _stop_event = threading.Event()
+
 
 def inject_connection_pool_exhaustion(
     host: Optional[str] = None,
@@ -21,7 +28,7 @@ def inject_connection_pool_exhaustion(
     driver: Optional[str] = None,
     num_connections: int = 100,
     hold_duration_seconds: int = 60,
-    leak_connections: bool = False
+    leak_connections: bool = False,
 ) -> Dict:
     """Exhaust MSSQL connection pool."""
     host = host or os.getenv("MSSQL_HOST", "localhost")
@@ -30,30 +37,33 @@ def inject_connection_pool_exhaustion(
     user = user or os.getenv("MSSQL_USER", "sa")
     password = password or os.getenv("MSSQL_PASSWORD", "")
     driver = driver or os.getenv("MSSQL_DRIVER", "FreeTDS")
-    
+
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "mssql")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
-    
+
     global _active_connections, _stop_event
     _stop_event.clear()
     _active_connections = []
-    
+
     connection_string = f"DRIVER={{{driver}}};SERVER={host},{port};DATABASE={database};UID={user};PWD={password};Encrypt=no"
-    
+
     connections_created = 0
     connections_failed = 0
     errors = 0
-    
+
     def create_and_hold_connection(conn_id: int):
         nonlocal connections_created, connections_failed, errors
         conn = None
         try:
-            with tracer.start_as_current_span(f"pool_exhaustion.connection.{conn_id}") as span:
+            with tracer.start_as_current_span(
+                f"pool_exhaustion.connection.{conn_id}"
+            ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system="mssql",
@@ -63,7 +73,7 @@ def inject_connection_pool_exhaustion(
                     chaos_activity="mssql_connection_pool_exhaustion",
                     chaos_action="connection_pool_exhaustion",
                     chaos_operation="connection_pool_exhaustion",
-                    chaos_connection_id=conn_id
+                    chaos_connection_id=conn_id,
                 )
 
                 time.time()
@@ -71,11 +81,13 @@ def inject_connection_pool_exhaustion(
                     conn = pyodbc.connect(connection_string, timeout=10)
 
                     connections_created += 1
-                    
+
                     # Record connection pool utilization (assuming default max_connections=32767 for MSSQL)
                     max_connections = 32767  # Default MSSQL max_connections
                     current_connections = len(_active_connections) + 1
-                    utilization_percent = min(100.0, (current_connections / max_connections) * 100.0)
+                    utilization_percent = min(
+                        100.0, (current_connections / max_connections) * 100.0
+                    )
                     metrics.record_db_connection_pool_utilization(
                         db_system=db_system,
                         utilization_percent=utilization_percent,
@@ -83,7 +95,7 @@ def inject_connection_pool_exhaustion(
                     )
 
                     _active_connections.append(conn)
-                    
+
                     end_time = time.time() + hold_duration_seconds
                     while not _stop_event.is_set() and time.time() < end_time:
                         try:
@@ -93,14 +105,18 @@ def inject_connection_pool_exhaustion(
                             cursor.close()
                             time.sleep(1)
                         except Exception as e:
-                            logger.warning(f"Connection {conn_id} error during hold: {e}")
+                            logger.warning(
+                                f"Connection {conn_id} error during hold: {e}"
+                            )
                             break
-                    
+
                     span.set_status(StatusCode.OK)
                 except pyodbc.Error as e:
                     connections_failed += 1
 
-                    metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
+                    metrics.record_db_error(
+                        db_system=db_system, error_type=type(e).__name__
+                    )
                     logger.warning(f"Failed to create connection {conn_id}: {e}")
                     span.set_status(StatusCode.ERROR, str(e))
         except Exception as e:
@@ -114,10 +130,13 @@ def inject_connection_pool_exhaustion(
                     pass
             elif conn and leak_connections:
                 logger.warning(f"Leaking connection {conn_id} (intentional)")
-    
+
     try:
-        with tracer.start_as_current_span("chaos.mssql.connection_pool_exhaustion") as span:
+        with tracer.start_as_current_span(
+            "chaos.mssql.connection_pool_exhaustion"
+        ) as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="mssql",
@@ -129,46 +148,52 @@ def inject_connection_pool_exhaustion(
                 chaos_operation="connection_pool_exhaustion",
                 chaos_num_connections=num_connections,
                 chaos_hold_duration_seconds=hold_duration_seconds,
-                chaos_leak_connections=leak_connections
+                chaos_leak_connections=leak_connections,
             )
-            
-            logger.info(f"Starting MSSQL connection pool exhaustion with {num_connections} connections")
-            
+
+            logger.info(
+                f"Starting MSSQL connection pool exhaustion with {num_connections} connections"
+            )
+
             threads = []
             for i in range(num_connections):
-                thread = threading.Thread(target=create_and_hold_connection, args=(i,), daemon=True)
+                thread = threading.Thread(
+                    target=create_and_hold_connection, args=(i,), daemon=True
+                )
                 thread.start()
                 threads.append(thread)
                 time.sleep(0.1)
-            
+
             time.sleep(hold_duration_seconds)
             _stop_event.set()
             for thread in threads:
                 thread.join(timeout=5)
-            
+
             if not leak_connections:
                 for conn in _active_connections:
                     try:
                         conn.close()
                     except Exception:
                         pass
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = {
                 "success": True,
                 "duration_ms": duration_ms,
                 "connections_created": connections_created,
                 "connections_failed": connections_failed,
-                "connections_leaked": len(_active_connections) if leak_connections else 0,
+                "connections_leaked": len(_active_connections)
+                if leak_connections
+                else 0,
                 "errors": errors,
-                "target_connections": num_connections
+                "target_connections": num_connections,
             }
-            
+
             span.set_attribute("chaos.connections_created", connections_created)
             span.set_attribute("chaos.connections_failed", connections_failed)
             span.set_status(StatusCode.OK)
-            
+
             logger.info(f"MSSQL connection pool exhaustion completed: {result}")
             flush()
             return result
@@ -179,6 +204,7 @@ def inject_connection_pool_exhaustion(
         flush()
         raise
 
+
 def stop_pool_exhaustion():
     global _stop_event, _active_connections
     _stop_event.set()
@@ -188,4 +214,3 @@ def stop_pool_exhaustion():
         except Exception:
             pass
     _active_connections = []
-

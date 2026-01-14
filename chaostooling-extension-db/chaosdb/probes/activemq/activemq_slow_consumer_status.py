@@ -70,7 +70,6 @@ def probe_slow_consumer_status(
 
     start = time.time()
 
-
     span_context = (
         tracer.start_as_current_span("probe.activemq.slow_consumer_status")
         if tracer

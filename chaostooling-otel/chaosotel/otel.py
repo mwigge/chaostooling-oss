@@ -93,9 +93,7 @@ def initialize(
             service_name="chaostoolkit", service_version=service_version
         )
         otel_metrics.set_meter_provider(_meter_provider)
-        logger.info(
-            "✓ Metrics provider initialized (→ OTEL Collector → Prometheus)"
-        )
+        logger.info("✓ Metrics provider initialized (→ OTEL Collector → Prometheus)")
 
         # Setup logs (Loki exporter via OTEL)
         _logger_provider = logs_setup.setup_logs(
@@ -142,9 +140,7 @@ def initialize(
                 RequestsInstrumentor().instrument()
                 URLLib3Instrumentor().instrument()
 
-                logger.info(
-                    "✓ Auto-instrumentation enabled (requests, urllib3)"
-                )
+                logger.info("✓ Auto-instrumentation enabled (requests, urllib3)")
             except Exception as e:
                 logger.warning(f"Could not setup auto-instrumentation: {e}")
 
@@ -186,9 +182,7 @@ def ensure_initialized() -> None:
         RuntimeError: If not initialized
     """
     if not _initialized:
-        raise RuntimeError(
-            "ChaoSOTEL not initialized. Call initialize() first."
-        )
+        raise RuntimeError("ChaoSOTEL not initialized. Call initialize() first.")
 
 
 # ============================================================================

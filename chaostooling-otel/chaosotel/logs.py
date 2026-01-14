@@ -75,9 +75,7 @@ def setup_logs(
         # Add environment info
         resource_attrs.update(
             {
-                "deployment.environment": os.getenv(
-                    "ENVIRONMENT", "development"
-                ),
+                "deployment.environment": os.getenv("ENVIRONMENT", "development"),
                 "host.name": os.getenv("HOSTNAME", "unknown"),
             }
         )
@@ -94,13 +92,9 @@ def setup_logs(
         logger_provider = LoggerProvider(resource=resource)
 
         # Add batch processor
-        logger_provider.add_log_record_processor(
-            BatchLogRecordProcessor(log_exporter)
-        )
+        logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
 
-        logger.info(
-            f"✓ Logs provider configured (→ OTEL Collector at {endpoint})"
-        )
+        logger.info(f"✓ Logs provider configured (→ OTEL Collector at {endpoint})")
 
         return logger_provider
 

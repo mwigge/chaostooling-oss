@@ -81,6 +81,7 @@ def inject_lock_storm(
         try:
             with tracer.start_as_current_span(f"lock_storm.worker.{thread_id}") as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,
@@ -90,7 +91,7 @@ def inject_lock_storm(
                     chaos_activity="postgresql_lock_storm",
                     chaos_action="lock_storm",
                     chaos_operation="lock_storm",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
 
                 conn = psycopg2.connect(
@@ -208,6 +209,7 @@ def inject_lock_storm(
     try:
         with tracer.start_as_current_span("chaos.postgres.lock_storm") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
@@ -218,7 +220,7 @@ def inject_lock_storm(
                 chaos_action="lock_storm",
                 chaos_operation="lock_storm",
                 chaos_num_threads=num_threads,
-                chaos_duration_seconds=duration_seconds
+                chaos_duration_seconds=duration_seconds,
             )
 
             logger.info(

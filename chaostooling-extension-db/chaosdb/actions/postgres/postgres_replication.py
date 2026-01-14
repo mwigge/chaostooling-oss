@@ -174,6 +174,7 @@ def stop_replica(
     try:
         with tracer.start_as_current_span("chaos.postgres.stop_replica") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
@@ -182,7 +183,7 @@ def stop_replica(
                 port=replica_port,
                 chaos_activity="postgresql_stop_replica",
                 chaos_action="stop_replica",
-                chaos_operation="stop_replica"
+                chaos_operation="stop_replica",
             )
 
             if container_name:
@@ -233,6 +234,7 @@ def start_replica(
         recovery_start_time = time.time()
         with tracer.start_as_current_span("chaos.postgres.start_replica") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
@@ -241,7 +243,7 @@ def start_replica(
                 port=None,  # replica_port not available in this function
                 chaos_activity="postgresql_start_replica",
                 chaos_action="start_replica",
-                chaos_operation="start_replica"
+                chaos_operation="start_replica",
             )
 
             if container_name:
@@ -312,6 +314,7 @@ def stop_primary(
     try:
         with tracer.start_as_current_span("chaos.postgres.stop_primary") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
@@ -320,7 +323,7 @@ def stop_primary(
                 port=primary_port,
                 chaos_activity="postgresql_stop_primary",
                 chaos_action="stop_primary",
-                chaos_operation="stop_primary"
+                chaos_operation="stop_primary",
             )
 
             if container_name:

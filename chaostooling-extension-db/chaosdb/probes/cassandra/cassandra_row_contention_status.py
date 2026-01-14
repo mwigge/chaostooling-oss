@@ -66,7 +66,6 @@ def probe_row_contention_status(
 
     start = time.time()
 
-
     span_context = (
         tracer.start_as_current_span("probe.cassandra.row_contention_status")
         if tracer

@@ -1,4 +1,5 @@
 """Cassandra row contention chaos action."""
+
 import logging
 import os
 import threading
@@ -7,14 +8,20 @@ from typing import Dict, Optional
 
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core,
-                       get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry._logs import get_logger_provider
 from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
 _stop_event = threading.Event()
+
 
 def inject_row_contention(
     host: Optional[str] = None,
@@ -24,7 +31,7 @@ def inject_row_contention(
     password: Optional[str] = None,
     num_threads: int = 10,
     duration_seconds: int = 60,
-    table_name: str = "chaos_test_table"
+    table_name: str = "chaos_test_table",
 ) -> Dict:
     """Inject Cassandra row contention by concurrent operations on same partition."""
     host = host or os.getenv("CASSANDRA_HOST", "localhost")
@@ -32,12 +39,12 @@ def inject_row_contention(
     keyspace = keyspace or os.getenv("CASSANDRA_KEYSPACE", "system")
     user = user or os.getenv("CASSANDRA_USER")
     password = password or os.getenv("CASSANDRA_PASSWORD")
-    
+
     ensure_initialized()
     db_system = "cassandra"
     metrics = get_metrics_core()
     tracer = get_tracer()
-    
+
     # Setup OpenTelemetry logger via LoggingHandler (OpenTelemetry standard)
     logger_provider = get_logger_provider()
     if logger_provider:
@@ -47,25 +54,28 @@ def inject_row_contention(
         logger.setLevel(logging.INFO)
     else:
         logger = logging.getLogger("chaosdb.cassandra.row_contention")
-    
+
     start_time = time.time()
-    
+
     global _active_threads, _stop_event
     _stop_event.clear()
     _active_threads = []
-    
+
     operations_completed = 0
     read_timeouts = 0
     write_timeouts = 0
     errors = 0
-    
+
     def contention_worker(thread_id: int):
         nonlocal operations_completed, read_timeouts, write_timeouts, errors
         cluster = None
         session = None
         try:
-            with tracer.start_as_current_span(f"row_contention.worker.{thread_id}") as span:
+            with tracer.start_as_current_span(
+                f"row_contention.worker.{thread_id}"
+            ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system="cassandra",
@@ -75,7 +85,7 @@ def inject_row_contention(
                     chaos_activity="cassandra_row_contention",
                     chaos_action="row_contention",
                     chaos_operation="row_contention",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
 
                 cluster = Cluster([host], port=port)
@@ -83,7 +93,7 @@ def inject_row_contention(
                     cluster = Cluster([host], port=port, auth_provider=None)
                     # Note: cassandra-driver auth setup varies
                 session = cluster.connect(keyspace)
-                
+
                 # Create table if needed
                 session.execute(f"""
                     CREATE TABLE IF NOT EXISTS {table_name} (
@@ -93,34 +103,47 @@ def inject_row_contention(
                         updated_at TIMESTAMP
                     )
                 """)
-                
+
                 # Insert initial row
                 session.execute(
-                    SimpleStatement(f"INSERT INTO {table_name} (id, value, thread_id, updated_at) VALUES (?, ?, ?, ?) IF NOT EXISTS"),
-                    ("contention_test", 0, thread_id, time.time())
+                    SimpleStatement(
+                        f"INSERT INTO {table_name} (id, value, thread_id, updated_at) VALUES (?, ?, ?, ?) IF NOT EXISTS"
+                    ),
+                    ("contention_test", 0, thread_id, time.time()),
                 )
-                
+
                 while not _stop_event.is_set():
                     try:
                         op_start = time.time()
-                        
+
                         # Read
                         result = session.execute(
                             SimpleStatement(f"SELECT * FROM {table_name} WHERE id = ?"),
-                            ("contention_test",)
+                            ("contention_test",),
                         )
                         row = result.one()
-                        
+
                         # Write
                         session.execute(
-                            SimpleStatement(f"UPDATE {table_name} SET value = ?, thread_id = ?, updated_at = ? WHERE id = ?"),
-                            ((row.value if row else 0) + 1, thread_id, time.time(), "contention_test")
+                            SimpleStatement(
+                                f"UPDATE {table_name} SET value = ?, thread_id = ?, updated_at = ? WHERE id = ?"
+                            ),
+                            (
+                                (row.value if row else 0) + 1,
+                                thread_id,
+                                time.time(),
+                                "contention_test",
+                            ),
                         )
-                        
+
                         op_duration_ms = (time.time() - op_start) * 1000
                         operations_completed += 1
-                        
-                        tags = get_metric_tags(db_name=keyspace, db_system="cassandra", db_operation="contention")
+
+                        tags = get_metric_tags(
+                            db_name=keyspace,
+                            db_system="cassandra",
+                            db_operation="contention",
+                        )
                         metrics = get_metrics_core()
                         metrics.record_db_query_latency(
                             op_duration_ms,
@@ -129,7 +152,7 @@ def inject_row_contention(
                             db_operation="contention",
                             tags=tags,
                         )
-                        
+
                         span.set_status(StatusCode.OK)
                         time.sleep(0.1)
                     except Exception as e:
@@ -139,7 +162,9 @@ def inject_row_contention(
                         elif "write timeout" in error_str:
                             write_timeouts += 1
                         errors += 1
-                        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
+                        metrics.record_db_error(
+                            db_system=db_system, error_type=type(e).__name__
+                        )
                         logger.warning(
                             f"Row contention worker {thread_id} error: {e}",
                             exc_info=True,
@@ -163,7 +188,7 @@ def inject_row_contention(
                     cluster.shutdown()
                 except Exception:
                     pass
-    
+
     try:
         with tracer.start_as_current_span("chaos.cassandra.row_contention") as span:
             span.set_attribute("db.system", "cassandra")
@@ -177,21 +202,25 @@ def inject_row_contention(
             span.set_attribute("chaos.activity.type", "action")
             span.set_attribute("chaos.system", "cassandra")
             span.set_attribute("chaos.operation", "row_contention")
-            
-            logger.info(f"Starting Cassandra row contention with {num_threads} threads for {duration_seconds}s")
-            
+
+            logger.info(
+                f"Starting Cassandra row contention with {num_threads} threads for {duration_seconds}s"
+            )
+
             for i in range(num_threads):
-                thread = threading.Thread(target=contention_worker, args=(i,), daemon=True)
+                thread = threading.Thread(
+                    target=contention_worker, args=(i,), daemon=True
+                )
                 thread.start()
                 _active_threads.append(thread)
-            
+
             time.sleep(duration_seconds)
             _stop_event.set()
             for thread in _active_threads:
                 thread.join(timeout=5)
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = {
                 "success": True,
                 "duration_ms": duration_ms,
@@ -199,14 +228,14 @@ def inject_row_contention(
                 "read_timeouts": read_timeouts,
                 "write_timeouts": write_timeouts,
                 "errors": errors,
-                "threads_used": num_threads
+                "threads_used": num_threads,
             }
-            
+
             span.set_attribute("chaos.operations_completed", operations_completed)
             span.set_attribute("chaos.read_timeouts", read_timeouts)
             span.set_attribute("chaos.write_timeouts", write_timeouts)
             span.set_status(StatusCode.OK)
-            
+
             logger.info(f"Cassandra row contention completed: {result}")
             flush()
             return result
@@ -220,10 +249,10 @@ def inject_row_contention(
         flush()
         raise
 
+
 def stop_row_contention():
     global _stop_event, _active_threads
     _stop_event.set()
     for thread in _active_threads:
         thread.join(timeout=2)
     _active_threads = []
-

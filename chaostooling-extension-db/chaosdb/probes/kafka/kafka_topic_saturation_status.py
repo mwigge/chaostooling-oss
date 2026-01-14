@@ -63,7 +63,6 @@ def probe_topic_saturation_status(
 
     start = time.time()
 
-
     span_context = (
         tracer.start_as_current_span("probe.kafka.topic_saturation_status")
         if tracer
@@ -168,7 +167,8 @@ def probe_topic_saturation_status(
                 span.set_status(StatusCode.ERROR, str(e))
 
             logger.error(
-                f"Kafka topic saturation probe failed: {str(e)}", extra={"error": str(e)}
+                f"Kafka topic saturation probe failed: {str(e)}",
+                extra={"error": str(e)},
             )
 
             flush()

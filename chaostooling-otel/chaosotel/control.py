@@ -106,9 +106,7 @@ def _start_and_end_span(
         if success:
             span.set_status(StatusCode.OK)
         else:
-            span.set_status(
-                StatusCode.ERROR, description=error or "Unknown error"
-            )
+            span.set_status(StatusCode.ERROR, description=error or "Unknown error")
 
 
 def _emit_risk_and_complexity_metrics(
@@ -231,9 +229,7 @@ def before_experiment_control(
 
     # Set experiment attributes
     root_span.set_attribute("experiment.title", experiment_title)
-    root_span.set_attribute(
-        "experiment.version", experiment.get("version", "unknown")
-    )
+    root_span.set_attribute("experiment.version", experiment.get("version", "unknown"))
     root_span.set_attribute("chaos.experiment.type", "chaos_engineering")
 
     # Extract experiment metadata for metrics
@@ -248,12 +244,14 @@ def before_experiment_control(
     root_span.set_attribute("experiment.num_rollbacks", len(rollbacks))
 
     # Count scenarios (method steps that are scenarios)
-    scenarios = [step for step in method_steps if step.get("name", "").startswith("SCENARIO-")]
+    scenarios = [
+        step for step in method_steps if step.get("name", "").startswith("SCENARIO-")
+    ]
     num_scenarios = len(scenarios)
-    
+
     # Count total activities (all method steps including scenarios and their actions)
     total_activities = len(method_steps)
-    
+
     # Record experiment metadata metrics for dashboard panels
     metrics = get_metrics_core()
     try:
@@ -281,9 +279,13 @@ def before_experiment_control(
             tags=tags,
             description="Total number of validation probes in experiment",
         )
-        logger.debug(f"Recorded experiment metrics: {num_scenarios} scenarios, {total_activities} activities, {len(steady_state_probes)} probes")
+        logger.debug(
+            f"Recorded experiment metrics: {num_scenarios} scenarios, {total_activities} activities, {len(steady_state_probes)} probes"
+        )
     except Exception as e:
-        logger.warning(f"Failed to record experiment metadata metrics: {e}", exc_info=True)
+        logger.warning(
+            f"Failed to record experiment metadata metrics: {e}", exc_info=True
+        )
 
     # Use use_span to make this span current and keep it in context
     # Store the context token to keep it active
@@ -352,9 +354,7 @@ def after_experiment_control(
         experiment_status = state.__dict__.get("status", None)
 
     # Default to success if we can't determine
-    experiment_success = (
-        experiment_status != "failed" if experiment_status else True
-    )
+    experiment_success = experiment_status != "failed" if experiment_status else True
 
     # Extract experiment metadata
     method_steps = experiment.get("method", []) or []
@@ -367,14 +367,10 @@ def after_experiment_control(
     # Detach context and end the root span
     if _experiment_root_span:
         root_span = _experiment_root_span
-        root_span.set_attribute(
-            "experiment.status", experiment_status or "completed"
-        )
+        root_span.set_attribute("experiment.status", experiment_status or "completed")
         root_span.set_attribute("experiment.success", experiment_success)
         root_span.set_attribute("experiment.duration_seconds", duration_seconds)
-        root_span.set_status(
-            StatusCode.OK if experiment_success else StatusCode.ERROR
-        )
+        root_span.set_status(StatusCode.OK if experiment_success else StatusCode.ERROR)
         root_span.end()
         logger.info(
             f"Ended root experiment span: {experiment_title} (success={experiment_success}, duration={duration_seconds:.2f}s)"
@@ -465,9 +461,7 @@ def after_experiment_control(
             f"Exported experiment metrics: {experiment_title} (risk/complexity calculated)"
         )
     except Exception as e:
-        logger.warning(
-            f"Failed to calculate experiment metrics: {e}", exc_info=True
-        )
+        logger.warning(f"Failed to calculate experiment metrics: {e}", exc_info=True)
 
     flush()
     _experiment_start_time = None
@@ -480,9 +474,7 @@ def before_hypothesis_control(
     _start_and_end_span(
         "chaos.hypothesis.start", {"experiment.title": experiment.get("title")}
     )
-    get_log_core().log_event(
-        "hypothesis_start", {"title": experiment.get("title")}
-    )
+    get_log_core().log_event("hypothesis_start", {"title": experiment.get("title")})
 
 
 def after_hypothesis_control(
@@ -492,9 +484,7 @@ def after_hypothesis_control(
     _start_and_end_span(
         "chaos.hypothesis.end", {"experiment.title": experiment.get("title")}
     )
-    get_log_core().log_event(
-        "hypothesis_end", {"title": experiment.get("title")}
-    )
+    get_log_core().log_event("hypothesis_end", {"title": experiment.get("title")})
 
 
 def before_method_control(
@@ -524,9 +514,9 @@ def before_activity_control(
     """Create activity span as child of root experiment span."""
     ensure_initialized()
     metrics = get_metrics_core()
-    
+
     activity = context or {}
-    
+
     activity_name = activity.get("name")
     if not activity_name:
         provider = activity.get("provider", {})
@@ -534,15 +524,13 @@ def before_activity_control(
         if func:
             activity_name = func
         else:
-             activity_name = "unknown"
+            activity_name = "unknown"
 
     activity_type = activity.get("type", "unknown")
     target_type = _infer_target_type(activity)
 
     # Capture infra snapshot at start of activity
-    activity_key = (
-        f"{activity_name}:{id(context) if context is not None else 'none'}"
-    )
+    activity_key = f"{activity_name}:{id(context) if context is not None else 'none'}"
     _activity_infra_snapshots[activity_key] = {
         "start": _snapshot_host_resources(),
         "meta": {
@@ -564,26 +552,23 @@ def before_activity_control(
         f"chaos.activity.{activity_name}",
         kind=SpanKind.SERVER,  # SERVER kind
     )
-    
+
     # Set activity attributes
     activity_span.set_attribute("activity.name", activity_name)
     activity_span.set_attribute("activity.type", activity_type)
-    activity_span.set_attribute(
-        "experiment.title", experiment.get("title", "unknown")
-    )
-    
+    activity_span.set_attribute("experiment.title", experiment.get("title", "unknown"))
+
     # Make the activity span current and store the context token
     activity_context_token = trace.context_api.attach(
         trace.set_span_in_context(activity_span)
     )
-    
+
     # Store the span and token in context for cleanup in after_activity_control
     if "_activity_spans" not in context:
         context["_activity_spans"] = []
-    context["_activity_spans"].append({
-        "span": activity_span,
-        "token": activity_context_token
-    })
+    context["_activity_spans"].append(
+        {"span": activity_span, "token": activity_context_token}
+    )
 
     # Record current phase metric so dashboards can show the active experiment phase
     phase_tags = get_metric_tags(
@@ -631,9 +616,7 @@ def after_activity_control(
     activity_type = activity.get("type", "unknown")
 
     # Compute infra "cost" for this activity from host-level snapshots
-    activity_key = (
-        f"{activity_name}:{id(context) if context is not None else 'none'}"
-    )
+    activity_key = f"{activity_name}:{id(context) if context is not None else 'none'}"
     snapshot = _activity_infra_snapshots.pop(activity_key, None)
     if snapshot and snapshot.get("start"):
         start = snapshot["start"]
@@ -653,12 +636,8 @@ def after_activity_control(
                     if v is not None
                 ]
 
-                cpu_avg = (
-                    sum(cpu_values) / len(cpu_values) if cpu_values else None
-                )
-                mem_avg = (
-                    sum(mem_values) / len(mem_values) if mem_values else None
-                )
+                cpu_avg = sum(cpu_values) / len(cpu_values) if cpu_values else None
+                mem_avg = sum(mem_values) / len(mem_values) if mem_values else None
 
                 cost_tags = get_metric_tags(
                     experiment_title=meta.get("experiment_title"),
@@ -711,21 +690,23 @@ def after_activity_control(
         logger.warning(
             f"Failed to record experiment phase completion metric for {activity_name}: {exc}"
         )
-    
+
     # Get and clean up the stored activity span
     activity_spans = context.get("_activity_spans", [])
-    
+
     # Record operation metrics (success/error counters) for dashboard visibility
     try:
         target_type = _infer_target_type(activity)
-        
+
         if activity_spans:
             last_span_data = activity_spans[-1]
             span = last_span_data.get("span")
             if span:
                 span_status = span.status
-                is_success = span_status.status_code == StatusCode.OK if span_status else True
-                
+                is_success = (
+                    span_status.status_code == StatusCode.OK if span_status else True
+                )
+
                 if activity_type == "probe":
                     # Record probe execution
                     metrics.record_probe_count(
@@ -745,15 +726,17 @@ def after_activity_control(
             f"Failed to record operation metrics for activity {activity_name}: {exc}"
         )
     if activity_spans:
-        activity_data = activity_spans.pop()  # Remove the last one (should be this activity)
+        activity_data = (
+            activity_spans.pop()
+        )  # Remove the last one (should be this activity)
         activity_span = activity_data.get("span")
         activity_token = activity_data.get("token")
-        
+
         if activity_span:
             # Set status and end the span
             activity_span.set_status(StatusCode.OK)
             activity_span.end()
-        
+
         # Detach the context token to return to parent span
         if activity_token is not None:
             trace.context_api.detach(activity_token)

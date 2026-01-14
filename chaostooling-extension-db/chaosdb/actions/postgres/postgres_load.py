@@ -101,6 +101,7 @@ def force_sequential_scans(
             "action.postgres.force_sequential_scans"
         ) as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
@@ -109,7 +110,7 @@ def force_sequential_scans(
                 port=port,
                 chaos_activity="postgres_force_sequential_scans",
                 chaos_action="force_sequential_scans",
-                chaos_operation="force_sequential_scans"
+                chaos_operation="force_sequential_scans",
             )
             span.set_attribute("chaos.duration", duration_seconds)
 
@@ -170,6 +171,7 @@ def generate_dead_tuples(
             "action.postgres.generate_dead_tuples"
         ) as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
@@ -178,7 +180,7 @@ def generate_dead_tuples(
                 port=port,
                 chaos_activity="postgres_generate_dead_tuples",
                 chaos_action="generate_dead_tuples",
-                chaos_operation="generate_dead_tuples"
+                chaos_operation="generate_dead_tuples",
             )
             span.set_attribute("chaos.count", count)
 
@@ -307,6 +309,7 @@ def complex_sort_query(
     try:
         with tracer.start_as_current_span("action.postgres.complex_sort_query") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
@@ -315,7 +318,7 @@ def complex_sort_query(
                 port=port,
                 chaos_activity="postgres_complex_sort_queries",
                 chaos_action="complex_sort_queries",
-                chaos_operation="complex_sort_queries"
+                chaos_operation="complex_sort_queries",
             )
 
             logger.info(

@@ -7,7 +7,7 @@ from chaosotel import (
     flush,
 )
 
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 __all__ = [
     "initialize",
     "ensure_initialized",
@@ -15,6 +15,7 @@ __all__ = [
     "get_logger",
     "flush",
 ]
+
 
 def discover(discover_system: bool = True) -> List[dict]:
     """
@@ -33,8 +34,8 @@ def discover(discover_system: bool = True) -> List[dict]:
                         {"name": "latency", "type": "int", "default": 0},
                         {"name": "jitter", "type": "int", "default": 0},
                         {"name": "loss", "type": "float", "default": 0.0},
-                        {"name": "bandwidth", "type": "string", "default": ""}
-                    ]
+                        {"name": "bandwidth", "type": "string", "default": ""},
+                    ],
                 },
                 {
                     "name": "chaosmobile.actions.client.simulate_purchase",
@@ -42,8 +43,8 @@ def discover(discover_system: bool = True) -> List[dict]:
                     "arguments": [
                         {"name": "user_id", "type": "int"},
                         {"name": "amount", "type": "float"},
-                        {"name": "item_id", "type": "string"}
-                    ]
+                        {"name": "item_id", "type": "string"},
+                    ],
                 },
                 {
                     "name": "chaosmobile.actions.client.simulate_purchase_via_api",
@@ -52,17 +53,21 @@ def discover(discover_system: bool = True) -> List[dict]:
                         {"name": "user_id", "type": "int"},
                         {"name": "amount", "type": "float"},
                         {"name": "item_id", "type": "string"},
-                        {"name": "url", "type": "string", "default": "http://haproxy:80/purchase"}
-                    ]
+                        {
+                            "name": "url",
+                            "type": "string",
+                            "default": "http://haproxy:80/purchase",
+                        },
+                    ],
                 },
                 {
                     "name": "chaosmobile.probes.validation.validate_data_consistency",
                     "type": "probe",
                     "arguments": [
                         {"name": "expected_count", "type": "int"},
-                        {"name": "item_id", "type": "string"}
-                    ]
-                }
-            ]
+                        {"name": "item_id", "type": "string"},
+                    ],
+                },
+            ],
         }
     ]

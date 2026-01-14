@@ -362,9 +362,7 @@ def calculate_and_export_metrics(
         }
 
     except Exception as e:
-        logger.error(
-            f"Error calculating and exporting metrics: {e}", exc_info=True
-        )
+        logger.error(f"Error calculating and exporting metrics: {e}", exc_info=True)
         return {
             "experiment_name": experiment_name,
             "error": str(e),

@@ -19,7 +19,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 def reset_chaosotel():
     """Reset ChaoSOTEL global state before each test."""
     import chaosotel.otel as otel_module
-    
+
     otel_module._initialized = False
     otel_module._meter_provider = None
     otel_module._tracer_provider = None
@@ -28,9 +28,9 @@ def reset_chaosotel():
     otel_module._log_core = None
     otel_module._trace_core = None
     otel_module._compliance_core = None
-    
+
     yield
-    
+
     # Cleanup after test
     otel_module._initialized = False
 
@@ -71,18 +71,19 @@ def logger_provider():
 def mock_otel_setup(meter_provider, tracer_provider, logger_provider):
     """Mock OTEL setup for testing."""
     import chaosotel.otel as otel_module
-    
-    with patch("chaosotel.metrics.setup_metrics", return_value=meter_provider), \
-         patch("chaosotel.traces.setup_traces", return_value=tracer_provider), \
-         patch("chaosotel.logs.setup_logs", return_value=logger_provider):
-        
+
+    with (
+        patch("chaosotel.metrics.setup_metrics", return_value=meter_provider),
+        patch("chaosotel.traces.setup_traces", return_value=tracer_provider),
+        patch("chaosotel.logs.setup_logs", return_value=logger_provider),
+    ):
         # Also set global state directly to avoid warnings
         otel_module._meter_provider = meter_provider
         otel_module._tracer_provider = tracer_provider
         otel_module._logger_provider = logger_provider
-        
+
         yield
-        
+
         # Cleanup
         otel_module._meter_provider = None
         otel_module._tracer_provider = None
@@ -93,12 +94,13 @@ def mock_otel_setup(meter_provider, tracer_provider, logger_provider):
 def initialized_chaosotel(mock_otel_setup):
     """Initialize ChaoSOTEL for testing."""
     from chaosotel import initialize
-    
+
     try:
         initialize(target_type="database", regulations=["SOX"])
         yield
     finally:
         from chaosotel import shutdown
+
         try:
             shutdown()
         except Exception:

@@ -57,9 +57,7 @@ class ComplianceCore:
             if violations:
                 self.violations.extend(violations)
 
-    def check_violations(
-        self, regulation: str, action_entry: Dict
-    ) -> List[str]:
+    def check_violations(self, regulation: str, action_entry: Dict) -> List[str]:
         """Check if action violates regulatory rules"""
         violations = []
         rules_dict = self.REGULATORY_RULES.get(regulation, {})
@@ -73,10 +71,7 @@ class ComplianceCore:
                     f"{rules['max_action_duration_ms']}ms)"
                 )
 
-        if (
-            "audit_trail_required" in rules
-            and action_entry["status"] == "failed"
-        ):
+        if "audit_trail_required" in rules and action_entry["status"] == "failed":
             if not action_entry.get("error"):
                 violations.append(
                     f"{regulation}: No audit trail for failed action {action_entry['action']}"
@@ -99,9 +94,7 @@ class ComplianceCore:
         if not self.execution_log:
             return 100.0
 
-        successful = sum(
-            1 for e in self.execution_log if e["status"] == "success"
-        )
+        successful = sum(1 for e in self.execution_log if e["status"] == "success")
         total = len(self.execution_log)
 
         score = (successful / total) * 100

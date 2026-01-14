@@ -109,6 +109,7 @@ def probe_mssql_connectivity(
                 # Use span helper for consistent attribute setting and resource updates
                 # This matches Redis pattern - clean, simple, no duplicate attributes
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,

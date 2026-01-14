@@ -1,15 +1,24 @@
 """MSSQL query timeout storm chaos action."""
+
 import os
 import threading
 import time
 from typing import Dict, Optional
 
 import pyodbc
-from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags, get_tracer, get_metrics_core)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metric_tags,
+    get_tracer,
+    get_metrics_core,
+)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
 _stop_event = threading.Event()
+
 
 def inject_query_timeout_storm(
     host: Optional[str] = None,
@@ -20,7 +29,7 @@ def inject_query_timeout_storm(
     driver: Optional[str] = None,
     num_threads: int = 20,
     duration_seconds: int = 60,
-    timeout_seconds: int = 1
+    timeout_seconds: int = 1,
 ) -> Dict:
     """
     Inject query timeout storm by executing many queries with very short timeouts.
@@ -32,31 +41,34 @@ def inject_query_timeout_storm(
     user = user or os.getenv("MSSQL_USER", "sa")
     password = password or os.getenv("MSSQL_PASSWORD", "")
     driver = driver or os.getenv("MSSQL_DRIVER", "FreeTDS")
-    
+
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "mssql")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
-    
+
     global _active_threads, _stop_event
     _stop_event.clear()
     _active_threads = []
-    
+
     total_queries = 0
     timeouts = 0
     errors = 0
-    
+
     connection_string = f"DRIVER={{{driver}}};SERVER={host},{port};DATABASE={database};UID={user};PWD={password};Encrypt=no"
-    
+
     def timeout_worker(thread_id: int):
         """Worker thread that executes queries with timeouts."""
         nonlocal total_queries, timeouts, errors
         conn = None
         try:
-            with tracer.start_as_current_span(f"query_timeout_storm.worker.{thread_id}") as span:
+            with tracer.start_as_current_span(
+                f"query_timeout_storm.worker.{thread_id}"
+            ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system="mssql",
@@ -66,19 +78,19 @@ def inject_query_timeout_storm(
                     chaos_activity="mssql_query_timeout_storm",
                     chaos_action="query_timeout_storm",
                     chaos_operation="query_timeout_storm",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
                 span.set_attribute("chaos.timeout_seconds", timeout_seconds)
-                
+
                 conn = pyodbc.connect(connection_string, timeout=timeout_seconds)
                 cursor = conn.cursor()
-                
+
                 end_time = time.time() + duration_seconds
-                
+
                 while not _stop_event.is_set() and time.time() < end_time:
                     try:
                         query_start = time.time()
-                        
+
                         # Execute a query that might timeout
                         try:
                             cursor.execute("WAITFOR DELAY '00:00:02'")
@@ -89,30 +101,43 @@ def inject_query_timeout_storm(
                             if "timeout" in error_str or "timed out" in error_str:
                                 timeouts += 1
                                 total_queries += 1
-                                
-                                get_metric_tags(db_name=database, db_system="mssql", db_operation="timeout")
-                                
-                                
+
+                                get_metric_tags(
+                                    db_name=database,
+                                    db_system="mssql",
+                                    db_operation="timeout",
+                                )
+
                                 logger.debug(f"Query timeout in thread {thread_id}")
                                 span.set_attribute("chaos.timeout_detected", True)
                             else:
                                 raise
-                        
+
                         query_duration_ms = (time.time() - query_start) * 1000
-                        get_metric_tags(db_name=database, db_system="mssql", db_operation="query")
-                        metrics.record_db_query_latency(query_duration_ms / 1000.0, db_system=db_system, db_name=database)
-                        metrics.record_db_query_count(db_system=db_system, db_name=database, count=1)
-                        
+                        get_metric_tags(
+                            db_name=database, db_system="mssql", db_operation="query"
+                        )
+                        metrics.record_db_query_latency(
+                            query_duration_ms / 1000.0,
+                            db_system=db_system,
+                            db_name=database,
+                        )
+                        metrics.record_db_query_count(
+                            db_system=db_system, db_name=database, count=1
+                        )
+
                         span.set_status(StatusCode.OK)
                         time.sleep(0.1)
-                        
+
                     except Exception as e:
                         errors += 1
-                        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
+                        metrics.record_db_error(
+                            db_system=db_system, error_type=type(e).__name__
+                        )
                         logger.warning(f"Error in timeout worker {thread_id}: {e}")
                         span.set_status(StatusCode.ERROR, str(e))
                         time.sleep(0.1)
-                        
+
         except Exception as e:
             errors += 1
             logger.error(f"Timeout worker {thread_id} failed: {e}")
@@ -122,7 +147,7 @@ def inject_query_timeout_storm(
                     conn.close()
                 except Exception:
                     pass
-    
+
     try:
         with tracer.start_as_current_span("chaos.mssql.query_timeout_storm") as span:
             span.set_attribute("db.system", "mssql")
@@ -131,21 +156,23 @@ def inject_query_timeout_storm(
             span.set_attribute("chaos.duration_seconds", duration_seconds)
             span.set_attribute("chaos.timeout_seconds", timeout_seconds)
             span.set_attribute("chaos.action", "query_timeout_storm")
-            
-            logger.info(f"Starting MSSQL query timeout storm with {num_threads} threads for {duration_seconds}s")
-            
+
+            logger.info(
+                f"Starting MSSQL query timeout storm with {num_threads} threads for {duration_seconds}s"
+            )
+
             for i in range(num_threads):
                 thread = threading.Thread(target=timeout_worker, args=(i,), daemon=True)
                 thread.start()
                 _active_threads.append(thread)
-            
+
             time.sleep(duration_seconds)
             _stop_event.set()
             for thread in _active_threads:
                 thread.join(timeout=10)
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = {
                 "success": True,
                 "duration_ms": duration_ms,
@@ -153,14 +180,14 @@ def inject_query_timeout_storm(
                 "timeouts": timeouts,
                 "errors": errors,
                 "timeout_rate": timeouts / total_queries if total_queries > 0 else 0,
-                "threads_used": num_threads
+                "threads_used": num_threads,
             }
-            
+
             span.set_attribute("chaos.total_queries", total_queries)
             span.set_attribute("chaos.timeouts", timeouts)
             span.set_attribute("chaos.timeout_rate", result["timeout_rate"])
             span.set_status(StatusCode.OK)
-            
+
             logger.info(f"MSSQL query timeout storm completed: {result}")
             flush()
             return result
@@ -171,6 +198,7 @@ def inject_query_timeout_storm(
         flush()
         raise
 
+
 def stop_query_timeout_storm():
     """Stop query timeout storm."""
     global _stop_event, _active_threads
@@ -178,4 +206,3 @@ def stop_query_timeout_storm():
     for thread in _active_threads:
         thread.join(timeout=5)
     _active_threads = []
-

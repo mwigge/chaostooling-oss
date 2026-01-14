@@ -6,8 +6,14 @@ import time
 from typing import Optional
 
 import psycopg2
-from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags,
-                       get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 
 # Import metrics module to access metrics dynamically after initialization
 from opentelemetry.trace import StatusCode
@@ -81,6 +87,7 @@ def inject_deadlock(
                 f"deadlock_injection.worker.{thread_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system="postgresql",
@@ -90,7 +97,7 @@ def inject_deadlock(
                     chaos_activity="postgresql_deadlock_injection",
                     chaos_action="deadlock_injection",
                     chaos_operation="deadlock_injection",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
 
                 conn = psycopg2.connect(

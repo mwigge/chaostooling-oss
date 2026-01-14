@@ -6,7 +6,13 @@ import threading
 import time
 from typing import Optional
 
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 from pymongo import MongoClient
 from pymongo.errors import OperationFailure
@@ -89,6 +95,7 @@ def inject_document_contention(
                 f"document_contention.worker.{thread_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,
@@ -98,7 +105,7 @@ def inject_document_contention(
                     chaos_activity="mongodb_document_contention",
                     chaos_action="document_contention",
                     chaos_operation="document_contention",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
 
                 client = MongoClient(uri, serverSelectionTimeoutMS=5000)
@@ -198,6 +205,7 @@ def inject_document_contention(
     try:
         with tracer.start_as_current_span("chaos.mongodb.document_contention") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system=db_system,
@@ -208,7 +216,7 @@ def inject_document_contention(
                 chaos_action="document_contention",
                 chaos_operation="document_contention",
                 chaos_num_threads=num_threads,
-                chaos_duration_seconds=duration_seconds
+                chaos_duration_seconds=duration_seconds,
             )
 
             logger.info(

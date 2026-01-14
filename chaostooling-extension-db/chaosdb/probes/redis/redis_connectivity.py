@@ -56,7 +56,6 @@ def probe_redis_connectivity(
 
     start = time.time()
 
-
     span_context = (
         tracer.start_as_current_span("probe.redis.connectivity")
         if tracer
@@ -68,6 +67,7 @@ def probe_redis_connectivity(
             if span:
                 # Use span helper for consistent attribute setting and resource updates
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,

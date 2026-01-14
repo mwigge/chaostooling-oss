@@ -7,7 +7,13 @@ import time
 from typing import Optional
 
 import pyodbc
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry._logs import get_logger_provider
 from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
@@ -40,7 +46,7 @@ def inject_slow_transactions(
     db_system = os.getenv("DB_SYSTEM", "mssql")
     metrics = get_metrics_core()
     tracer = get_tracer()
-    
+
     # Setup OpenTelemetry logger via LoggingHandler (OpenTelemetry standard)
     logger_provider = get_logger_provider()
     if logger_provider:
@@ -50,7 +56,7 @@ def inject_slow_transactions(
         logger.setLevel(logging.INFO)
     else:
         logger = logging.getLogger("chaosdb.mssql.slow_transactions")
-    
+
     start_time = time.time()
 
     global _active_threads, _stop_event
@@ -71,6 +77,7 @@ def inject_slow_transactions(
                 f"slow_transaction.worker.{thread_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system="mssql",
@@ -80,7 +87,7 @@ def inject_slow_transactions(
                     chaos_activity="mssql_slow_transactions",
                     chaos_action="slow_transactions",
                     chaos_operation="slow_transactions",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
 
                 conn = pyodbc.connect(connection_string, timeout=5)
@@ -173,6 +180,7 @@ def inject_slow_transactions(
     try:
         with tracer.start_as_current_span("chaos.mssql.slow_transactions") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="mssql",
@@ -184,7 +192,7 @@ def inject_slow_transactions(
                 chaos_operation="slow_transactions",
                 chaos_num_threads=num_threads,
                 chaos_duration_seconds=duration_seconds,
-                chaos_transaction_delay_ms=transaction_delay_ms
+                chaos_transaction_delay_ms=transaction_delay_ms,
             )
             span.set_attribute("chaos.operation", "slow_transactions")
 
