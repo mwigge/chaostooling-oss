@@ -5,8 +5,7 @@ import time
 from typing import Dict, Optional
 
 import redis
-from chaosotel import ( get_metric_tags
-                       get_tracer)
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags, get_metrics_core, get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -39,9 +38,10 @@ def inject_slow_operations(
     operations_completed = 0
     total_operation_time = 0
     errors = 0
+    slow_operations = 0
     
     def slow_operation_worker(thread_id: int):
-        nonlocal operations_completed, total_operation_time, errors
+        nonlocal operations_completed, total_operation_time, errors, slow_operations
         r = None
         try:
             with tracer.start_as_current_span(f"slow_operation.worker.{thread_id}") as span:
@@ -84,10 +84,15 @@ def inject_slow_operations(
                         total_operation_time += op_duration_ms
                         
                         tags = get_metric_tags(db_name="redis", db_system="redis", db_operation="slow_operation")
+                        metrics = get_metrics_core()
                         
-
                         if op_duration_ms > 1000:
                             slow_operations += 1
+                            metrics.record_db_slow_query_count(
+                                db_system="redis",
+                                db_name=None,
+                                tags=tags,
+                            )
 
                         span.set_status(StatusCode.OK)
                     except Exception as e:

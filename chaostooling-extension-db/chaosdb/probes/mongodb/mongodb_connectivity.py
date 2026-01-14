@@ -71,7 +71,6 @@ def probe_mongodb_connectivity(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.mongodb.connectivity")

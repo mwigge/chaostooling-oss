@@ -49,7 +49,6 @@ def probe_slow_transactions_status(
 
     db_system = "mysql"
     start = time.time()
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.mysql.slow_transactions_status")

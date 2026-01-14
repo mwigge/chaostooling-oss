@@ -941,7 +941,6 @@ class ReportGenerator:
         suggestions = []
         name_lower = probe_name.lower()
         module_lower = provider_module.lower() if provider_module else ""
-        func_lower = provider_func.lower() if provider_func else ""
         error_str = str(error_msg).lower() if error_msg else ""
         
         # Database connectivity failures
@@ -1179,8 +1178,6 @@ class ReportGenerator:
             
             # Format scenario name
             display_name = scenario_name.replace("SCENARIO-", "") if scenario_name.startswith("SCENARIO-") else scenario_name
-            
-            status_class = "status-success" if success_rate == 100.0 else "status-failed" if success_rate < 50.0 else ""
             
             html += f'''
     <div style="margin: 10px 0; padding: 10px; background: white; border-radius: 3px;">

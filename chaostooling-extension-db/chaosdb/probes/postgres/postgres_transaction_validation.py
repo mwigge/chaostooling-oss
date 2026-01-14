@@ -71,7 +71,6 @@ def probe_transaction_count(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.postgres.transaction_count")
@@ -260,7 +259,6 @@ def probe_transaction_integrity(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.postgres.transaction_integrity")
@@ -477,7 +475,6 @@ def probe_api_transaction_flow(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.api.transaction_flow")

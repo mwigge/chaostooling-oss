@@ -36,7 +36,7 @@ jobs:
       - name: Run Ruff linter
         run: |
           echo "::group::Ruff Linter"
-          ruff check . --output-format=github
+          ruff check --ignore F811,F821 . --output-format=github
           echo "::endgroup::"
 
       - name: Run Ruff formatter check

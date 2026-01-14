@@ -66,11 +66,10 @@ def inject_connection_pool_exhaustion(
                     chaos_connection_id=conn_id
                 )
 
-                acquisition_start = time.time()
+                time.time()
                 try:
                     conn = pyodbc.connect(connection_string, timeout=10)
 
-                    acquisition_time_ms = (time.time() - acquisition_start) * 1000
                     connections_created += 1
                     
                     # Record connection pool utilization (assuming default max_connections=32767 for MSSQL)
@@ -100,7 +99,6 @@ def inject_connection_pool_exhaustion(
                     span.set_status(StatusCode.OK)
                 except pyodbc.Error as e:
                     connections_failed += 1
-                    wait_time_ms = (time.time() - acquisition_start) * 1000
 
                     metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
                     logger.warning(f"Failed to create connection {conn_id}: {e}")

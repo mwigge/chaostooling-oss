@@ -5,7 +5,7 @@ import time
 from typing import Dict, Optional
 
 import pyodbc
-from chaosotel import (ensure_initialized, flush, get_logger, get_tracer), get_metric_tags
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags, get_tracer, get_metrics_core)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -35,6 +35,7 @@ def inject_query_timeout_storm(
     
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "mssql")
+    metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
@@ -89,7 +90,7 @@ def inject_query_timeout_storm(
                                 timeouts += 1
                                 total_queries += 1
                                 
-                                tags = get_metric_tags(db_name=database, db_system="mssql", db_operation="timeout")
+                                get_metric_tags(db_name=database, db_system="mssql", db_operation="timeout")
                                 
                                 
                                 logger.debug(f"Query timeout in thread {thread_id}")
@@ -98,7 +99,7 @@ def inject_query_timeout_storm(
                                 raise
                         
                         query_duration_ms = (time.time() - query_start) * 1000
-                        tags = get_metric_tags(db_name=database, db_system="mssql", db_operation="query")
+                        get_metric_tags(db_name=database, db_system="mssql", db_operation="query")
                         metrics.record_db_query_latency(query_duration_ms / 1000.0, db_system=db_system, db_name=database)
                         metrics.record_db_query_count(db_system=db_system, db_name=database, count=1)
                         

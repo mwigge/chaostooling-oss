@@ -107,7 +107,7 @@ def kill_process_by_name(
                     error_msg = f"Access denied when killing process {pid}"
                     errors.append(error_msg)
                     logger.error(error_msg)
-                    metrics.record_db_error(db_system=db_system, error_type="AccessDenied", db_name=database)
+                    metrics.record_db_error(db_system=db_system, error_type="AccessDenied")
                 except Exception as e:
                     error_msg = f"Error killing process {pid}: {e}"
                     errors.append(error_msg)

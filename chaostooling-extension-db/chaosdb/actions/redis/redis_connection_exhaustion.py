@@ -6,7 +6,7 @@ import time
 from typing import Optional
 
 import redis
-from chaosotel import ( get_metrics_core
+from chaosotel import (
     ensure_initialized,
     flush,
     get_logger,

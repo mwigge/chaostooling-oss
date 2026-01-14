@@ -66,7 +66,6 @@ def probe_cassandra_connectivity(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.cassandra.connectivity")
@@ -98,7 +97,6 @@ def probe_cassandra_connectivity(
             retry_delay = 5  # seconds - increased for Cassandra startup time
             cluster = None
             session = None
-            last_error = None
             
             for attempt in range(max_retries):
                 try:
@@ -137,7 +135,6 @@ def probe_cassandra_connectivity(
                     # Success, exit retry loop
                     break
                 except Exception as e:
-                    last_error = e
                     # Clean up on error
                     if session:
                         try:

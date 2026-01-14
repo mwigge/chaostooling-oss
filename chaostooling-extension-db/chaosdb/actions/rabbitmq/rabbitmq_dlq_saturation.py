@@ -5,7 +5,7 @@ import time
 from typing import Dict, Optional
 
 import pika
-from chaosotel import (ensure_initialized, flush, get_logger, get_tracer), get_metric_tags
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags, get_tracer, get_metrics_core)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -37,6 +37,7 @@ def inject_dlq_saturation(
     
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "rabbitmq")
+    metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
@@ -89,7 +90,7 @@ def inject_dlq_saturation(
                         total_messages_sent += 1
                         message_count += 1
                         
-                        tags = get_metric_tags(db_name=dlq_queue, db_system="rabbitmq", db_operation="dlq_send")
+                        get_metric_tags(db_name=dlq_queue, db_system="rabbitmq", db_operation="dlq_send")
                         
                         
                         span.set_status(StatusCode.OK)

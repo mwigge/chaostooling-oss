@@ -93,7 +93,6 @@ def probe_mysql_connectivity(
             max_retries = 3
             retry_delay = 2  # seconds
             conn = None
-            last_error = None
             
             for attempt in range(max_retries):
                 try:
@@ -109,7 +108,6 @@ def probe_mysql_connectivity(
                     # Success, exit retry loop
                     break
                 except (mysql.connector.Error, Exception) as e:
-                    last_error = e
                     if attempt < max_retries - 1:
                         logger.warning(
                             f"MySQL connection attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {retry_delay}s..."

@@ -70,7 +70,6 @@ def probe_query_saturation_status(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.cassandra.query_saturation_status")
@@ -187,6 +186,6 @@ def probe_query_saturation_status(
                 extra={"error": str(e)},
             )
 
-        flush()
+            flush()
 
-        return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)}

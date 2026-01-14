@@ -49,7 +49,7 @@ def inject_rebalancing_storm(
     errors = 0
     
     def consumer_worker(consumer_id: int):
-        nonlocal rebalances_triggered, errors
+        nonlocal rebalances_triggered, errors, _active_consumers
         conn = None
         channel = None
         try:

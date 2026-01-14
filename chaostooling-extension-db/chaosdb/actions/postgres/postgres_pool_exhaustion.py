@@ -7,7 +7,7 @@ import time
 from typing import Optional
 
 import psycopg2
-from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer, get_metric_tags
+from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
 from opentelemetry.trace import StatusCode
 
 _active_connections = []

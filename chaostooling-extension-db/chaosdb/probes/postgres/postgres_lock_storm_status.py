@@ -73,7 +73,6 @@ def probe_lock_storm_status(
 
     db_system = "postgresql"
 
-    span = None
 
     start = time.time()
 

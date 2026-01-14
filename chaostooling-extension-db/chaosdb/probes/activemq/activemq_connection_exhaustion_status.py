@@ -71,7 +71,6 @@ def probe_connection_exhaustion_status(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.activemq.connection_exhaustion_status")
@@ -133,6 +132,8 @@ def probe_connection_exhaustion_status(
             return result
 
         except Exception as e:
+            mq_system = "activemq"
+            metrics = get_metrics_core()
             metrics.record_messaging_error(
                 mq_system=mq_system,
                 error_type=type(e).__name__,
@@ -147,6 +148,6 @@ def probe_connection_exhaustion_status(
                 extra={"error": str(e)},
             )
 
-        flush()
+            flush()
 
-        return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)}

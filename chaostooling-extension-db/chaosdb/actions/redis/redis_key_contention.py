@@ -85,13 +85,20 @@ def inject_key_contention(
                         pipe.incr(key_name)
                         pipe.get(key_name)
                         pipe.set(f"{key_name}:thread_{thread_id}", thread_id)
-                        results = pipe.execute()
+                        pipe.execute()
                         
                         cmd_duration_ms = (time.time() - cmd_start) * 1000
                         operations_completed += 1
                         
                         tags = get_metric_tags(db_name="redis", db_system="redis", db_operation="contention")
-                        
+                        metrics = get_metrics_core()
+                        metrics.record_db_query_latency(
+                            cmd_duration_ms,
+                            db_system="redis",
+                            db_name=None,
+                            db_operation="contention",
+                            tags=tags,
+                        )
 
                         if cmd_duration_ms > 1000:
                             slow_operations += 1

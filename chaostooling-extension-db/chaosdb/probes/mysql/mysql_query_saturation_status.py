@@ -51,7 +51,6 @@ def probe_query_saturation_status(
     metrics = get_metrics_core()
 
     db_system = os.getenv("DB_SYSTEM", "mysql")
-    span = None
     start = time.time()
 
     span_context = (
@@ -166,11 +165,3 @@ def probe_query_saturation_status(
             )
             flush()
             raise
-            span.record_exception(e)
-
-            span.set_status(StatusCode.ERROR, str(e))
-        logger.error(
-            f"MySQL query saturation probe failed: {str(e)}", extra={"error": str(e)}
-        )
-        flush()
-        return {"success": False, "error": str(e)}

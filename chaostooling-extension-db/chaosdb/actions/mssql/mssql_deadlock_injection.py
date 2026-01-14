@@ -5,7 +5,7 @@ import time
 from typing import Dict, Optional
 
 import pyodbc
-from chaosotel import (ensure_initialized, flush, get_logger, get_tracer), get_metric_tags
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags, get_tracer, get_metrics_core)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -35,6 +35,7 @@ def inject_deadlock(
     
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "mssql")
+    metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
@@ -116,8 +117,8 @@ def inject_deadlock(
                         
                         conn.commit()
                         
-                        txn_duration_ms = (time.time() - txn_start) * 1000
-                        tags = get_metric_tags(db_name=database, db_system="mssql", db_operation="deadlock_txn")
+                        (time.time() - txn_start) * 1000
+                        get_metric_tags(db_name=database, db_system="mssql", db_operation="deadlock_txn")
                         
                         metrics.record_db_query_count(db_system=db_system, db_name=database, count=1)
                         
@@ -130,7 +131,7 @@ def inject_deadlock(
                             deadlocks_created += 1
                             transactions_rolled_back += 1
                             
-                            tags = get_metric_tags(db_name=database, db_system="mssql", db_operation="deadlock")
+                            get_metric_tags(db_name=database, db_system="mssql", db_operation="deadlock")
                             
                             
                             logger.debug(f"Deadlock detected in thread {thread_id}: {e}")

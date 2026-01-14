@@ -43,7 +43,6 @@ def force_sequential_scans(
     password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
 
     ensure_initialized()
-    db_system = os.getenv("DB_SYSTEM", "postgresql")
     tracer = get_tracer()
 
     stop_event = threading.Event()

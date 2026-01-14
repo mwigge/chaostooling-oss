@@ -11,8 +11,6 @@ This extension provides network-level chaos engineering capabilities including:
 
 __version__ = "0.1.0"
 
-from typing import Dict
-
 __all__ = ["__version__", "discover"]
 
 

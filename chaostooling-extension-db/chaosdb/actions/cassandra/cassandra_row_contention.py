@@ -121,9 +121,14 @@ def inject_row_contention(
                         operations_completed += 1
                         
                         tags = get_metric_tags(db_name=keyspace, db_system="cassandra", db_operation="contention")
-                        
-                        
-                        
+                        metrics = get_metrics_core()
+                        metrics.record_db_query_latency(
+                            op_duration_ms,
+                            db_system="cassandra",
+                            db_name=keyspace,
+                            db_operation="contention",
+                            tags=tags,
+                        )
                         
                         span.set_status(StatusCode.OK)
                         time.sleep(0.1)

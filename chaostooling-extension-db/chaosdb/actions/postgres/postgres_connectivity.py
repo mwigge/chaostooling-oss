@@ -1,16 +1,12 @@
+import logging
 import os
 import time
 from typing import Optional
 
 import psycopg2
-from chaosotel import ( get_metric_tags, get_metrics_core
-    ensure_initialized,
-    flush,
-    get_logger,
-    get_metric_tags,
-    get_metrics_core,
-    get_tracer,
-)
+from chaosotel import (ensure_initialized, flush, get_logger, get_logger_provider,
+                       get_metric_tags, get_metrics_core, get_tracer)
+from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 
