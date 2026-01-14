@@ -214,8 +214,8 @@ class ReportGenerator:
         <p><strong>Experiment ID:</strong> {experiment_id}</p>
         <p><strong>Execution Date:</strong> {journal.get("start", "N/A")}</p>
         <p><strong>Status:</strong> <span class="status-{"success" if status == "completed" else "failed"}">{status}</span></p>
-        {f"<p><strong>Total Runs:</strong> {run_stats.get("total_runs", 0)}</p>" if run_stats.get("total_runs", 0) > 0 else ""}
-        {f"<p><strong>Success Rate:</strong> {run_stats.get("success_rate", 0):.1f}% ({run_stats.get("successful_runs", 0)}/{run_stats.get("total_runs", 0)})</p>" if run_stats.get("total_runs", 0) > 0 else ""}
+        {("<p><strong>Total Runs:</strong> " + str(run_stats.get("total_runs", 0)) + "</p>") if run_stats.get("total_runs", 0) > 0 else ""}
+        {("<p><strong>Success Rate:</strong> " + f"{run_stats.get('success_rate', 0):.1f}% ({run_stats.get('successful_runs', 0)}/{run_stats.get('total_runs', 0)})" + "</p>") if run_stats.get("total_runs", 0) > 0 else ""}
     </div>
 
     {test_state_coverage}
