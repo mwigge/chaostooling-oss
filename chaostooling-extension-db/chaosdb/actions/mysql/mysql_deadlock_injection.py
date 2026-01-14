@@ -63,6 +63,7 @@ def inject_deadlock(
     db_system = os.getenv("DB_SYSTEM", "mysql")
 
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "mysql")
     tracer = get_tracer()
     logger = logging.getLogger("chaosdb.mysql.deadlock_injection")
     metrics = get_metrics_core()

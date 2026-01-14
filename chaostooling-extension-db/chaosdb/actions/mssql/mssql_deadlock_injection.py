@@ -34,6 +34,7 @@ def inject_deadlock(
     driver = driver or os.getenv("MSSQL_DRIVER", "FreeTDS")
     
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "mssql")
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()

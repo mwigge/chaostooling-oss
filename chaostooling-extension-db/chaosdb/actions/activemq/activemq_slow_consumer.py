@@ -40,8 +40,6 @@ class SlowConsumerListener(stomp.ConnectionListener):
             )
             
             try:
-                ack_start = time.time()
-                
                 # Simulate slow processing
                 time.sleep(self.consume_delay_ms / 1000.0)
                 

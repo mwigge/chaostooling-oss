@@ -167,6 +167,7 @@ def stop_replica(
         Dict with results
     """
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "postgresql")
     tracer = get_tracer()
     logger = logging.getLogger("chaosdb.postgres.replication")
 

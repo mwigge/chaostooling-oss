@@ -36,6 +36,7 @@ def inject_dlq_saturation(
     dlq_queue = dlq_queue or os.getenv("RABBITMQ_DLQ_QUEUE", f"{queue}_dlq")
     
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "rabbitmq")
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()

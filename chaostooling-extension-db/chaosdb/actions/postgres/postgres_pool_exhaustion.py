@@ -237,13 +237,7 @@ def inject_connection_pool_exhaustion(
                 for conn in _active_connections:
                     try:
                         # Connection pool tracking handled above
-                        if False:  # Placeholder - pool tracking
-                            connection_pool_active_counter.add(
-                                -1,
-                                get_metric_tags(
-                                    db_name=database, db_system="postgresql"
-                                ),
-                            )
+                        # Pool tracking is handled via metrics.record_db_connection_pool_utilization
                         conn.close()
                     except Exception:
                         pass
