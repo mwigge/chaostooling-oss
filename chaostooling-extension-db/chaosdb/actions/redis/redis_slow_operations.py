@@ -26,6 +26,7 @@ def inject_slow_operations(
     password = password or os.getenv("REDIS_PASSWORD", None)
     
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "redis")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()

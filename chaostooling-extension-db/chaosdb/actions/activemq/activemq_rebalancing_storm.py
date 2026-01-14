@@ -49,7 +49,7 @@ def inject_rebalancing_storm(
     errors = 0
 
     def consumer_worker(consumer_id: int):
-        nonlocal rebalances_triggered, errors
+        nonlocal rebalances_triggered, errors, _active_consumers
         conn = None
         try:
             with tracer.start_as_current_span(
@@ -95,9 +95,6 @@ def inject_rebalancing_storm(
 
                     except Exception as e:
                         errors += 1
-                        tags = get_metric_tags(
-                            db_name=queue, error_type=type(e).__name__
-                        )
                         metrics.record_db_error(
                             db_system=db_system,
                             error_type=type(e).__name__,

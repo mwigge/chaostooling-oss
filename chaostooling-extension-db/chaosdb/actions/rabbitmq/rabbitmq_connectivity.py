@@ -29,6 +29,7 @@ def test_rabbitmq_connection(
     password = password or os.getenv("RABBITMQ_PASSWORD", "guest")
     vhost = vhost or os.getenv("RABBITMQ_VHOST", "/")
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "rabbitmq")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()

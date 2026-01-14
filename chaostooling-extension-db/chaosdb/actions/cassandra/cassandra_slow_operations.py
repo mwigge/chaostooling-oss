@@ -30,6 +30,7 @@ def inject_slow_operations(
     password = password or os.getenv("CASSANDRA_PASSWORD")
     
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "cassandra")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()

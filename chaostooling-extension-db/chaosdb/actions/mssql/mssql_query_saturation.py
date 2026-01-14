@@ -33,6 +33,7 @@ def inject_query_saturation(
     driver = driver or os.getenv("MSSQL_DRIVER", "FreeTDS")
     
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "mssql")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()

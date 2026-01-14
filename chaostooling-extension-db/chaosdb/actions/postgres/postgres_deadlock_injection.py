@@ -6,7 +6,8 @@ import time
 from typing import Optional
 
 import psycopg2
-from chaosotel import flush, get_metric_tags, get_tracer
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags,
+                       get_metrics_core, get_tracer)
 
 # Import metrics module to access metrics dynamically after initialization
 from opentelemetry.trace import StatusCode
@@ -57,6 +58,8 @@ def inject_deadlock(
     password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
 
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "postgresql")
+    metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
@@ -182,10 +185,15 @@ def inject_deadlock(
                             deadlocks_created += 1
                             transactions_rolled_back += 1
 
-                            get_metric_tags(
+                            tags = get_metric_tags(
                                 db_name=database,
                                 db_system="postgresql",
                                 db_operation="deadlock",
+                            )
+                            metrics.record_db_deadlock_count(
+                                db_system=db_system,
+                                db_name=database,
+                                tags=tags,
                             )
 
                             logger.debug(

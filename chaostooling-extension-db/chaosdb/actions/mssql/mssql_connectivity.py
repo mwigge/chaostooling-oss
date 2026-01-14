@@ -3,8 +3,14 @@ import time
 from typing import Optional
 
 import pyodbc  # pip install pyodbc -- requires system ODBC driver for MSSQL
-from chaosotel import ( get_metrics_core
-                       get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 # Requires: pyodbc, and the system ODBC driver for SQL Server (ODBC Driver 17 or 18 for SQL Server)

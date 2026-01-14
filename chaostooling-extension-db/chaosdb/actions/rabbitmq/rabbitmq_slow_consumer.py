@@ -32,6 +32,7 @@ def inject_slow_consumer(
     queue = queue or os.getenv("RABBITMQ_QUEUE", "chaos_test_queue")
     
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "rabbitmq")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()

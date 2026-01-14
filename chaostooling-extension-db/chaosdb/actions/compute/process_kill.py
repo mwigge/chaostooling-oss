@@ -107,7 +107,7 @@ def kill_process_by_name(
                     error_msg = f"Access denied when killing process {pid}"
                     errors.append(error_msg)
                     logger.error(error_msg)
-                    metrics.record_db_error(db_system=db_system, error_type=type(e).__name__, db_name=database)
+                    metrics.record_db_error(db_system=db_system, error_type="AccessDenied", db_name=database)
                 except Exception as e:
                     error_msg = f"Error killing process {pid}: {e}"
                     errors.append(error_msg)
@@ -212,10 +212,14 @@ def kill_process_by_pid(
     except psutil.AccessDenied:
         error_msg = f"Access denied when killing process {pid}"
         logger.error(error_msg)
+        metrics = get_metrics_core()
+        db_system = os.getenv("DB_SYSTEM", "postgresql")
         metrics.record_db_error(db_system=db_system, error_type="AccessDenied")
         flush()
         raise
     except Exception as e:
+        metrics = get_metrics_core()
+        db_system = os.getenv("DB_SYSTEM", "postgresql")
         metrics.record_db_error(db_system=db_system, error_type=type(e).__name__, pid=str(pid))
         logger.error(f"Process kill failed: {e}")
         flush()

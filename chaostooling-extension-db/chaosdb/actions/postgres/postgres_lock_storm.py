@@ -57,6 +57,7 @@ def inject_lock_storm(
     db_system = os.getenv("DB_SYSTEM", "postgresql")
 
     ensure_initialized()
+    db_system = os.getenv("DB_SYSTEM", "postgresql")
     tracer = get_tracer()
     logger = logging.getLogger("chaosdb.postgres.lock_storm")
     metrics = get_metrics_core()

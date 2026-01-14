@@ -143,13 +143,11 @@ def inject_query_timeout_storm(
 
                     except Exception as e:
                         errors += 1
-                        if metrics_module.error_counter:
-                            metrics_module.error_counter.add(
-                                1,
-                                get_metric_tags(
-                                    db_name=database, error_type=type(e).__name__
-                                ),
-                            )
+                        metrics.record_db_error(
+                            db_system=db_system,
+                            error_type=type(e).__name__,
+                            db_name=database,
+                        )
                         logger.warning(f"Error in timeout worker {thread_id}: {e}")
                         span.set_status(StatusCode.ERROR, str(e))
                         time.sleep(0.1)
@@ -213,10 +211,11 @@ def inject_query_timeout_storm(
             return result
     except Exception as e:
         _stop_event.set()
-        if metrics_module.error_counter:
-            metrics_module.error_counter.add(
-                1, get_metric_tags(db_name=database, error_type=type(e).__name__)
-            )
+        metrics.record_db_error(
+            db_system=db_system,
+            error_type=type(e).__name__,
+            db_name=database,
+        )
         logger.error(f"PostgreSQL query timeout storm failed: {e}")
         flush()
         raise
