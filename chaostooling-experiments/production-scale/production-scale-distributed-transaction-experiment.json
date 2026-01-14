@@ -123,7 +123,7 @@
     },
     "mysql_db": {
       "type": "env",
-      "key": "MYSQL_DATABASE",
+      "key": "MYSQL_DB",
       "default": "testdb"
     },
     "mysql_user": {
@@ -146,6 +146,21 @@
       "key": "MSSQL_PORT",
       "default": "1433"
     },
+    "mssql_db": {
+      "type": "env",
+      "key": "MSSQL_DB",
+      "default": "master"
+    },
+    "mssql_user": {
+      "type": "env",
+      "key": "MSSQL_USER",
+      "default": "sa"
+    },
+    "mssql_password": {
+      "type": "env",
+      "key": "MSSQL_SA_PASSWORD",
+      "default": "Password123!"
+    },
     "cassandra_host": {
       "type": "env",
       "key": "CASSANDRA_HOST",
@@ -155,6 +170,11 @@
       "type": "env",
       "key": "CASSANDRA_PORT",
       "default": "9042"
+    },
+    "cassandra_keyspace": {
+      "type": "env",
+      "key": "CASSANDRA_KEYSPACE",
+      "default": "system"
     },
     "_comment4": "=== MESSAGING SYSTEMS ===",
     "kafka_bootstrap_servers": {
@@ -465,7 +485,10 @@
           "func": "probe_mysql_connectivity",
           "arguments": {
             "host": "${mysql_host}",
-            "port": "${mysql_port}"
+            "port": "${mysql_port}",
+            "database": "${mysql_db}",
+            "user": "${mysql_user}",
+            "password": "${mysql_password}"
           }
         },
         "tolerance": true
@@ -479,7 +502,10 @@
           "func": "probe_mssql_connectivity",
           "arguments": {
             "host": "${mssql_host}",
-            "port": "${mssql_port}"
+            "port": "${mssql_port}",
+            "database": "${mssql_db}",
+            "user": "${mssql_user}",
+            "password": "${mssql_password}"
           }
         },
         "tolerance": true
@@ -493,7 +519,8 @@
           "func": "probe_cassandra_connectivity",
           "arguments": {
             "host": "${cassandra_host}",
-            "port": "${cassandra_port}"
+            "port": "${cassandra_port}",
+            "keyspace": "${cassandra_keyspace}"
           }
         },
         "tolerance": true
@@ -715,9 +742,9 @@
         "arguments": {
           "host": "${mssql_host}",
           "port": "${mssql_port}",
-          "database": "${postgres_db}",
-          "user": "${postgres_user}",
-          "password": "${postgres_password}",
+          "database": "${mssql_db}",
+          "user": "${mssql_user}",
+          "password": "${mssql_password}",
           "num_threads": 5,
           "duration_seconds": 60,
           "transaction_delay_ms": 3000
@@ -1168,7 +1195,10 @@
         "func": "probe_mysql_connectivity",
         "arguments": {
           "host": "${mysql_host}",
-          "port": "${mysql_port}"
+          "port": "${mysql_port}",
+          "database": "${mysql_db}",
+          "user": "${mysql_user}",
+          "password": "${mysql_password}"
         }
       },
       "tolerance": true
@@ -1182,7 +1212,10 @@
         "func": "probe_mssql_connectivity",
         "arguments": {
           "host": "${mssql_host}",
-          "port": "${mssql_port}"
+          "port": "${mssql_port}",
+          "database": "${mssql_db}",
+          "user": "${mssql_user}",
+          "password": "${mssql_password}"
         }
       },
       "tolerance": true
@@ -1196,7 +1229,8 @@
         "func": "probe_cassandra_connectivity",
         "arguments": {
           "host": "${cassandra_host}",
-          "port": "${cassandra_port}"
+          "port": "${cassandra_port}",
+          "keyspace": "${cassandra_keyspace}"
         }
       },
       "tolerance": true
