@@ -50,7 +50,6 @@ def probe_queue_saturation_status(
 
     mq_system = "rabbitmq"
     start = time.time()
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.rabbitmq.queue_saturation_status")

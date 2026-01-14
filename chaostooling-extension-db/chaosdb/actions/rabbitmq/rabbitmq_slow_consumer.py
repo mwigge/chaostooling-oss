@@ -5,8 +5,7 @@ import time
 from typing import Dict, Optional
 
 import pika
-from chaosotel import ( get_metric_tags
-                       get_tracer)
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags, get_metrics_core, get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -78,7 +77,7 @@ def inject_slow_consumer(
                         time.sleep(consume_delay_ms / 1000.0)
                         
                         messages_consumed += 1
-                        tags = get_metric_tags(db_name=queue, db_system="rabbitmq", db_operation="slow_consume")
+                        get_metric_tags(db_name=queue, db_system="rabbitmq", db_operation="slow_consume")
                         
                         
                         

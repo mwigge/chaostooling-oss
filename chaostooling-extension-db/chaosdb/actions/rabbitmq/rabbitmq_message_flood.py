@@ -105,9 +105,14 @@ def inject_message_flood(
                             message_count += 1
                             
                             tags = get_metric_tags(db_name=queue, db_system="rabbitmq", db_operation="message_send")
-                            
-                            
-                            
+                            metrics = get_metrics_core()
+                            metrics.record_messaging_operation_latency(
+                                send_duration_ms,
+                                mq_system="rabbitmq",
+                                destination=queue,
+                                mq_operation="message_send",
+                                tags=tags,
+                            )
                         
                         span.set_status(StatusCode.OK)
                         time.sleep(0.01)

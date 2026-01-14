@@ -5,8 +5,7 @@ import time
 from typing import Dict, Optional
 
 from cassandra.cluster import Cluster
-from chaosotel import ( get_metric_tags
-                       get_tracer)
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags, get_metrics_core, get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -85,11 +84,11 @@ def inject_query_saturation(
                         query = queries[query_count % len(queries)]
                         query()
                         
-                        query_duration_ms = (time.time() - query_start) * 1000
+                        (time.time() - query_start) * 1000
                         total_queries += 1
                         query_count += 1
                         
-                        tags = get_metric_tags(db_name=keyspace, db_system="cassandra", db_operation="saturation_query")
+                        get_metric_tags(db_name=keyspace, db_system="cassandra", db_operation="saturation_query")
                         
                         
                         

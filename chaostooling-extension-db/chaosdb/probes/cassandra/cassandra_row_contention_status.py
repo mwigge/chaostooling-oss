@@ -66,7 +66,6 @@ def probe_row_contention_status(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.cassandra.row_contention_status")
@@ -184,6 +183,6 @@ def probe_row_contention_status(
                 extra={"error": str(e)},
             )
 
-        flush()
+            flush()
 
-        return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)}

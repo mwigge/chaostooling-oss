@@ -68,7 +68,6 @@ def probe_slow_consumer_status(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.kafka.slow_consumer_status")
@@ -188,17 +187,14 @@ def probe_slow_consumer_status(
                 mq_operation="probe",
             )
 
-        if span:
-            span.record_exception(e)
+            if span:
+                span.record_exception(e)
+                span.set_status(StatusCode.ERROR, str(e))
 
-            span.set_status(StatusCode.ERROR, str(e))
+            logger.error(
+                f"Kafka slow consumer probe failed: {str(e)}", extra={"error": str(e)}
+            )
 
-            span.record_exception(e)
+            flush()
 
-        logger.error(
-            f"Kafka slow consumer probe failed: {str(e)}", extra={"error": str(e)}
-        )
-
-        flush()
-
-        return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)}

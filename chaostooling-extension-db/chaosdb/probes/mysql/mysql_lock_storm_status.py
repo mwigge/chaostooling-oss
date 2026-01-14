@@ -69,7 +69,6 @@ def probe_lock_storm_status(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.mysql.lock_storm_status")

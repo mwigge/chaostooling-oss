@@ -75,7 +75,6 @@ def probe_pool_exhaustion_status(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.mysql.pool_exhaustion_status")

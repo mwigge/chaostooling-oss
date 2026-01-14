@@ -47,7 +47,6 @@ def probe_query_saturation_status(
 
     db_system = "mongodb"
     start = time.time()
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.mongodb.query_saturation_status")

@@ -54,7 +54,7 @@ def log_metric(metric_name: str, value: float, tags: Dict[str, Any] = None) -> b
     finally:
         conn.close()
 
-def get_metrics(metric_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+def get_metrics(metric_name: str, limit: int = 10) -> list[dict[str, Any]]:
     """
     Retrieve recent metrics from the database.
     """

@@ -100,9 +100,14 @@ def inject_queue_saturation(
                         message_count += 1
                         
                         tags = get_metric_tags(db_name=queue, db_system="rabbitmq", db_operation="saturation_send")
-                        
-                        
-                        
+                        metrics = get_metrics_core()
+                        metrics.record_messaging_operation_count(
+                            mq_system="rabbitmq",
+                            destination=queue,
+                            count=1,
+                            mq_operation="saturation_send",
+                            tags=tags,
+                        )
                         
                         span.set_status(StatusCode.OK)
                         time.sleep(0.01)

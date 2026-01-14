@@ -73,7 +73,6 @@ def probe_slow_transactions_status(
 
     db_system = "postgresql"
 
-    span = None
 
     start = time.time()
 

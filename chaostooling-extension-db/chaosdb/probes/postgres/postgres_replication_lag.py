@@ -86,7 +86,6 @@ def check_replication_lag(
 
     db_system = "postgresql"
     start = time.time()
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.postgres.replication_lag")

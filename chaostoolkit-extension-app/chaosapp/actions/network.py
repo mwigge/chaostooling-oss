@@ -1,11 +1,11 @@
-import subprocess
 import logging
+import subprocess
+import time
+
+from chaosotel import ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer
+from opentelemetry.trace import StatusCode
 
 logger = logging.getLogger("chaostoolkit")
-
-import time
-from chaosotel import ensure_initialized, get_tracer, flush, get_metric_tags, get_metrics_core
-from opentelemetry.trace import StatusCode
 
 def simulate_network_conditions(latency: int = 0, jitter: int = 0, loss: float = 0.0, bandwidth: str = "", duration: int = 0) -> bool:
     """

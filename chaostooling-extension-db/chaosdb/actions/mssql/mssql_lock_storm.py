@@ -87,7 +87,7 @@ def inject_lock_storm(
                 
                 while not _stop_event.is_set():
                     try:
-                        txn_start = time.time()
+                        time.time()
                         cursor.execute("BEGIN TRANSACTION")
                         cursor.execute(f"SELECT * FROM {table_name} WITH (UPDLOCK, ROWLOCK) WHERE id = 1")
                         cursor.fetchone()
@@ -114,8 +114,6 @@ def inject_lock_storm(
                                 )
                                 logger.warning(f"Deadlock detected in thread {thread_id}: {e}")
                             conn.rollback()
-
-                        txn_duration = (time.time() - txn_start) * 1000
 
                         span.set_status(StatusCode.OK)
                     except Exception as e:

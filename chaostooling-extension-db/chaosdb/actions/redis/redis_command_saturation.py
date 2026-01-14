@@ -94,7 +94,7 @@ def inject_command_saturation(
                         total_commands += 1
                         command_count += 1
                         
-                        tags = get_metric_tags(db_name="redis", db_system="redis", db_operation="saturation_command")
+                        get_metric_tags(db_name="redis", db_system="redis", db_operation="saturation_command")
                         
                         
                         

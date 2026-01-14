@@ -60,7 +60,6 @@ def probe_key_contention_status(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.redis.key_contention_status")

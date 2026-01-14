@@ -5,8 +5,7 @@ import time
 from typing import Dict, Optional
 
 from cassandra.cluster import Cluster
-from chaosotel import ( get_metric_tags
-                       get_tracer)
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags, get_metrics_core, get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -85,7 +84,7 @@ def inject_slow_operations(
                         operations_completed += 1
                         total_operation_time += op_duration_ms
                         
-                        tags = get_metric_tags(db_name=keyspace, db_system="cassandra", db_operation="slow_operation")
+                        get_metric_tags(db_name=keyspace, db_system="cassandra", db_operation="slow_operation")
                         
                         
                         

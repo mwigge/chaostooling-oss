@@ -73,7 +73,6 @@ def probe_slow_consumer_status(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.rabbitmq.slow_consumer_status")
@@ -160,6 +159,8 @@ def probe_slow_consumer_status(
             return result
 
         except Exception as e:
+            mq_system = "rabbitmq"
+            metrics = get_metrics_core()
             metrics.record_messaging_error(
                 mq_system=mq_system,
                 error_type=type(e).__name__,
@@ -167,13 +168,12 @@ def probe_slow_consumer_status(
 
             if span:
                 span.record_exception(e)
+                span.set_status(StatusCode.ERROR, str(e))
 
-            span.set_status(StatusCode.ERROR, str(e))
+            logger.error(
+                f"RabbitMQ slow consumer probe failed: {e}", extra={"error": str(e)}
+            )
 
-        logger.error(
-            f"RabbitMQ slow consumer probe failed: {e}", extra={"error": str(e)}
-        )
+            flush()
 
-        flush()
-
-        return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)}

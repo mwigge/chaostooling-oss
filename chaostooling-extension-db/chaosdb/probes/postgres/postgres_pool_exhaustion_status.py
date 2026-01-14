@@ -73,7 +73,6 @@ def probe_pool_exhaustion_status(
 
     db_system = "postgresql"
 
-    span = None
 
     start = time.time()
 

@@ -56,7 +56,6 @@ def probe_redis_connectivity(
 
     start = time.time()
 
-    span = None
 
     span_context = (
         tracer.start_as_current_span("probe.redis.connectivity")

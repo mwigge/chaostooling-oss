@@ -1,12 +1,14 @@
-import os
-import psycopg2
-import time
 import json
 import logging
+import os
+import time
+
+import psycopg2
+import requests
+from chaosotel import ensure_initialized, flush, get_tracer
 from kafka import KafkaProducer
-from chaosotel import ensure_initialized, get_tracer, flush
-from opentelemetry.trace import StatusCode
 from opentelemetry.propagate import inject
+from opentelemetry.trace import StatusCode
 
 def get_db_connection():
     return psycopg2.connect(
@@ -123,7 +125,6 @@ def simulate_purchase(user_id: int, amount: float, item_id: str) -> bool:
         finally:
             conn.close()
 
-import requests
 
 def simulate_purchase_via_api(user_id: int, amount: float, item_id: str, url: str = "http://haproxy:80/purchase") -> bool:
     """
