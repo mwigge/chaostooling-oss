@@ -244,7 +244,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_risk_level_ratio",
+          "expr": "chaos_experiment_risk_level or vector(0)",
           "refId": "A"
         }
       ],
@@ -328,7 +328,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_risk_score_ratio",
+          "expr": "chaos_experiment_risk_score or vector(0)",
           "refId": "A"
         }
       ],
@@ -412,7 +412,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_complexity_score_ratio",
+          "expr": "chaos_experiment_complexity_score or vector(0)",
           "refId": "A"
         }
       ],
@@ -1119,7 +1119,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_transaction_total) by (tag_db_operation)",
+          "expr": "sum(chaos_transaction_total) by (tag_db_operation) or vector(0)",
           "legendFormat": "Total Transactions",
           "refId": "A"
         },
@@ -1128,7 +1128,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_transaction_successful_total) by (tag_db_operation)",
+          "expr": "sum(chaos_transaction_successful_total) by (tag_db_operation) or vector(0)",
           "legendFormat": "Successful",
           "refId": "B"
         },
@@ -1137,7 +1137,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_transaction_failed_total) by (tag_db_operation)",
+          "expr": "sum(chaos_transaction_failed_total) by (tag_db_operation) or vector(0)",
           "legendFormat": "Failed",
           "refId": "C"
         }
@@ -2238,7 +2238,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(tempo_spanmetrics_calls_total{service_name=~\".*(app-server|payment-service|order-service|inventory-service|notification-service|transaction-load-generator).*\"}[5m])) by (service_name) or sum(rate(chaos_operation_success_total{operation_name=~\".*(app-server|payment-service|order-service|inventory-service|notification-service|transaction-load-generator).*\"}[5m])) by (operation_name)",
+          "expr": "sum(rate(tempo_spanmetrics_calls_total{service_name=~\".*(app-server|payment-service|order-service|inventory-service|notification-service|transaction-load-generator).*\"}[5m])) by (service_name) or sum(rate(chaos_operation_success_total{operation_name=~\".*(app-server|payment-service|order-service|inventory-service|notification-service|transaction-load-generator).*\"}[5m])) by (operation_name) or vector(0)",
           "legendFormat": "{{service_name}}",
           "refId": "A"
         }
@@ -2521,7 +2521,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(tempo_spanmetrics_calls_total[5m])) by (service_name, service_name_dst) or sum(rate(chaos_operation_success_total[5m])) by (operation_name, operation_target_type)",
+          "expr": "sum(rate(tempo_spanmetrics_calls_total[5m])) by (service_name, service_name_dst) or sum(rate(chaos_operation_success_total[5m])) by (operation_name, operation_target_type) or vector(0)",
           "legendFormat": "{{service_name}} → {{service_name_dst}}",
           "refId": "A"
         }
@@ -2610,7 +2610,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(tempo_spanmetrics_calls_total{service_name=~\".*(postgresql|mysql|mssql|mongodb|redis|cassandra|kafka|rabbitmq|activemq).*\"}[5m])) by (service_name) or sum(rate(chaos_db_query_count_total{db_system=~\"(postgresql|mysql|mssql|mongodb|redis|cassandra)\"}[5m])) by (db_system) or sum(rate(chaos_messaging_operation_count_total{mq_system=~\"(kafka|rabbitmq|activemq)\"}[5m])) by (mq_system)",
+          "expr": "sum(rate(tempo_spanmetrics_calls_total{service_name=~\".*(postgresql|mysql|mssql|mongodb|redis|cassandra|kafka|rabbitmq|activemq).*\"}[5m])) by (service_name) or sum(rate(chaos_db_query_count_total{db_system=~\"(postgresql|mysql|mssql|mongodb|redis|cassandra)\"}[5m])) by (db_system) or sum(rate(chaos_messaging_operation_count_total{mq_system=~\"(kafka|rabbitmq|activemq)\"}[5m])) by (mq_system) or vector(0)",
           "legendFormat": "{{service_name}}",
           "refId": "A"
         }
@@ -2971,7 +2971,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count(count by (service_name) (tempo_spanmetrics_calls_total)) or count(count by (operation_name) (chaos_operation_success_total))",
+          "expr": "count(count by (service_name) (tempo_spanmetrics_calls_total)) or count(count by (operation_name) (chaos_operation_success_total)) or vector(0)",
           "refId": "A"
         }
       ],
@@ -3051,7 +3051,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_db_lock_count_total) by (db_system, lock_type) or sum(chaos_db_deadlock_count_total) by (db_system)",
+          "expr": "sum(chaos_db_lock_count_total) by (db_system, lock_type) or sum(chaos_db_deadlock_count_total) by (db_system) or vector(0)",
           "refId": "A"
         }
       ],
@@ -3120,7 +3120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_db_connection_pool_utilization",
+          "expr": "chaos_db_connection_pool_utilization or vector(0)",
           "refId": "A"
         }
       ],
@@ -3292,7 +3292,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(chaos_db_slow_query_count_total[5m])) by (db_system, threshold_ms)",
+          "expr": "sum(rate(chaos_db_slow_query_count_total[5m])) by (db_system, threshold_ms) or vector(0)",
           "legendFormat": "{{db_system}} (> {{threshold_ms}}ms)",
           "refId": "A"
         }
@@ -3383,7 +3383,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(chaos_mttr_seconds_bucket[5m])) by (le, service_name, recovery_type))",
+          "expr": "histogram_quantile(0.95, sum(rate(chaos_mttr_seconds_bucket[5m])) by (le, service_name, recovery_type)) or vector(0)",
           "legendFormat": "P95 - {{service_name}} ({{recovery_type}})",
           "refId": "A"
         },
@@ -3392,7 +3392,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(chaos_mttr_seconds_bucket[5m])) by (le, service_name, recovery_type))",
+          "expr": "histogram_quantile(0.99, sum(rate(chaos_mttr_seconds_bucket[5m])) by (le, service_name, recovery_type)) or vector(0)",
           "legendFormat": "P99 - {{service_name}} ({{recovery_type}})",
           "refId": "B"
         }
@@ -3495,7 +3495,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(chaos_db_lock_count_total[5m])) by (db_system, lock_type)",
+          "expr": "sum(rate(chaos_db_lock_count_total[5m])) by (db_system, lock_type) or vector(0)",
           "legendFormat": "{{db_system}} - {{lock_type}}",
           "refId": "A"
         }
@@ -3585,7 +3585,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(chaos_db_deadlock_count_total[5m])) by (db_system)",
+          "expr": "sum(rate(chaos_db_deadlock_count_total[5m])) by (db_system) or vector(0)",
           "legendFormat": "{{db_system}}",
           "refId": "A"
         }
@@ -3675,7 +3675,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_db_connection_pool_utilization",
+          "expr": "chaos_db_connection_pool_utilization or vector(0)",
           "legendFormat": "{{db_system}}",
           "refId": "A"
         }
@@ -3982,7 +3982,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_mttr_current_seconds",
+          "expr": "chaos_mttr_current_seconds or vector(0)",
           "legendFormat": "{{service_name}} ({{recovery_type}})",
           "refId": "A"
         }
@@ -4054,7 +4054,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_mttr_current_seconds",
+          "expr": "chaos_mttr_current_seconds or vector(0)",
           "refId": "A"
         }
       ],

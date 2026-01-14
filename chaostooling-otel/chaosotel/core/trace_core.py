@@ -177,11 +177,19 @@ def _update_resource_service_name(span: trace.Span, service_name: str):
         # Note: We can only update _resource, not the public resource property (it's read-only)
         if hasattr(span, "_resource"):
             try:
+                # Try to update _resource directly
                 span._resource = new_resource
                 logger.debug(f"Updated span._resource.service.name to {service_name}")
             except (AttributeError, TypeError) as e:
-                # _resource might be read-only in some SDK versions, that's OK
-                logger.debug(f"Could not update _resource (may be read-only): {e}")
+                # If _resource is read-only, try to update the internal dict directly
+                try:
+                    if hasattr(span._resource, "attributes") and hasattr(span._resource.attributes, "__setitem__"):
+                        span._resource.attributes["service.name"] = service_name
+                        logger.debug(f"Updated span._resource.attributes.service.name to {service_name}")
+                    else:
+                        logger.debug(f"Could not update _resource (may be read-only): {e}")
+                except Exception as e2:
+                    logger.debug(f"Could not update _resource attributes: {e2}")
 
         # Don't try to set span.resource - it's a read-only property
         # The resource is set when the span is created, and we update _resource above

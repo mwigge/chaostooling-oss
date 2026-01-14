@@ -108,10 +108,6 @@ def probe_cassandra_connectivity(
                         connect_timeout=90,  # Increased to 90 seconds for slow startup
                         control_connection_timeout=90,
                         protocol_version=4,  # Use protocol version 4 for Cassandra 4.x
-                        # Add connection pooling settings for better reliability
-                        max_connections_per_host=2,
-                        # Disable metadata refresh on connect to speed up initial connection
-                        metadata_refresh_on_connect=False,
                     )
                     # Connect to cluster first, then to keyspace
                     # If keyspace doesn't exist, try connecting without it and use system keyspace
