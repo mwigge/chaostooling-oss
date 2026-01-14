@@ -72,9 +72,7 @@ class LogCore:
 
             log_data.update(self._get_trace_context())
 
-            self._audit_trail.append(
-                {"event": "action_start", "data": log_data}
-            )
+            self._audit_trail.append({"event": "action_start", "data": log_data})
 
             logger.info(f"Action started: {action_name}", extra=log_data)
         except Exception as e:
@@ -207,9 +205,7 @@ class LogCore:
 
             self._audit_trail.append({"event": "error", "data": log_data})
 
-            logger.error(
-                f"Error in {component}: {error_message}", extra=log_data
-            )
+            logger.error(f"Error in {component}: {error_message}", extra=log_data)
         except Exception as e:
             logger.error(f"Error logging error: {e}")
 
@@ -239,9 +235,7 @@ class LogCore:
 
             log_data.update(self._get_trace_context())
 
-            self._audit_trail.append(
-                {"event": "compliance_check", "data": log_data}
-            )
+            self._audit_trail.append({"event": "compliance_check", "data": log_data})
 
             level = logging.INFO if passed else logging.WARNING
             logger.log(

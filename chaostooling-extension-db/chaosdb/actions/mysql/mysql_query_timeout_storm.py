@@ -7,7 +7,13 @@ import time
 from typing import Optional
 
 import mysql.connector
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -82,6 +88,7 @@ def inject_query_timeout_storm(
                 f"query_timeout_storm.worker.{thread_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,
@@ -91,7 +98,7 @@ def inject_query_timeout_storm(
                     chaos_activity="mysql_query_timeout_storm",
                     chaos_action="query_timeout_storm",
                     chaos_operation="query_timeout_storm",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
                 span.set_attribute("chaos.timeout_seconds", timeout_seconds)
 

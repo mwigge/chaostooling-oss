@@ -1,16 +1,23 @@
 """MSSQL lock storm chaos action."""
+
 import os
 import threading
 import time
 from typing import Dict, Optional
 
 import pyodbc
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
-                       get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
 _stop_event = threading.Event()
+
 
 def inject_lock_storm(
     host: Optional[str] = None,
@@ -21,7 +28,7 @@ def inject_lock_storm(
     driver: Optional[str] = None,
     num_threads: int = 10,
     duration_seconds: int = 60,
-    table_name: str = "chaos_test_table"
+    table_name: str = "chaos_test_table",
 ) -> Dict:
     """Inject MSSQL lock storm."""
     host = host or os.getenv("MSSQL_HOST", "localhost")
@@ -30,30 +37,31 @@ def inject_lock_storm(
     user = user or os.getenv("MSSQL_USER", "sa")
     password = password or os.getenv("MSSQL_PASSWORD", "")
     driver = driver or os.getenv("MSSQL_DRIVER", "FreeTDS")
-    
+
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "mssql")
     metrics = get_metrics_core()
     tracer = get_tracer()
     logger = get_logger()
     start_time = time.time()
-    
+
     global _active_threads, _stop_event
     _stop_event.clear()
     _active_threads = []
-    
+
     connection_string = f"DRIVER={{{driver}}};SERVER={host},{port};DATABASE={database};UID={user};PWD={password};Encrypt=no"
-    
+
     locks_created = 0
     deadlocks_detected = 0
     errors = 0
-    
+
     def lock_worker(thread_id: int):
         nonlocal locks_created, deadlocks_detected, errors
         conn = None
         try:
             with tracer.start_as_current_span(f"lock_storm.worker.{thread_id}") as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system="mssql",
@@ -63,13 +71,13 @@ def inject_lock_storm(
                     chaos_activity="mssql_lock_storm",
                     chaos_action="lock_storm",
                     chaos_operation="lock_storm",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
-                
+
                 conn = pyodbc.connect(connection_string, timeout=5)
                 conn.autocommit = False
                 cursor = conn.cursor()
-                
+
                 cursor.execute(f"""
                     IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '{table_name}')
                     CREATE TABLE {table_name} (
@@ -79,17 +87,21 @@ def inject_lock_storm(
                     )
                 """)
                 conn.commit()
-                
+
                 cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
                 if cursor.fetchone()[0] == 0:
-                    cursor.execute(f"INSERT INTO {table_name} (value) VALUES (1), (2), (3), (4), (5)")
+                    cursor.execute(
+                        f"INSERT INTO {table_name} (value) VALUES (1), (2), (3), (4), (5)"
+                    )
                     conn.commit()
-                
+
                 while not _stop_event.is_set():
                     try:
                         time.time()
                         cursor.execute("BEGIN TRANSACTION")
-                        cursor.execute(f"SELECT * FROM {table_name} WITH (UPDLOCK, ROWLOCK) WHERE id = 1")
+                        cursor.execute(
+                            f"SELECT * FROM {table_name} WITH (UPDLOCK, ROWLOCK) WHERE id = 1"
+                        )
                         cursor.fetchone()
 
                         locks_created += 1
@@ -101,9 +113,12 @@ def inject_lock_storm(
                         )
 
                         time.sleep(0.5)
-                        
+
                         try:
-                            cursor.execute(f"UPDATE {table_name} SET locked_by = ? WHERE id = 1", thread_id)
+                            cursor.execute(
+                                f"UPDATE {table_name} SET locked_by = ? WHERE id = 1",
+                                thread_id,
+                            )
                             conn.commit()
                         except pyodbc.Error as e:
                             if "deadlock" in str(e).lower() or "1205" in str(e):
@@ -112,13 +127,17 @@ def inject_lock_storm(
                                     db_system=db_system,
                                     db_name=database,
                                 )
-                                logger.warning(f"Deadlock detected in thread {thread_id}: {e}")
+                                logger.warning(
+                                    f"Deadlock detected in thread {thread_id}: {e}"
+                                )
                             conn.rollback()
 
                         span.set_status(StatusCode.OK)
                     except Exception as e:
                         errors += 1
-                        metrics.record_db_error(db_system=db_system, error_type=type(e).__name__)
+                        metrics.record_db_error(
+                            db_system=db_system, error_type=type(e).__name__
+                        )
                         logger.error(f"Lock storm worker {thread_id} error: {e}")
                         if conn:
                             conn.rollback()
@@ -136,6 +155,7 @@ def inject_lock_storm(
     try:
         with tracer.start_as_current_span("chaos.mssql.lock_storm") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="mssql",
@@ -146,36 +166,38 @@ def inject_lock_storm(
                 chaos_action="lock_storm",
                 chaos_operation="lock_storm",
                 chaos_num_threads=num_threads,
-                chaos_duration_seconds=duration_seconds
+                chaos_duration_seconds=duration_seconds,
             )
-            
-            logger.info(f"Starting MSSQL lock storm with {num_threads} threads for {duration_seconds}s")
-            
+
+            logger.info(
+                f"Starting MSSQL lock storm with {num_threads} threads for {duration_seconds}s"
+            )
+
             for i in range(num_threads):
                 thread = threading.Thread(target=lock_worker, args=(i,), daemon=True)
                 thread.start()
                 _active_threads.append(thread)
-            
+
             time.sleep(duration_seconds)
             _stop_event.set()
             for thread in _active_threads:
                 thread.join(timeout=5)
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = {
                 "success": True,
                 "duration_ms": duration_ms,
                 "locks_created": locks_created,
                 "deadlocks_detected": deadlocks_detected,
                 "errors": errors,
-                "threads_used": num_threads
+                "threads_used": num_threads,
             }
-            
+
             span.set_attribute("chaos.locks_created", locks_created)
             span.set_attribute("chaos.deadlocks_detected", deadlocks_detected)
             span.set_status(StatusCode.OK)
-            
+
             logger.info(f"MSSQL lock storm completed: {result}")
             flush()
             return result
@@ -186,10 +208,10 @@ def inject_lock_storm(
         flush()
         raise
 
+
 def stop_lock_storm():
     global _stop_event, _active_threads
     _stop_event.set()
     for thread in _active_threads:
         thread.join(timeout=2)
     _active_threads = []
-

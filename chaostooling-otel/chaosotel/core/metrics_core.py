@@ -273,9 +273,7 @@ class MetricsCore:
             )
         return self._instruments[cache_key]
 
-    def _get_or_create_counter(
-        self, name: str, unit: str = "1", description: str = ""
-    ):
+    def _get_or_create_counter(self, name: str, unit: str = "1", description: str = ""):
         """Get or create counter."""
         cache_key = f"counter_{name}"
         if cache_key not in self._instruments:
@@ -284,9 +282,7 @@ class MetricsCore:
             )
         return self._instruments[cache_key]
 
-    def _get_or_create_gauge(
-        self, name: str, unit: str = "1", description: str = ""
-    ):
+    def _get_or_create_gauge(self, name: str, unit: str = "1", description: str = ""):
         """Get or create gauge."""
         cache_key = f"gauge_{name}"
         if cache_key not in self._instruments:
@@ -883,7 +879,7 @@ class MetricsCore:
         try:
             # Convert milliseconds to seconds for consistency with metric name
             recovery_time_seconds = float(recovery_time_ms) / 1000.0
-            
+
             histogram = self._get_or_create_histogram(
                 "chaos_mttr_seconds",
                 unit="s",

@@ -70,7 +70,6 @@ def probe_connection_exhaustion_status(
 
     start = time.time()
 
-
     span_context = (
         tracer.start_as_current_span("probe.cassandra.connection_exhaustion_status")
         if tracer

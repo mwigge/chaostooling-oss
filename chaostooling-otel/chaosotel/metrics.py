@@ -72,9 +72,7 @@ def setup_metrics(
         )
 
         # Create periodic metric reader (exports every 5 seconds by default)
-        export_interval_ms = int(
-            os.getenv("OTEL_METRIC_EXPORT_INTERVAL", "5000")
-        )
+        export_interval_ms = int(os.getenv("OTEL_METRIC_EXPORT_INTERVAL", "5000"))
         metric_reader = PeriodicExportingMetricReader(
             exporter=metric_exporter,
             export_interval_millis=export_interval_ms,
@@ -92,9 +90,7 @@ def setup_metrics(
         # Add environment info
         resource_attrs.update(
             {
-                "deployment.environment": os.getenv(
-                    "ENVIRONMENT", "development"
-                ),
+                "deployment.environment": os.getenv("ENVIRONMENT", "development"),
                 "host.name": os.getenv("HOSTNAME", "unknown"),
             }
         )
@@ -107,9 +103,7 @@ def setup_metrics(
             resource=resource,
         )
 
-        logger.info(
-            f"✓ Metrics provider configured (→ OTEL Collector at {endpoint})"
-        )
+        logger.info(f"✓ Metrics provider configured (→ OTEL Collector at {endpoint})")
 
         return meter_provider
 

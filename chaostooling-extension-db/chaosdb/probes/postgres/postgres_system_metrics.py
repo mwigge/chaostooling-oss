@@ -95,7 +95,6 @@ def collect_postgres_system_metrics(
 
     start = time.time()
 
-
     span_context = (
         tracer.start_as_current_span("probe.postgres.system_metrics")
         if tracer

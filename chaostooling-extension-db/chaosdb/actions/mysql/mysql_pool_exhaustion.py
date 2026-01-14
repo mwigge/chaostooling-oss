@@ -79,6 +79,7 @@ def inject_connection_pool_exhaustion(
                 f"pool_exhaustion.connection.{conn_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,
@@ -88,7 +89,7 @@ def inject_connection_pool_exhaustion(
                     chaos_activity="mysql_connection_pool_exhaustion",
                     chaos_action="connection_pool_exhaustion",
                     chaos_operation="connection_pool_exhaustion",
-                    chaos_connection_id=conn_id
+                    chaos_connection_id=conn_id,
                 )
 
                 acquisition_start = time.time()
@@ -120,11 +121,13 @@ def inject_connection_pool_exhaustion(
                         db_name=database,
                         count=1,
                     )
-                    
+
                     # Record connection pool utilization (assuming default max_connections=151 for MySQL)
                     max_connections = 151  # Default MySQL max_connections
                     current_connections = len(_active_connections) + 1
-                    utilization_percent = min(100.0, (current_connections / max_connections) * 100.0)
+                    utilization_percent = min(
+                        100.0, (current_connections / max_connections) * 100.0
+                    )
                     metrics.record_db_connection_pool_utilization(
                         db_system=db_system,
                         utilization_percent=utilization_percent,
@@ -198,6 +201,7 @@ def inject_connection_pool_exhaustion(
             "chaos.mysql.connection_pool_exhaustion"
         ) as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system=db_system,
@@ -209,7 +213,7 @@ def inject_connection_pool_exhaustion(
                 chaos_operation="connection_pool_exhaustion",
                 chaos_num_connections=num_connections,
                 chaos_duration_seconds=duration_seconds,
-                chaos_leak_connections=leak_connections
+                chaos_leak_connections=leak_connections,
             )
             span.set_attribute("chaos.system", "mysql")
             span.set_attribute("chaos.operation", "connection_pool_exhaustion")

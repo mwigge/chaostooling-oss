@@ -76,6 +76,7 @@ def probe_kafka_connectivity(
             if span:
                 # Use span helper for consistent attribute setting and resource updates
                 from chaosotel.core.trace_core import set_messaging_span_attributes
+
                 set_messaging_span_attributes(
                     span,
                     messaging_system="kafka",
@@ -87,7 +88,9 @@ def probe_kafka_connectivity(
                 )
 
             # Use threading to enforce overall timeout
-            max_probe_time = 10  # 10 seconds max for entire probe (increased for Kafka startup)
+            max_probe_time = (
+                10  # 10 seconds max for entire probe (increased for Kafka startup)
+            )
             result = {"success": False, "error": None}
             exception_occurred = threading.Event()
 

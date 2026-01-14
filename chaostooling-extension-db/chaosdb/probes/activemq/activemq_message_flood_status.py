@@ -70,7 +70,6 @@ def probe_message_flood_status(
 
     start = time.time()
 
-
     span_context = (
         tracer.start_as_current_span("probe.activemq.message_flood_status")
         if tracer

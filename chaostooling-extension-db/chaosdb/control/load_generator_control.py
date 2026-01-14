@@ -80,9 +80,12 @@ def before_experiment_control(
 
         _load_generator_started = True
         logger.info(f"Load generator started successfully: {result}")
-        
+
         # Verify load generator is actually running
-        from ..actions.load_generator.transaction_load_generator import get_background_load_stats
+        from ..actions.load_generator.transaction_load_generator import (
+            get_background_load_stats,
+        )
+
         try:
             stats = get_background_load_stats(load_generator_url=url)
             logger.info(f"Load generator verification: {stats}")
@@ -138,10 +141,7 @@ def load_control(
     """
     logger.info("Load generator control loaded")
     configure_control(
-        control=None,
-        experiment=experiment,
-        configuration=configuration,
-        **kwargs
+        control=None, experiment=experiment, configuration=configuration, **kwargs
     )
 
 
@@ -156,11 +156,7 @@ def unload_control(
     Ensures load generator is stopped.
     """
     logger.info("Load generator control unloaded")
-    cleanup_control(
-        control=None,
-        experiment=experiment,
-        **kwargs
-    )
+    cleanup_control(control=None, experiment=experiment, **kwargs)
 
 
 def cleanup_control(

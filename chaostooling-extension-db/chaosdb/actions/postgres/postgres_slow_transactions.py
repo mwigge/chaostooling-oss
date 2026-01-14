@@ -7,7 +7,13 @@ import time
 from typing import Optional
 
 import psycopg2
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -90,16 +96,17 @@ def inject_slow_transactions(
                 # Use modular helper from chaosotel for consistent span attributes
                 # Helper automatically uses environment variables for defaults if not provided
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,  # Uses DB_SYSTEM env var if not provided
-                    db_name=database,    # Uses POSTGRES_DB/MYSQL_DB/etc env var if not provided
-                    host=host,           # Uses POSTGRES_HOST/MYSQL_HOST/etc env var if not provided
-                    port=port,           # Uses POSTGRES_PORT/MYSQL_PORT/etc env var if not provided
+                    db_name=database,  # Uses POSTGRES_DB/MYSQL_DB/etc env var if not provided
+                    host=host,  # Uses POSTGRES_HOST/MYSQL_HOST/etc env var if not provided
+                    port=port,  # Uses POSTGRES_PORT/MYSQL_PORT/etc env var if not provided
                     chaos_activity="postgresql_slow_transactions",
                     chaos_action="slow_transactions",
                     chaos_operation="slow_transactions",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
 
                 conn = psycopg2.connect(
@@ -207,6 +214,7 @@ def inject_slow_transactions(
         with tracer.start_as_current_span("chaos.postgres.slow_transactions") as span:
             # Use modular helper from chaosotel for consistent span attributes
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system="postgresql",
@@ -218,7 +226,7 @@ def inject_slow_transactions(
                 chaos_operation="slow_transactions",
                 chaos_num_threads=num_threads,
                 chaos_duration_seconds=duration_seconds,
-                chaos_transaction_delay_ms=transaction_delay_ms
+                chaos_transaction_delay_ms=transaction_delay_ms,
             )
 
             logger.info(

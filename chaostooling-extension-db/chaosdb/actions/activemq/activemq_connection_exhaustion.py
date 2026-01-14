@@ -60,6 +60,7 @@ def inject_connection_exhaustion(
                 # Get metrics in the function scope
                 metrics = get_metrics_core()
                 from chaosotel.core.trace_core import set_messaging_span_attributes
+
                 set_messaging_span_attributes(
                     span,
                     messaging_system="activemq",
@@ -69,7 +70,7 @@ def inject_connection_exhaustion(
                     chaos_activity="activemq_connection_exhaustion",
                     chaos_action="connection_exhaustion",
                     chaos_operation="connection_exhaustion",
-                    chaos_connection_id=conn_id
+                    chaos_connection_id=conn_id,
                 )
 
                 try:
@@ -136,6 +137,7 @@ def inject_connection_exhaustion(
             "chaos.activemq.connection_exhaustion"
         ) as span:
             from chaosotel.core.trace_core import set_messaging_span_attributes
+
             set_messaging_span_attributes(
                 span,
                 messaging_system="activemq",
@@ -147,7 +149,7 @@ def inject_connection_exhaustion(
                 chaos_operation="connection_exhaustion",
                 chaos_num_connections=num_connections,
                 chaos_hold_duration_seconds=hold_duration_seconds,
-                chaos_leak_connections=leak_connections
+                chaos_leak_connections=leak_connections,
             )
 
             logger.info(

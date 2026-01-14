@@ -76,6 +76,7 @@ def probe_mysql_connectivity(
             if span:
                 # Use span helper for consistent attribute setting and resource updates
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=DB_SYSTEM,
@@ -93,7 +94,7 @@ def probe_mysql_connectivity(
             max_retries = 3
             retry_delay = 2  # seconds
             conn = None
-            
+
             for attempt in range(max_retries):
                 try:
                     conn = mysql.connector.connect(
@@ -116,7 +117,7 @@ def probe_mysql_connectivity(
                     else:
                         # Final attempt failed, raise the exception
                         raise
-            
+
             # Close connection if successfully established
             if conn:
                 conn.close()

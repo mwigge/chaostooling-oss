@@ -6,7 +6,13 @@ import threading
 import time
 from typing import Optional
 
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from kafka import KafkaProducer
 from opentelemetry.trace import StatusCode
 
@@ -51,9 +57,18 @@ def inject_topic_saturation(
                 f"topic_saturation.producer.{producer_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_messaging_span_attributes
+
                 # Extract host/port from bootstrap_servers for network attributes
-                bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else None
-                bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else None
+                bootstrap_host = (
+                    bootstrap_servers.split(",")[0].split(":")[0]
+                    if bootstrap_servers
+                    else None
+                )
+                bootstrap_port = (
+                    int(bootstrap_servers.split(",")[0].split(":")[1])
+                    if bootstrap_servers and ":" in bootstrap_servers.split(",")[0]
+                    else None
+                )
                 set_messaging_span_attributes(
                     span,
                     messaging_system=mq_system,
@@ -64,7 +79,7 @@ def inject_topic_saturation(
                     chaos_activity="kafka_topic_saturation",
                     chaos_action="topic_saturation",
                     chaos_operation="topic_saturation",
-                    chaos_producer_id=producer_id
+                    chaos_producer_id=producer_id,
                 )
 
                 producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
@@ -127,9 +142,18 @@ def inject_topic_saturation(
     try:
         with tracer.start_as_current_span("chaos.kafka.topic_saturation") as span:
             from chaosotel.core.trace_core import set_messaging_span_attributes
+
             # Extract host/port from bootstrap_servers for network attributes
-            bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else "kafka"
-            bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else 9092
+            bootstrap_host = (
+                bootstrap_servers.split(",")[0].split(":")[0]
+                if bootstrap_servers
+                else "kafka"
+            )
+            bootstrap_port = (
+                int(bootstrap_servers.split(",")[0].split(":")[1])
+                if bootstrap_servers and ":" in bootstrap_servers.split(",")[0]
+                else 9092
+            )
             set_messaging_span_attributes(
                 span,
                 messaging_system=mq_system,
@@ -141,7 +165,7 @@ def inject_topic_saturation(
                 chaos_action="topic_saturation",
                 chaos_operation="topic_saturation",
                 chaos_num_producers=num_producers,
-                chaos_duration_seconds=duration_seconds
+                chaos_duration_seconds=duration_seconds,
             )
 
             logger.info(

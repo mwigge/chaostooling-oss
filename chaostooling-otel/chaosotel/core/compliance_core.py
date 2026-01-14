@@ -67,12 +67,8 @@ class ComplianceCore:
             reg: [] for reg in self.regulations
         }
         self._audit_trail: List[Dict[str, Any]] = []
-        self._action_count: Dict[str, int] = {
-            reg: 0 for reg in self.regulations
-        }
-        self._violation_count: Dict[str, int] = {
-            reg: 0 for reg in self.regulations
-        }
+        self._action_count: Dict[str, int] = {reg: 0 for reg in self.regulations}
+        self._violation_count: Dict[str, int] = {reg: 0 for reg in self.regulations}
 
         logger.info(
             f"ComplianceCore initialized for regulations: {', '.join(self.regulations)}"
@@ -104,9 +100,7 @@ class ComplianceCore:
         if not self.regulations:
             return 100.0
 
-        total = sum(
-            self._compliance_scores.get(reg, 50.0) for reg in self.regulations
-        )
+        total = sum(self._compliance_scores.get(reg, 50.0) for reg in self.regulations)
         return total / len(self.regulations)
 
     def set_compliance_score(
@@ -136,9 +130,7 @@ class ComplianceCore:
                 }
             )
 
-            logger.info(
-                f"Updated {regulation} compliance score: {old_score} → {score}"
-            )
+            logger.info(f"Updated {regulation} compliance score: {old_score} → {score}")
         except Exception as e:
             logger.error(f"Error setting compliance score: {e}")
 
@@ -212,9 +204,7 @@ class ComplianceCore:
         except Exception as e:
             logger.error(f"Error recording violation: {e}")
 
-    def get_violations(
-        self, regulation: Optional[str] = None
-    ) -> Dict[str, List]:
+    def get_violations(self, regulation: Optional[str] = None) -> Dict[str, List]:
         """
         Get violations for regulation(s).
 
@@ -265,9 +255,7 @@ class ComplianceCore:
             duration_ms: Execution duration
         """
         try:
-            regulations_to_track = (
-                [regulation] if regulation else self.regulations
-            )
+            regulations_to_track = [regulation] if regulation else self.regulations
 
             for reg in regulations_to_track:
                 self._action_count[reg] = self._action_count.get(reg, 0) + 1
@@ -315,9 +303,7 @@ class ComplianceCore:
                     "violation_details": self.get_violations(reg).get(reg, []),
                 }
 
-            logger.info(
-                f"Generated compliance report: score={report['overall_score']}"
-            )
+            logger.info(f"Generated compliance report: score={report['overall_score']}")
 
             return report
         except Exception as e:
@@ -328,9 +314,7 @@ class ComplianceCore:
     # AUDIT TRAIL
     # ========================================================================
 
-    def get_audit_trail(
-        self, limit: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+    def get_audit_trail(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get audit trail entries.
 
@@ -382,9 +366,7 @@ class ComplianceCore:
             # Adjust for violations
             if violation_count > 10:
                 risk_level = min(4, risk_level + 1)
-                risk_name = ["Low", "Medium", "High", "Critical"][
-                    risk_level - 1
-                ]
+                risk_name = ["Low", "Medium", "High", "Critical"][risk_level - 1]
 
             return {
                 "risk_level": risk_level,

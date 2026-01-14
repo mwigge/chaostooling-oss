@@ -2,7 +2,14 @@ import os
 import time
 
 import pika
-from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 
@@ -50,7 +57,9 @@ def test_rabbitmq_connection(
             tags = get_metric_tags(
                 mq_system=mq_system, mq_vhost=vhost, mq_operation="connection_test"
             )
-            metrics.record_messaging_operation_count(mq_system=mq_system, count=1, tags=tags)
+            metrics.record_messaging_operation_count(
+                mq_system=mq_system, count=1, tags=tags
+            )
 
             span.set_status(StatusCode.OK)
             logger.info(

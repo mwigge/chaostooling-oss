@@ -6,7 +6,13 @@ import threading
 import time
 from typing import Optional
 
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 from pymongo import MongoClient
 
@@ -95,6 +101,7 @@ def inject_slow_operations(
                 f"slow_operation.worker.{thread_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,
@@ -104,7 +111,7 @@ def inject_slow_operations(
                     chaos_activity="mongodb_slow_operations",
                     chaos_action="slow_operations",
                     chaos_operation="slow_operations",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
 
                 client = MongoClient(uri, serverSelectionTimeoutMS=5000)

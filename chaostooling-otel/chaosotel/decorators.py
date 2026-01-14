@@ -97,9 +97,7 @@ def instrument_action(
                 span_attrs.update({f"tag.{k}": str(v) for k, v in tags.items()})
 
             try:
-                with traces.create_span(
-                    f"action-{name}", attributes=span_attrs
-                ):
+                with traces.create_span(f"action-{name}", attributes=span_attrs):
                     # Execute action
                     result = func(*args, **kwargs)
 
@@ -130,9 +128,7 @@ def instrument_action(
                         result={"value": result} if record_result else None,
                     )
 
-                    logger.debug(
-                        f"Action completed: {name} ({duration_ms:.1f}ms)"
-                    )
+                    logger.debug(f"Action completed: {name} ({duration_ms:.1f}ms)")
 
                     return result
 
@@ -220,9 +216,7 @@ def instrument_probe(
             start_time = time.time()
 
             # Log probe start
-            logs.log_probe_start(
-                probe_name=name, target_type=target_type, tags=tags
-            )
+            logs.log_probe_start(probe_name=name, target_type=target_type, tags=tags)
 
             # Create trace span
             span_attrs = {
@@ -238,10 +232,7 @@ def instrument_probe(
 
                     # Determine status from result
                     status = "success"
-                    if (
-                        isinstance(result, dict)
-                        and result.get("status") == "error"
-                    ):
+                    if isinstance(result, dict) and result.get("status") == "error":
                         status = "error"
 
                     # Record metrics
@@ -265,9 +256,7 @@ def instrument_probe(
                         result=result,
                     )
 
-                    logger.debug(
-                        f"Probe completed: {name} ({duration_ms:.1f}ms)"
-                    )
+                    logger.debug(f"Probe completed: {name} ({duration_ms:.1f}ms)")
 
                     return result
 
@@ -374,9 +363,7 @@ def instrument_rollback(
                         },
                     )
 
-                    logger.info(
-                        f"Recovery completed: {name} ({duration_ms:.1f}ms)"
-                    )
+                    logger.info(f"Recovery completed: {name} ({duration_ms:.1f}ms)")
 
                     return result
 
@@ -639,15 +626,11 @@ class instrumented_section:
             self.trace_core = get_trace_core()
             self.log_core = get_log_core()
 
-            self.log_core.log_event(
-                f"{self.name}_start", event_data=self.tags or {}
-            )
+            self.log_core.log_event(f"{self.name}_start", event_data=self.tags or {})
 
             span_attrs = {"section.name": self.name}
             if self.tags:
-                span_attrs.update(
-                    {f"tag.{k}": str(v) for k, v in self.tags.items()}
-                )
+                span_attrs.update({f"tag.{k}": str(v) for k, v in self.tags.items()})
 
             self.span = self.trace_core.start_span(f"section-{self.name}")
             if self.span:
@@ -657,9 +640,7 @@ class instrumented_section:
             logger.debug(f"Instrumented section started: {self.name}")
 
         except Exception as e:
-            logger.error(
-                f"Error entering instrumented section: {e}", exc_info=True
-            )
+            logger.error(f"Error entering instrumented section: {e}", exc_info=True)
 
         return self
 
@@ -679,9 +660,7 @@ class instrumented_section:
             logger.debug(f"Instrumented section completed: {self.name}")
 
         except Exception as e:
-            logger.error(
-                f"Error exiting instrumented section: {e}", exc_info=True
-            )
+            logger.error(f"Error exiting instrumented section: {e}", exc_info=True)
 
         return False  # Don't suppress exceptions
 

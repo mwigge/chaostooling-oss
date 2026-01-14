@@ -6,7 +6,13 @@ import threading
 import time
 from typing import Optional
 
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from kafka import KafkaConsumer
 from opentelemetry.trace import StatusCode
 
@@ -53,9 +59,18 @@ def inject_slow_consumer(
                 f"slow_consumer.worker.{consumer_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_messaging_span_attributes
+
                 # Extract host/port from bootstrap_servers for network attributes
-                bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else None
-                bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else None
+                bootstrap_host = (
+                    bootstrap_servers.split(",")[0].split(":")[0]
+                    if bootstrap_servers
+                    else None
+                )
+                bootstrap_port = (
+                    int(bootstrap_servers.split(",")[0].split(":")[1])
+                    if bootstrap_servers and ":" in bootstrap_servers.split(",")[0]
+                    else None
+                )
                 set_messaging_span_attributes(
                     span,
                     messaging_system=mq_system,
@@ -66,7 +81,7 @@ def inject_slow_consumer(
                     chaos_activity="kafka_slow_consumer",
                     chaos_action="slow_consumer",
                     chaos_operation="slow_consumer",
-                    chaos_consumer_id=consumer_id
+                    chaos_consumer_id=consumer_id,
                 )
 
                 consumer = KafkaConsumer(
@@ -140,6 +155,7 @@ def inject_slow_consumer(
                         )
                         # CommitFailedError is expected during memory stress - log as warning
                         from kafka.errors import CommitFailedError
+
                         if isinstance(e, CommitFailedError):
                             logger.warning(
                                 f"Slow consumer {consumer_id} commit failed (expected during stress): {e}",
@@ -168,9 +184,18 @@ def inject_slow_consumer(
     try:
         with tracer.start_as_current_span("chaos.kafka.slow_consumer") as span:
             from chaosotel.core.trace_core import set_messaging_span_attributes
+
             # Extract host/port from bootstrap_servers for network attributes
-            bootstrap_host = bootstrap_servers.split(',')[0].split(':')[0] if bootstrap_servers else "kafka"
-            bootstrap_port = int(bootstrap_servers.split(',')[0].split(':')[1]) if bootstrap_servers and ':' in bootstrap_servers.split(',')[0] else 9092
+            bootstrap_host = (
+                bootstrap_servers.split(",")[0].split(":")[0]
+                if bootstrap_servers
+                else "kafka"
+            )
+            bootstrap_port = (
+                int(bootstrap_servers.split(",")[0].split(":")[1])
+                if bootstrap_servers and ":" in bootstrap_servers.split(",")[0]
+                else 9092
+            )
             set_messaging_span_attributes(
                 span,
                 messaging_system=mq_system,
@@ -183,7 +208,7 @@ def inject_slow_consumer(
                 chaos_operation="slow_consumer",
                 chaos_num_consumers=num_consumers,
                 chaos_duration_seconds=duration_seconds,
-                chaos_consume_delay_ms=consume_delay_ms
+                chaos_consume_delay_ms=consume_delay_ms,
             )
 
             logger.info(

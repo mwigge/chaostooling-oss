@@ -70,7 +70,6 @@ def probe_queue_saturation_status(
 
     start = time.time()
 
-
     span_context = (
         tracer.start_as_current_span("probe.activemq.queue_saturation_status")
         if tracer

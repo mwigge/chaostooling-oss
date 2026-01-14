@@ -6,7 +6,13 @@ import threading
 import time
 from typing import Optional
 
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 from pymongo import MongoClient
 
@@ -103,6 +109,7 @@ def inject_query_saturation(
                 f"query_saturation.worker.{thread_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,
@@ -112,7 +119,7 @@ def inject_query_saturation(
                     chaos_activity="mongodb_query_saturation",
                     chaos_action="query_saturation",
                     chaos_operation="query_saturation",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
 
                 client = MongoClient(uri, serverSelectionTimeoutMS=5000)
@@ -210,6 +217,7 @@ def inject_query_saturation(
     try:
         with tracer.start_as_current_span("chaos.mongodb.query_saturation") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system=db_system,
@@ -220,7 +228,7 @@ def inject_query_saturation(
                 chaos_action="query_saturation",
                 chaos_operation="query_saturation",
                 chaos_num_threads=num_threads,
-                chaos_duration_seconds=duration_seconds
+                chaos_duration_seconds=duration_seconds,
             )
 
             logger.info(

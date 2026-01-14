@@ -88,6 +88,7 @@ def inject_connection_exhaustion(
                 f"connection_exhaustion.connection.{conn_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,
@@ -97,7 +98,7 @@ def inject_connection_exhaustion(
                     chaos_activity="mongodb_connection_exhaustion",
                     chaos_action="connection_exhaustion",
                     chaos_operation="connection_exhaustion",
-                    chaos_connection_id=conn_id
+                    chaos_connection_id=conn_id,
                 )
 
                 acquisition_start = time.time()
@@ -186,6 +187,7 @@ def inject_connection_exhaustion(
             "chaos.mongodb.connection_exhaustion"
         ) as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system=db_system,
@@ -197,7 +199,7 @@ def inject_connection_exhaustion(
                 chaos_operation="connection_exhaustion",
                 chaos_num_connections=num_connections,
                 chaos_duration_seconds=duration_seconds,
-                chaos_leak_connections=leak_connections
+                chaos_leak_connections=leak_connections,
             )
 
             logger.info(

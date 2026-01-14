@@ -6,7 +6,13 @@ import threading
 import time
 from typing import Optional
 
-from chaosotel import ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from kafka import KafkaProducer
 from opentelemetry.trace import StatusCode
 
@@ -50,6 +56,7 @@ def inject_message_flood(
             ) as span:
                 # Use modular helper from chaosotel for consistent span attributes
                 from chaosotel.core.trace_core import set_messaging_span_attributes
+
                 set_messaging_span_attributes(
                     span,
                     messaging_system="kafka",
@@ -58,7 +65,7 @@ def inject_message_flood(
                     chaos_activity="kafka_message_flood",
                     chaos_action="message_flood",
                     chaos_operation="message_flood",
-                    chaos_producer_id=producer_id
+                    chaos_producer_id=producer_id,
                 )
 
                 producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
@@ -131,6 +138,7 @@ def inject_message_flood(
         with tracer.start_as_current_span("chaos.kafka.message_flood") as span:
             # Use modular helper from chaosotel for consistent span attributes
             from chaosotel.core.trace_core import set_messaging_span_attributes
+
             set_messaging_span_attributes(
                 span,
                 messaging_system="kafka",
@@ -140,7 +148,7 @@ def inject_message_flood(
                 chaos_action="message_flood",
                 chaos_operation="message_flood",
                 chaos_num_producers=num_producers,
-                chaos_duration_seconds=duration_seconds
+                chaos_duration_seconds=duration_seconds,
             )
 
             logger.info(

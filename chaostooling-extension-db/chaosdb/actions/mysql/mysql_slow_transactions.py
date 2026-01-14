@@ -7,7 +7,13 @@ import time
 from typing import Optional
 
 import mysql.connector
-from chaosotel import (ensure_initialized, flush, get_metric_tags, get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -135,6 +141,7 @@ def inject_slow_transactions(
                 f"slow_transaction.worker.{thread_id}"
             ) as span:
                 from chaosotel.core.trace_core import set_db_span_attributes
+
                 set_db_span_attributes(
                     span,
                     db_system=db_system,
@@ -144,7 +151,7 @@ def inject_slow_transactions(
                     chaos_activity="mysql_slow_transactions",
                     chaos_action="slow_transactions",
                     chaos_operation="slow_transactions",
-                    chaos_thread_id=thread_id
+                    chaos_thread_id=thread_id,
                 )
 
                 conn = mysql.connector.connect(
@@ -251,6 +258,7 @@ def inject_slow_transactions(
     try:
         with tracer.start_as_current_span("chaos.mysql.slow_transactions") as span:
             from chaosotel.core.trace_core import set_db_span_attributes
+
             set_db_span_attributes(
                 span,
                 db_system=db_system,
@@ -262,7 +270,7 @@ def inject_slow_transactions(
                 chaos_operation="slow_transactions",
                 chaos_num_threads=num_threads,
                 chaos_duration_seconds=duration_seconds,
-                chaos_transaction_delay_ms=transaction_delay_ms
+                chaos_transaction_delay_ms=transaction_delay_ms,
             )
             span.set_attribute("chaos.activity.type", "action")
             span.set_attribute("chaos.system", "mysql")

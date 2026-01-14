@@ -75,7 +75,6 @@ def probe_pool_exhaustion_status(
 
     start = time.time()
 
-
     span_context = (
         tracer.start_as_current_span("probe.mysql.pool_exhaustion_status")
         if tracer
@@ -173,7 +172,7 @@ def probe_pool_exhaustion_status(
                 count=1,
                 tags=tags,
             )
-            
+
             # Record connection pool utilization metric
             metrics.record_db_connection_pool_utilization(
                 db_system=db_system,
