@@ -1,6 +1,4 @@
-"""
-Generic Chaos Toolkit controls.
-"""
+"""Generic Chaos Toolkit controls."""
 
 from .env_loader_control import (
     before_experiment_control as env_loader_before_experiment_control,
@@ -32,4 +30,3 @@ __all__ = [
     "load_generator_after_experiment_control",
     "load_generator_cleanup_control",
 ]
-

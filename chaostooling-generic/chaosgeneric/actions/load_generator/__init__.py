@@ -11,4 +11,3 @@ __all__ = [
     "stop_background_transaction_load",
     "get_background_load_stats",
 ]
-
