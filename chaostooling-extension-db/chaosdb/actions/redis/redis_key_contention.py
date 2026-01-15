@@ -31,6 +31,14 @@ def inject_key_contention(
     key_name: str = "chaos:contention:test",
 ) -> Dict:
     """Inject Redis key contention by concurrent operations on same key."""
+    # Handle string input from Chaos Toolkit configuration
+    if port is not None:
+        port = int(port) if isinstance(port, str) else port
+    num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
+    duration_seconds = (
+        int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
+    )
+    
     host = host or os.getenv("REDIS_HOST", "localhost")
     port = port or int(os.getenv("REDIS_PORT", "6379"))
     password = password or os.getenv("REDIS_PASSWORD", None)

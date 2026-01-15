@@ -34,6 +34,17 @@ def inject_message_flood(
     duration_seconds: int = 60,
 ) -> Dict:
     """Flood RabbitMQ queue with high volume of messages."""
+    # Handle string input from Chaos Toolkit configuration
+    if port is not None:
+        port = int(port) if isinstance(port, str) else port
+    num_producers = int(num_producers) if isinstance(num_producers, str) else num_producers
+    messages_per_producer = (
+        int(messages_per_producer) if isinstance(messages_per_producer, str) else messages_per_producer
+    )
+    duration_seconds = (
+        int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
+    )
+    
     host = host or os.getenv("RABBITMQ_HOST", "localhost")
     port = port or int(os.getenv("RABBITMQ_PORT", "5672"))
     user = user or os.getenv("RABBITMQ_USER", "guest")

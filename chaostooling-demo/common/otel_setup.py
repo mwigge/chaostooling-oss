@@ -15,13 +15,9 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
-# Import Kafka tracing helpers from production-ready trace_core module
-# These are the modular, reusable functions from chaosotel
-from chaosotel.core.trace_core import (
-    get_kafka_producer,
-    trace_kafka_produce,
-    trace_kafka_consume,
-)
+# Kafka tracing helpers are available from chaosotel.core.trace_core
+# Services can import directly:
+#   from chaosotel.core.trace_core import trace_kafka_produce, trace_kafka_consume
 
 
 class ServiceNameSpanProcessor(SpanProcessor):

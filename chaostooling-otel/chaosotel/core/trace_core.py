@@ -818,7 +818,6 @@ def trace_kafka_produce(
         logger.error("kafka-python not installed - cannot produce Kafka messages")
         return False
 
-    tracer = trace.get_tracer(__name__)
     span = None
 
     try:
@@ -854,7 +853,10 @@ def trace_kafka_produce(
         )
 
         # Produce message
-        producer = get_kafka_producer(bootstrap_servers)
+        producer = KafkaProducer(
+            bootstrap_servers=bootstrap_servers.split(","),
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+        )
         producer.send(topic, value)
         producer.flush()
         producer.close()
@@ -914,8 +916,6 @@ def trace_kafka_consume(
             "kafka-python is required for Kafka operations. "
             "Install with: pip install kafka-python"
         )
-
-    tracer = trace.get_tracer(__name__)
 
     # Extract host from bootstrap_servers for network.peer.address
     if not bootstrap_servers:

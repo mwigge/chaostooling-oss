@@ -34,6 +34,14 @@ def inject_row_contention(
     table_name: str = "chaos_test_table",
 ) -> Dict:
     """Inject Cassandra row contention by concurrent operations on same partition."""
+    # Handle string input from Chaos Toolkit configuration
+    if port is not None:
+        port = int(port) if isinstance(port, str) else port
+    num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
+    duration_seconds = (
+        int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
+    )
+    
     host = host or os.getenv("CASSANDRA_HOST", "localhost")
     port = port or int(os.getenv("CASSANDRA_PORT", "9042"))
     keyspace = keyspace or os.getenv("CASSANDRA_KEYSPACE", "system")
