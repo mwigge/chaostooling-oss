@@ -73,8 +73,6 @@ def probe_pool_exhaustion_status(
 
     start = time.time()
 
-    span = None
-
     # Build connection string
 
     connection_string = (

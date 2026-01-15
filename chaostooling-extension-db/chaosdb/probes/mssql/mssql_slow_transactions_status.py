@@ -73,8 +73,6 @@ def probe_slow_transactions_status(
 
     start = time.time()
 
-    span = None
-
     # Build connection string
 
     connection_string = (

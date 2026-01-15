@@ -73,8 +73,6 @@ def probe_lock_storm_status(
 
     start = time.time()
 
-    span = None
-
     # Build connection string
 
     connection_string = (
