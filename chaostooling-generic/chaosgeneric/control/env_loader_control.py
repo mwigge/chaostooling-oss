@@ -213,14 +213,11 @@ def before_experiment_control(
                 logger.debug(f"Skipped {key} (already in environment)")
 
         _env_loaded = True
-        logger.info(
-            f"Loaded {vars_set} environment variable(s) from {env_file_path}"
-        )
+        logger.info(f"Loaded {vars_set} environment variable(s) from {env_file_path}")
 
         if vars_set == 0:
             logger.info(
-                "No new environment variables were set "
-                "(all already in environment)"
+                "No new environment variables were set (all already in environment)"
             )
 
     except Exception as e:

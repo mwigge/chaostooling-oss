@@ -64,10 +64,7 @@ def before_experiment_control(
     """
     global _load_generator_started, _load_generator_config
 
-    if (
-        not _load_generator_config
-        or not _load_generator_config.get("auto_start", True)
-    ):
+    if not _load_generator_config or not _load_generator_config.get("auto_start", True):
         logger.info("Load generator auto-start is disabled, skipping")
         return
 
@@ -75,9 +72,7 @@ def before_experiment_control(
         url = _load_generator_config["url"]
         tps = _load_generator_config["tps"]
 
-        logger.info(
-            f"Starting background transaction load generator: {tps} TPS"
-        )
+        logger.info(f"Starting background transaction load generator: {tps} TPS")
         result = start_background_transaction_load(
             load_generator_url=url,
             transactions_per_second=tps,
@@ -185,4 +180,3 @@ def cleanup_control(
             _load_generator_started = False
         except Exception as e:
             logger.warning(f"Failed to stop load generator during cleanup: {e}")
-

@@ -39,7 +39,8 @@ def start_background_transaction_load(
         Dict with status and TPS information
     """
     url = load_generator_url or os.getenv(
-        "TRANSACTION_LOAD_GENERATOR_URL", "http://transaction-load-generator:5001"
+        "TRANSACTION_LOAD_GENERATOR_URL",
+        "http://transaction-load-generator:5001",
     )
 
     try:
@@ -75,7 +76,8 @@ def stop_background_transaction_load(
         Dict with status and statistics
     """
     url = load_generator_url or os.getenv(
-        "TRANSACTION_LOAD_GENERATOR_URL", "http://transaction-load-generator:5001"
+        "TRANSACTION_LOAD_GENERATOR_URL",
+        "http://transaction-load-generator:5001",
     )
 
     try:
@@ -109,7 +111,8 @@ def get_background_load_stats(
         Dict with statistics (total, successful, failed, TPS, etc.)
     """
     url = load_generator_url or os.getenv(
-        "TRANSACTION_LOAD_GENERATOR_URL", "http://transaction-load-generator:5001"
+        "TRANSACTION_LOAD_GENERATOR_URL",
+        "http://transaction-load-generator:5001",
     )
 
     try:
@@ -119,4 +122,3 @@ def get_background_load_stats(
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to get load stats: {e}", extra={"url": url})
         raise
-
