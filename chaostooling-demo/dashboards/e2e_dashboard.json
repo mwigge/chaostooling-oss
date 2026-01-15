@@ -244,7 +244,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_risk_level_ratio or vector(0)",
+          "expr": "chaos_chaos_experiment_risk_level_ratio",
           "refId": "A"
         }
       ],
@@ -328,7 +328,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_risk_score_ratio or vector(0)",
+          "expr": "chaos_chaos_experiment_risk_score_ratio",
           "refId": "A"
         }
       ],
@@ -412,7 +412,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_complexity_score_ratio or vector(0)",
+          "expr": "chaos_chaos_experiment_complexity_score_ratio",
           "refId": "A"
         }
       ],
@@ -677,7 +677,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "((sum(chaos_chaos_operation_success_total) / clamp_min(sum(chaos_chaos_operation_success_total) + sum(chaos_chaos_operation_error_total), 1)) * 100) or vector(0)",
+          "expr": "((sum(chaos_chaos_operation_success_total) / clamp_min(sum(chaos_chaos_operation_success_total) + sum(chaos_chaos_operation_error_total), 1)) * 100)",
           "refId": "A"
         }
       ],
@@ -869,7 +869,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_probes_total_ratio or count(count by (probe_name) (chaos_probe_executions_total)) or vector(0)",
+          "expr": "chaos_chaos_experiment_probes_total_ratio or count(count by (probe_name) (chaos_probe_executions_total))",
           "refId": "A"
         }
       ],
@@ -1011,7 +1011,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "((sum(chaos_operation_success_total) / clamp_min(sum(chaos_operation_success_total) + sum(chaos_operation_error_total), 1)) * 100) or vector(0)",
+          "expr": "((sum(chaos_operation_success_total) / clamp_min(sum(chaos_operation_success_total) + sum(chaos_operation_error_total), 1)) * 100)",
           "refId": "A"
         }
       ],
@@ -1119,7 +1119,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_transaction_total) by (tag_db_operation) or vector(0)",
+          "expr": "sum(chaos_transaction_total) by (tag_db_operation)",
           "legendFormat": "Total Transactions",
           "refId": "A"
         },
@@ -1128,7 +1128,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_transaction_successful_total) by (tag_db_operation) or vector(0)",
+          "expr": "sum(chaos_transaction_successful_total) by (tag_db_operation)",
           "legendFormat": "Successful",
           "refId": "B"
         },
@@ -1137,7 +1137,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_transaction_failed_total) by (tag_db_operation) or vector(0)",
+          "expr": "sum(chaos_transaction_failed_total) by (tag_db_operation)",
           "legendFormat": "Failed",
           "refId": "C"
         }
@@ -1208,7 +1208,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "((sum(last_over_time(chaos_transaction_successful_total[5m])) / clamp_min(sum(last_over_time(chaos_transaction_total[5m])), 1)) * 100) or vector(0)",
+          "expr": "((sum(last_over_time(chaos_transaction_successful_total[5m])) / clamp_min(sum(last_over_time(chaos_transaction_total[5m])), 1)) * 100)",
           "refId": "A"
         }
       ],
@@ -2080,7 +2080,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"kafka\"}",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo-kafka-1|chaostooling-demo-zookeeper-1\"}",
               "refId": "A"
             }
           ],
@@ -2139,7 +2139,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"kafka\"}",
+              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo-kafka-1|chaostooling-demo-zookeeper-1\"}",
               "refId": "A"
             }
           ],
@@ -2164,8 +2164,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"kafka\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-kafka-1|chaostooling-demo-zookeeper-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -2173,8 +2173,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"kafka\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-kafka-1|chaostooling-demo-zookeeper-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -2803,7 +2803,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(tempo_spanmetrics_calls_total{service_name=~\".*(app-server|payment-service|order-service|inventory-service|notification-service|transaction-load-generator).*\"}[5m])) by (service_name) or sum(rate(chaos_operation_success_total{operation_name=~\".*(app-server|payment-service|order-service|inventory-service|notification-service|transaction-load-generator).*\"}[5m])) by (operation_name) or vector(0)",
+          "expr": "sum(rate(tempo_spanmetrics_calls_total{service_name=~\".*(app-server|payment-service|order-service|inventory-service|notification-service|transaction-load-generator).*\"}[5m])) by (service_name) or sum(rate(chaos_operation_success_total{operation_name=~\".*(app-server|payment-service|order-service|inventory-service|notification-service|transaction-load-generator).*\"}[5m])) by (operation_name)",
           "legendFormat": "{{service_name}}",
           "refId": "A"
         }
@@ -3050,7 +3050,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count(count by (service_name) (tempo_spanmetrics_calls_total)) or count(count by (operation_name) (chaos_operation_success_total)) or vector(0)",
+          "expr": "count(count by (service_name) (tempo_spanmetrics_calls_total)) or count(count by (operation_name) (chaos_operation_success_total))",
           "refId": "A"
         }
       ],
@@ -3130,7 +3130,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_db_lock_count_total) by (db_system, lock_type) or sum(chaos_db_deadlock_count_total) by (db_system) or vector(0)",
+          "expr": "sum(chaos_db_lock_count_total) by (db_system, lock_type) or sum(chaos_db_deadlock_count_total) by (db_system)",
           "refId": "A"
         }
       ],
@@ -3199,7 +3199,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_db_connection_pool_utilization or vector(0)",
+          "expr": "chaos_db_connection_pool_utilization",
           "refId": "A"
         }
       ],
@@ -3371,7 +3371,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(chaos_db_slow_query_count_total[5m])) by (db_system, threshold_ms) or vector(0)",
+          "expr": "sum(rate(chaos_db_slow_query_count_total[5m])) by (db_system, threshold_ms)",
           "legendFormat": "{{db_system}} (> {{threshold_ms}}ms)",
           "refId": "A"
         }
@@ -3462,7 +3462,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(chaos_mttr_seconds_bucket[5m])) by (le, service_name, recovery_type)) or vector(0)",
+          "expr": "histogram_quantile(0.95, sum(rate(chaos_mttr_seconds_bucket[5m])) by (le, service_name, recovery_type))",
           "legendFormat": "P95 - {{service_name}} ({{recovery_type}})",
           "refId": "A"
         },
@@ -3471,7 +3471,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(chaos_mttr_seconds_bucket[5m])) by (le, service_name, recovery_type)) or vector(0)",
+          "expr": "histogram_quantile(0.99, sum(rate(chaos_mttr_seconds_bucket[5m])) by (le, service_name, recovery_type))",
           "legendFormat": "P99 - {{service_name}} ({{recovery_type}})",
           "refId": "B"
         }
@@ -3574,7 +3574,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(chaos_db_lock_count_total[5m])) by (db_system, lock_type) or vector(0)",
+          "expr": "sum(rate(chaos_db_lock_count_total[5m])) by (db_system, lock_type)",
           "legendFormat": "{{db_system}} - {{lock_type}}",
           "refId": "A"
         }
@@ -3664,7 +3664,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(chaos_db_deadlock_count_total[5m])) by (db_system) or vector(0)",
+          "expr": "sum(rate(chaos_db_deadlock_count_total[5m])) by (db_system)",
           "legendFormat": "{{db_system}}",
           "refId": "A"
         }
@@ -3754,7 +3754,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_db_connection_pool_utilization or vector(0)",
+          "expr": "chaos_db_connection_pool_utilization",
           "legendFormat": "{{db_system}}",
           "refId": "A"
         }
@@ -4061,7 +4061,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_mttr_current_seconds or vector(0)",
+          "expr": "chaos_mttr_current_seconds",
           "legendFormat": "{{service_name}} ({{recovery_type}})",
           "refId": "A"
         }
@@ -4133,7 +4133,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_mttr_current_seconds or vector(0)",
+          "expr": "chaos_mttr_current_seconds",
           "refId": "A"
         }
       ],
@@ -4202,7 +4202,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"postgres\"} or vector(0)",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo-postgres-primary-site-a-1|chaostooling-demo-postgres-replica-site-a-1|chaostooling-demo-postgres-primary-site-b-1|chaostooling-demo-postgres-primary-1|chaostooling-demo-postgres-replica-1|chaostooling-demo-postgres-1\"}",
               "refId": "A"
             }
           ],
@@ -4261,7 +4261,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"postgres\"} or vector(0)",
+              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo-postgres-primary-site-a-1|chaostooling-demo-postgres-replica-site-a-1|chaostooling-demo-postgres-primary-site-b-1|chaostooling-demo-postgres-primary-1|chaostooling-demo-postgres-replica-1|chaostooling-demo-postgres-1\"}",
               "refId": "A"
             }
           ],
@@ -4286,8 +4286,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"postgres\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-postgres-primary-site-a-1|chaostooling-demo-postgres-replica-site-a-1|chaostooling-demo-postgres-primary-site-b-1|chaostooling-demo-postgres-primary-1|chaostooling-demo-postgres-replica-1|chaostooling-demo-postgres-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -4295,8 +4295,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"postgres\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-postgres-primary-site-a-1|chaostooling-demo-postgres-replica-site-a-1|chaostooling-demo-postgres-primary-site-b-1|chaostooling-demo-postgres-primary-1|chaostooling-demo-postgres-replica-1|chaostooling-demo-postgres-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -4321,7 +4321,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"postgresql\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"postgresql\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -4330,7 +4330,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"postgresql\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"postgresql\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -4404,7 +4404,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"mysql\"} or vector(0)",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo-mysql-1\"}",
               "refId": "A"
             }
           ],
@@ -4463,7 +4463,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"mysql\"} or vector(0)",
+              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo-mysql-1\"}",
               "refId": "A"
             }
           ],
@@ -4488,8 +4488,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"mysql\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-mysql-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -4497,8 +4497,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"mysql\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-mysql-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -4523,7 +4523,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"mysql\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"mysql\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -4532,7 +4532,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"mysql\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"mysql\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -4606,7 +4606,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"mssql\"} or vector(0)",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo-mssql-1\"}",
               "refId": "A"
             }
           ],
@@ -4665,7 +4665,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"mssql\"} or vector(0)",
+              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo-mssql-1\"}",
               "refId": "A"
             }
           ],
@@ -4690,8 +4690,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"mssql\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-mssql-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -4699,8 +4699,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"mssql\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-mssql-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -4725,7 +4725,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"mssql\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"mssql\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -4734,7 +4734,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"mssql\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"mssql\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -4808,7 +4808,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"mongodb\"} or vector(0)",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo-mongodb-1\"}",
               "refId": "A"
             }
           ],
@@ -4867,7 +4867,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"mongodb\"} or vector(0)",
+              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo-mongodb-1\"}",
               "refId": "A"
             }
           ],
@@ -4892,8 +4892,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"mongodb\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-mongodb-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -4901,8 +4901,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"mongodb\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-mongodb-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -4927,7 +4927,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"mongodb\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"mongodb\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -4936,7 +4936,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"mongodb\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"mongodb\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -5010,7 +5010,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"redis\"} or vector(0)",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo-redis-1\"}",
               "refId": "A"
             }
           ],
@@ -5069,7 +5069,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"redis\"} or vector(0)",
+              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo-redis-1\"}",
               "refId": "A"
             }
           ],
@@ -5094,8 +5094,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"redis\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-redis-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -5103,8 +5103,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"redis\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-redis-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -5129,7 +5129,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"redis\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"redis\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -5138,7 +5138,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"redis\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"redis\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -5212,7 +5212,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"cassandra\"} or vector(0)",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo-cassandra-1\"}",
               "refId": "A"
             }
           ],
@@ -5271,7 +5271,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"cassandra\"} or vector(0)",
+              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo-cassandra-1\"}",
               "refId": "A"
             }
           ],
@@ -5296,8 +5296,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"cassandra\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-cassandra-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -5305,8 +5305,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"cassandra\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-cassandra-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -5331,7 +5331,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"cassandra\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"cassandra\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -5340,7 +5340,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"cassandra\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"cassandra\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -5414,7 +5414,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"kafka\"} or vector(0)",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"kafka\"}",
               "refId": "A"
             }
           ],
@@ -5473,7 +5473,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"kafka\"} or vector(0)",
+              "expr": "chaos_container_memory_percent_ratio{container_name=\"kafka\"}",
               "refId": "A"
             }
           ],
@@ -5498,8 +5498,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"kafka\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-kafka-1|chaostooling-demo-zookeeper-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -5507,8 +5507,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"kafka\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-kafka-1|chaostooling-demo-zookeeper-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -5533,7 +5533,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"kafka\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"kafka\"}[1m]))",
               "legendFormat": "Messages",
               "refId": "A"
             },
@@ -5542,7 +5542,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"kafka\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"kafka\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -5616,7 +5616,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"rabbitmq\"} or vector(0)",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo-rabbitmq-1\"}",
               "refId": "A"
             }
           ],
@@ -5675,7 +5675,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"rabbitmq\"} or vector(0)",
+              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo-rabbitmq-1\"}",
               "refId": "A"
             }
           ],
@@ -5700,8 +5700,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"rabbitmq\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-rabbitmq-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -5709,8 +5709,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"rabbitmq\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-rabbitmq-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -5735,7 +5735,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"rabbitmq\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"rabbitmq\"}[1m]))",
               "legendFormat": "Messages",
               "refId": "A"
             },
@@ -5744,7 +5744,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"rabbitmq\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"rabbitmq\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -5818,7 +5818,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=\"activemq\"} or vector(0)",
+              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo-activemq-1\"}",
               "refId": "A"
             }
           ],
@@ -5877,7 +5877,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=\"activemq\"} or vector(0)",
+              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo-activemq-1\"}",
               "refId": "A"
             }
           ],
@@ -5902,8 +5902,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=\"activemq\"}[1m])",
-              "legendFormat": "RX",
+              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo-activemq-1\"}[$__rate_interval])",
+              "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
             {
@@ -5911,8 +5911,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=\"activemq\"}[1m])",
-              "legendFormat": "TX",
+              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo-activemq-1\"}[$__rate_interval])",
+              "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
           ],
@@ -5937,7 +5937,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"activemq\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"activemq\"}[1m]))",
               "legendFormat": "Messages",
               "refId": "A"
             },
@@ -5946,7 +5946,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"activemq\"}[1m])) or vector(0)",
+              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"activemq\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }

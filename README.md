@@ -11,12 +11,14 @@ ChaosTooling provides a comprehensive set of extensions, observability tools, an
 ### Core Components
 
 1. **chaostooling-otel** - OpenTelemetry observability for Chaos Toolkit (module: `chaosotel`)
-2. **chaostooling-extension-db** - Database and messaging system extensions
-3. **chaostooling-extension-compute** - Compute resource extensions
-4. **chaostooling-extension-network** - Network extensions
-5. **chaostooling-reporting** - Reporting and analytics extension
-6. **chaostooling-demo** - Demo environment with full observability stack
-7. **chaostooling-experiments** - Example experiments
+2. **chaostooling-generic** - Generic chaos engineering controls and utilities (module: `chaosgeneric`)
+3. **chaostooling-extension-db** - Database and messaging system extensions (module: `chaosdb`)
+4. **chaostooling-extension-compute** - Compute resource extensions (module: `chaoscompute`)
+5. **chaostooling-extension-network** - Network extensions (module: `chaosnetwork`)
+6. **chaostooling-reporting** - Reporting and analytics extension (module: `chaostooling_reporting`)
+7. **chaostoolkit-extension-app** - Application-level chaos extensions (module: `chaosapp`)
+8. **chaostooling-demo** - Demo environment with full observability stack
+9. **chaostooling-experiments** - Example experiments
 
 ## Quick Start
 

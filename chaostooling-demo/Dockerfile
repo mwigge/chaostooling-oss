@@ -48,9 +48,13 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 # Copy setup and entrypoint scripts
 COPY scripts/docker-entrypoint.sh /docker-entrypoint.sh
+COPY scripts/chaos-runner-entrypoint.sh /chaos-runner-entrypoint.sh
 COPY scripts/setup-extensions.sh /setup-extensions.sh
-RUN dos2unix /docker-entrypoint.sh /setup-extensions.sh && \
-    chmod +x /docker-entrypoint.sh /setup-extensions.sh
+RUN dos2unix /docker-entrypoint.sh /chaos-runner-entrypoint.sh /setup-extensions.sh && \
+    chmod +x /docker-entrypoint.sh /chaos-runner-entrypoint.sh /setup-extensions.sh
+
+# Run setup-extensions.sh during build to pre-install extensions
+RUN /setup-extensions.sh || true
 
 WORKDIR /experiments
 

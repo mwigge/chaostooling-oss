@@ -20,6 +20,14 @@ else
     fi
 fi
 
+# Ensure PYTHONPATH is exported and available for all commands
+export PYTHONPATH
+
+# Source the profile script if it exists (created by setup-extensions.sh)
+if [ -f /etc/profile.d/chaostooling-pythonpath.sh ]; then
+    source /etc/profile.d/chaostooling-pythonpath.sh
+fi
+
 # Execute the original command (chaos run, bash, etc.)
 exec "$@"
 

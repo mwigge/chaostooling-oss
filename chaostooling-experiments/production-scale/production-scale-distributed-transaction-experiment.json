@@ -282,222 +282,27 @@
       "default": "http://transaction-load-generator:5001"
     },
     "_comment_load_generator_port": "Note: Container uses port 5001 internally, but host port is 6002 to avoid conflict with app-servers/payment-services (5001-5008)",
-    "type": "env",
-    "key": "POSTGRES_PASSWORD",
-    "default": "postgres"
+    "load_generator_tps": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_TPS",
+      "default": "2.0"
+    },
+    "auto_start_load_generator": {
+      "type": "env",
+      "key": "AUTO_START_LOAD_GENERATOR",
+      "default": "true"
+    },
+    "reporting_output_dir": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_OUTPUT_DIR",
+      "default": "/var/log/chaostoolkit/reports"
+    },
+    "reporting_formats": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_FORMATS",
+      "default": "html,json"
+    }
   },
-  "mongodb_uri": {
-    "type": "env",
-    "key": "MONGODB_URI",
-    "default": "mongodb://mongodb:27017"
-  },
-  "mongodb_db": {
-    "type": "env",
-    "key": "MONGODB_DB",
-    "default": "test"
-  },
-  "redis_host": {
-    "type": "env",
-    "key": "REDIS_HOST",
-    "default": "redis"
-  },
-  "redis_port": {
-    "type": "env",
-    "key": "REDIS_PORT",
-    "default": "6379"
-  },
-  "mysql_host": {
-    "type": "env",
-    "key": "MYSQL_HOST",
-    "default": "mysql"
-  },
-  "mysql_port": {
-    "type": "env",
-    "key": "MYSQL_PORT",
-    "default": "3306"
-  },
-  "mysql_db": {
-    "type": "env",
-    "key": "MYSQL_DB",
-    "default": "testdb"
-  },
-  "mysql_user": {
-    "type": "env",
-    "key": "MYSQL_USER",
-    "default": "root"
-  },
-  "mysql_password": {
-    "type": "env",
-    "key": "MYSQL_PASSWORD",
-    "default": "mysql"
-  },
-  "mssql_host": {
-    "type": "env",
-    "key": "MSSQL_HOST",
-    "default": "mssql"
-  },
-  "mssql_port": {
-    "type": "env",
-    "key": "MSSQL_PORT",
-    "default": "1433"
-  },
-  "mssql_db": {
-    "type": "env",
-    "key": "MSSQL_DB",
-    "default": "master"
-  },
-  "mssql_user": {
-    "type": "env",
-    "key": "MSSQL_USER",
-    "default": "sa"
-  },
-  "mssql_password": {
-    "type": "env",
-    "key": "MSSQL_SA_PASSWORD",
-    "default": "Password123!"
-  },
-  "cassandra_host": {
-    "type": "env",
-    "key": "CASSANDRA_HOST",
-    "default": "cassandra"
-  },
-  "cassandra_port": {
-    "type": "env",
-    "key": "CASSANDRA_PORT",
-    "default": "9042"
-  },
-  "cassandra_keyspace": {
-    "type": "env",
-    "key": "CASSANDRA_KEYSPACE",
-    "default": "system"
-  },
-  "_comment4": "=== MESSAGING SYSTEMS ===",
-  "kafka_bootstrap_servers": {
-    "type": "env",
-    "key": "KAFKA_BOOTSTRAP_SERVERS",
-    "default": "kafka:9092"
-  },
-  "kafka_topic": {
-    "type": "env",
-    "key": "KAFKA_TOPIC",
-    "default": "test"
-  },
-  "rabbitmq_host": {
-    "type": "env",
-    "key": "RABBITMQ_HOST",
-    "default": "rabbitmq"
-  },
-  "rabbitmq_port": {
-    "type": "env",
-    "key": "RABBITMQ_PORT",
-    "default": "5672"
-  },
-  "rabbitmq_user": {
-    "type": "env",
-    "key": "RABBITMQ_USER",
-    "default": "chaos"
-  },
-  "rabbitmq_password": {
-    "type": "env",
-    "key": "RABBITMQ_PASSWORD",
-    "default": "password"
-  },
-  "activemq_host": {
-    "type": "env",
-    "key": "ACTIVEMQ_HOST",
-    "default": "activemq"
-  },
-  "activemq_port": {
-    "type": "env",
-    "key": "ACTIVEMQ_PORT",
-    "default": "61616"
-  },
-  "activemq_web_port": {
-    "type": "env",
-    "key": "ACTIVEMQ_WEB_PORT",
-    "default": "8161"
-  },
-  "_comment5": "=== CHAOS PARAMETERS ===",
-  "network_latency_ms": {
-    "type": "env",
-    "key": "CHAOS_NETWORK_LATENCY_MS",
-    "default": "500"
-  },
-  "network_duration_s": {
-    "type": "env",
-    "key": "CHAOS_NETWORK_DURATION_S",
-    "default": "30"
-  },
-  "cpu_stress_load": {
-    "type": "env",
-    "key": "CHAOS_CPU_LOAD",
-    "default": "80"
-  },
-  "cpu_stress_duration_s": {
-    "type": "env",
-    "key": "CHAOS_CPU_DURATION_S",
-    "default": "30"
-  },
-  "db_slow_txn_delay_ms": {
-    "type": "env",
-    "key": "CHAOS_DB_SLOW_TXN_DELAY_MS",
-    "default": "3000"
-  },
-  "db_slow_txn_duration_s": {
-    "type": "env",
-    "key": "CHAOS_DB_SLOW_TXN_DURATION_S",
-    "default": "20"
-  },
-  "_comment6": "=== TEST PARAMETERS ===",
-  "baseline_transactions": {
-    "type": "env",
-    "key": "TEST_BASELINE_TRANSACTIONS",
-    "default": "50"
-  },
-  "distributed_transaction_test_count": {
-    "type": "env",
-    "key": "TEST_DISTRIBUTED_TXN_COUNT",
-    "default": "30"
-  },
-  "dr_failover_test_count": {
-    "type": "env",
-    "key": "TEST_DR_FAILOVER_COUNT",
-    "default": "20"
-  },
-  "_comment7": "=== OBSERVABILITY ===",
-  "otel_service_name": {
-    "type": "env",
-    "key": "OTEL_SERVICE_NAME",
-    "default": "production-scale-chaos-experiment"
-  },
-  "_comment8": "=== BACKGROUND TRANSACTION LOAD ===",
-  "load_generator_url": {
-    "type": "env",
-    "key": "TRANSACTION_LOAD_GENERATOR_URL",
-    "default": "http://transaction-load-generator:5001"
-  },
-  "_comment_load_generator_port": "Note: Container uses port 5001 internally, but host port is 6002 to avoid conflict with app-servers/payment-services (5001-5008)",
-  "load_generator_tps": {
-    "type": "env",
-    "key": "TRANSACTION_LOAD_GENERATOR_TPS",
-    "default": "2.0"
-  },
-  "auto_start_load_generator": {
-    "type": "env",
-    "key": "AUTO_START_LOAD_GENERATOR",
-    "default": "true"
-  },
-  "reporting_output_dir": {
-    "type": "env",
-    "key": "CHAOS_REPORTING_OUTPUT_DIR",
-    "default": "./reporting-output"
-  },
-  "reporting_formats": {
-    "type": "env",
-    "key": "CHAOS_REPORTING_FORMATS",
-    "default": "html,json"
-  }
-},
 "controls": [
   {
     "name": "env-loader",

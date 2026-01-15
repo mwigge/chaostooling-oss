@@ -75,6 +75,10 @@ reports/
 
 # Reporting output from experiments (do not sync)
 chaostooling-demo/reporting-output/
+chaostooling-experiments/reporting-output/
+chaostooling-experiments/*/reporting-output/
+# Prevent incorrectly named directories from variable expansion issues
+chaostooling-experiments/\$\{*
 
 # Docker
 .docker/
