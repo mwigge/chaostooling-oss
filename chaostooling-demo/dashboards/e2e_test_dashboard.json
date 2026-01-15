@@ -757,7 +757,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "chaos_chaos_experiment_success_ratio * 100 or vector(100)",
+                    "expr": "chaos_chaos_experiment_success_ratio * 100",
                     "refId": "A"
                 }
             ],
@@ -799,7 +799,7 @@
                         "type": "loki",
                         "uid": "loki"
                     },
-                    "expr": "{service_name=~\"app-server-1|app-server-2|postgres-primary|postgres-replica|payment-service|haproxy\"} |~ \"(stopped|started|Container|replica|server)\" | line_format \"{{.ts}} {{.msg}}\"",
+                    "expr": "{service_name=~\"app-server-1-site-a|app-server-2-site-a|postgres-primary-site-a|postgres-replica-site-a|payment-service-site-a|haproxy-site-a|haproxy-site-b\"} |~ \"(stopped|started|Container|replica|server)\" | line_format \"{{.ts}} {{.msg}}\"",
                     "maxLines": 20,
                     "refId": "A"
                 }

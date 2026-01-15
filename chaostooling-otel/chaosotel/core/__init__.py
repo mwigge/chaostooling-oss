@@ -18,9 +18,12 @@ from .trace_core import (
     InstrumentedSpan,
     TraceCore,
     create_instrumented_span,
+    get_kafka_producer,
     get_system_name_from_module,
     instrument_db_span,
     instrument_messaging_span,
+    trace_kafka_consume,
+    trace_kafka_produce,
 )
 
 __all__ = [
@@ -37,4 +40,8 @@ __all__ = [
     "get_system_name_from_module",
     "DB_SYSTEM_MAP",
     "MESSAGING_SYSTEM_MAP",
+    # Kafka-specific helpers
+    "get_kafka_producer",
+    "trace_kafka_produce",
+    "trace_kafka_consume",
 ]

@@ -35,6 +35,19 @@ def inject_slow_transactions(
     table_name: str = "chaos_test_table",
 ) -> dict:
     """Inject slow MSSQL transactions."""
+    # Handle string input from Chaos Toolkit configuration
+    if port is not None:
+        port = int(port) if isinstance(port, str) else port
+    num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
+    duration_seconds = (
+        int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
+    )
+    transaction_delay_ms = (
+        int(transaction_delay_ms)
+        if isinstance(transaction_delay_ms, str)
+        else transaction_delay_ms
+    )
+    
     host = host or os.getenv("MSSQL_HOST", "localhost")
     port = port or int(os.getenv("MSSQL_PORT", "1433"))
     database = database or os.getenv("MSSQL_DB", "master")

@@ -5,8 +5,6 @@ import os
 import pika
 import psycopg2
 from flask import Flask, jsonify, request
-from kafka import KafkaProducer
-from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.pika import PikaInstrumentor
@@ -14,6 +12,8 @@ from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+from chaosotel.core.trace_core import trace_kafka_produce
 
 # Setup OpenTelemetry with proper service name
 service_name = os.getenv("OTEL_SERVICE_NAME", "payment-service")
@@ -59,14 +59,6 @@ def get_rabbitmq_connection():
     credentials = pika.PlainCredentials(user, password)
     parameters = pika.ConnectionParameters(host, port, "/", credentials)
     return pika.BlockingConnection(parameters)
-
-
-def get_kafka_producer():
-    bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
-    return KafkaProducer(
-        bootstrap_servers=bootstrap_servers.split(","),
-        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-    )
 
 
 @app.route("/process", methods=["POST"])
@@ -133,23 +125,18 @@ def process_payment():
         logger.warning(f"RabbitMQ publish failed (non-critical): {e}")
 
     # NEW: Publish to Kafka after PostgreSQL write
-    try:
-        producer = get_kafka_producer()
-        producer.send(
-            "payment-events",
-            {
-                "payment_id": payment_id,
-                "user_id": user_id,
-                "amount": amount,
-                "status": "PROCESSED",
-                "source": "postgresql",
-            },
-        )
-        producer.flush()
-        producer.close()
-        logger.info(f"Payment {payment_id} published to Kafka (from PostgreSQL)")
-    except Exception as e:
-        logger.warning(f"Kafka publish failed (non-critical): {e}")
+    trace_kafka_produce(
+        "payment-events",
+        {
+            "payment_id": payment_id,
+            "user_id": user_id,
+            "amount": amount,
+            "status": "PROCESSED",
+            "source": "postgresql",
+        },
+        additional_attributes={"payment.id": payment_id},
+    )
+    logger.info(f"Payment {payment_id} published to Kafka (from PostgreSQL)")
 
     return jsonify({"status": "processed", "payment_id": payment_id}), 200
 

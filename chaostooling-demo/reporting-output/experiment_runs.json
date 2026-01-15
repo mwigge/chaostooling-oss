@@ -397,5 +397,19 @@
         "duration": 1082.7085287570953
       }
     ]
+  },
+  "Comprehensive E2E Distributed Transaction Chaos Experiment": {
+    "total_runs": 1,
+    "successful_runs": 1,
+    "failed_runs": 0,
+    "runs": [
+      {
+        "experiment_id": "0467-20260115194528-5eb4763c",
+        "run_timestamp": "2026-01-15T19:30:30.126756+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 273.4033133983612
+      }
+    ]
   }
 }

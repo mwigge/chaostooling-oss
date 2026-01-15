@@ -4,13 +4,13 @@ import os
 
 import pymysql
 from flask import Flask, jsonify, request
-from kafka import KafkaProducer
-from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+from chaosotel.core.trace_core import trace_kafka_produce
 
 # Setup OpenTelemetry with proper service name
 service_name = os.getenv("OTEL_SERVICE_NAME", "order-service")
@@ -45,14 +45,6 @@ def get_db_connection():
         password=os.getenv("MYSQL_PASSWORD", "mysql"),
         database=os.getenv("MYSQL_DB", "testdb"),
         cursorclass=pymysql.cursors.DictCursor,
-    )
-
-
-def get_kafka_producer():
-    bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
-    return KafkaProducer(
-        bootstrap_servers=bootstrap_servers.split(","),
-        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
     )
 
 
@@ -98,25 +90,22 @@ def create_order():
         return jsonify({"error": "Database error"}), 500
 
     # Publish order event to Kafka after MySQL write
-    try:
-        producer = get_kafka_producer()
-        producer.send(
-            "order-events",
-            {
-                "order_id": order_id,
-                "user_id": user_id,
-                "item_id": item_id,
-                "quantity": quantity,
-                "status": "PENDING",
-                "source": "mysql",
-            },
-        )
-        producer.flush()
-        producer.close()
-        logger.info(f"Order {order_id} published to Kafka (from MySQL)")
-    except Exception as e:
-        logger.error(f"Kafka failed: {e}")
+    success = trace_kafka_produce(
+        "order-events",
+        {
+            "order_id": order_id,
+            "user_id": user_id,
+            "item_id": item_id,
+            "quantity": quantity,
+            "status": "PENDING",
+            "source": "mysql",
+        },
+        additional_attributes={"order.id": order_id},
+    )
+    if not success:
+        logger.error(f"Kafka publish failed for order {order_id}")
         return jsonify({"error": "Kafka error"}), 500
+    logger.info(f"Order {order_id} published to Kafka (from MySQL)")
 
     return jsonify({"status": "success", "order_id": order_id}), 200
 
