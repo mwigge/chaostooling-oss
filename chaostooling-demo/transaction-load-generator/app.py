@@ -18,22 +18,23 @@ This simulates a real transaction platform with event-driven architecture.
 All transactions are instrumented with OpenTelemetry for distributed tracing.
 """
 
-import os
-import time
 import logging
+import os
 import threading
-import requests
-from typing import Dict, Optional
+import time
 from datetime import datetime
+from typing import Dict, Optional
 
+import requests
 # OpenTelemetry instrumentation for distributed tracing
 from opentelemetry import trace
-from opentelemetry.trace import Status, StatusCode
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+    OTLPSpanExporter
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.trace import Status, StatusCode
 
 # Setup OpenTelemetry for service graph visibility
 service_name = os.getenv("OTEL_SERVICE_NAME", "transaction-load-generator")

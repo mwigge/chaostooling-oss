@@ -6,14 +6,8 @@ import time
 from typing import Dict, Optional
 
 import pyodbc
-from chaosotel import (
-    ensure_initialized,
-    flush,
-    get_logger,
-    get_metric_tags,
-    get_tracer,
-    get_metrics_core,
-)
+from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags,
+                       get_metrics_core, get_tracer)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []

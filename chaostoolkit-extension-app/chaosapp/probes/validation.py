@@ -1,6 +1,7 @@
 import os
+
 import psycopg2
-from chaosotel import ensure_initialized, get_tracer, get_logger
+from chaosotel import ensure_initialized, get_logger, get_tracer
 from opentelemetry.trace import StatusCode
 
 

@@ -1,15 +1,17 @@
-import os
-import logging
 import json
-from flask import Flask, request, jsonify
-from kafka import KafkaProducer
+import logging
+import os
+
 import pymysql
+from flask import Flask, jsonify, request
+from kafka import KafkaProducer
 from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+    OTLPSpanExporter
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
 # Setup OpenTelemetry with proper service name
 service_name = os.getenv("OTEL_SERVICE_NAME", "order-service")

@@ -18,13 +18,8 @@ import logging
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-from chaosotel.otel import (
-    ensure_initialized,
-    get_compliance_core,
-    get_log_core,
-    get_metrics_core,
-    get_trace_core,
-)
+from chaosotel.otel import (ensure_initialized, get_compliance_core,
+                            get_log_core, get_metrics_core, get_trace_core)
 
 logger = logging.getLogger("chaosotel.decorators")
 

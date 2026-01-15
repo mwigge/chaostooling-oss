@@ -1,16 +1,18 @@
-import os
 import logging
-from flask import Flask, request, jsonify
-from pymongo import MongoClient
+import os
+
 import redis
+from flask import Flask, jsonify, request
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+    OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from pymongo import MongoClient
 
 # Setup OpenTelemetry with proper service name
 service_name = os.getenv("OTEL_SERVICE_NAME", "inventory-service")

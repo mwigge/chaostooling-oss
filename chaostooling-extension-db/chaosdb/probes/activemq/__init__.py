@@ -1,6 +1,7 @@
 """ActiveMQ chaos probes."""
 
-from .activemq_connection_exhaustion_status import probe_connection_exhaustion_status
+from .activemq_connection_exhaustion_status import \
+    probe_connection_exhaustion_status
 from .activemq_connectivity import probe_activemq_connectivity
 from .activemq_message_flood_status import probe_message_flood_status
 from .activemq_queue_saturation_status import probe_queue_saturation_status

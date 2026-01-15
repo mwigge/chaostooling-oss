@@ -2,13 +2,8 @@ import os
 import time
 
 import stomp  # pip install stomp.py
-from chaosotel import (
-    ensure_initialized,
-    flush,
-    get_logger,
-    get_metrics_core,
-    get_tracer,
-)
+from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
+                       get_tracer)
 from opentelemetry.trace import StatusCode
 
 # Requires: stomp.py for Python; ActiveMQ server must have STOMP support enabled (default).

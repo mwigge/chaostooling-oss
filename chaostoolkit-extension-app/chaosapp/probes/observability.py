@@ -1,8 +1,9 @@
-import os
 import json
+import os
+from typing import Any, Dict
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from typing import Dict, Any
 
 
 def get_db_connection():

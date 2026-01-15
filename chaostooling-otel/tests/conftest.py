@@ -4,15 +4,16 @@
 Pytest configuration and shared fixtures for ChaoSOTEL tests.
 """
 
-import pytest
 from unittest.mock import patch
 
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.trace import TracerProvider
+import pytest
 from opentelemetry.sdk._logs import LoggerProvider
+from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import InMemoryMetricReader
+from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import \
+    InMemorySpanExporter
 
 
 @pytest.fixture(autouse=True)

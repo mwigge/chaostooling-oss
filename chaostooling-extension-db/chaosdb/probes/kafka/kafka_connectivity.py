@@ -75,7 +75,8 @@ def probe_kafka_connectivity(
         try:
             if span:
                 # Use span helper for consistent attribute setting and resource updates
-                from chaosotel.core.trace_core import set_messaging_span_attributes
+                from chaosotel.core.trace_core import \
+                    set_messaging_span_attributes
 
                 set_messaging_span_attributes(
                     span,

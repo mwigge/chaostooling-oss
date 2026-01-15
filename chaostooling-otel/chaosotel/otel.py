@@ -19,7 +19,8 @@ Architecture:
 import logging
 from typing import Any, Optional
 
-from opentelemetry import metrics as otel_metrics, trace as otel_trace
+from opentelemetry import metrics as otel_metrics
+from opentelemetry import trace as otel_trace
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.trace import TracerProvider
@@ -82,11 +83,9 @@ def initialize(
         # ====================================================================
         # 1. Import and setup signal exporters
         # ====================================================================
-        from chaosotel import (
-            logs as logs_setup,
-            metrics as metrics_setup,
-            traces as traces_setup,
-        )
+        from chaosotel import logs as logs_setup
+        from chaosotel import metrics as metrics_setup
+        from chaosotel import traces as traces_setup
 
         # Setup metrics (OTLP HTTP exporter → OTEL Collector → Prometheus)
         _meter_provider = metrics_setup.setup_metrics(
@@ -130,12 +129,10 @@ def initialize(
         # ====================================================================
         if auto_instrument:
             try:
-                from opentelemetry.instrumentation.requests import (
-                    RequestsInstrumentor,
-                )
-                from opentelemetry.instrumentation.urllib3 import (
-                    URLLib3Instrumentor,
-                )
+                from opentelemetry.instrumentation.requests import \
+                    RequestsInstrumentor
+                from opentelemetry.instrumentation.urllib3 import \
+                    URLLib3Instrumentor
 
                 RequestsInstrumentor().instrument()
                 URLLib3Instrumentor().instrument()

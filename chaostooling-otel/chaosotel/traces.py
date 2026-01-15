@@ -13,11 +13,10 @@ import logging
 import os
 from typing import Optional
 
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-    OTLPSpanExporter,
-)
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+    OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider, SpanProcessor
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 logger = logging.getLogger("chaosotel.traces")
@@ -35,7 +34,8 @@ class ServiceNameSpanProcessor(SpanProcessor):
         """Initialize processor with system mappings."""
         # Try to import mappings from trace_core (where helpers are)
         try:
-            from chaosotel.core.trace_core import DB_SYSTEM_MAP, MESSAGING_SYSTEM_MAP
+            from chaosotel.core.trace_core import (DB_SYSTEM_MAP,
+                                                   MESSAGING_SYSTEM_MAP)
 
             self.db_system_map = DB_SYSTEM_MAP
             self.messaging_system_map = MESSAGING_SYSTEM_MAP

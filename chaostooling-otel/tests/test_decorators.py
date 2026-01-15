@@ -13,18 +13,12 @@ Tests all 7 decorators:
 7. instrumented_section
 """
 
-import pytest
 import time
 
-from chaosotel import (
-    instrument_action,
-    instrument_probe,
-    instrument_rollback,
-    record_metric,
-    track_compliance,
-    track_impact,
-    instrumented_section,
-)
+import pytest
+from chaosotel import (instrument_action, instrument_probe,
+                       instrument_rollback, instrumented_section,
+                       record_metric, track_compliance, track_impact)
 
 
 class TestInstrumentAction:

@@ -11,10 +11,10 @@ Records:
 Also provides span instrumentation helpers for database and messaging systems.
 """
 
-import os
+import inspect
 import json
 import logging
-import inspect
+import os
 from typing import Any, Dict, Optional
 
 from opentelemetry import trace
