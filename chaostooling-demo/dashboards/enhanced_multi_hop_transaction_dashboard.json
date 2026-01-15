@@ -141,7 +141,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "last_over_time(chaos_experiment_success[5m])",
+          "expr": "last_over_time(chaos_experiment_success[1m])",
           "refId": "A"
         }
       ],
@@ -212,7 +212,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "last_over_time(chaos_experiment_risk_level_ratio[5m])",
+          "expr": "last_over_time(chaos_experiment_risk_level_ratio[1m])",
           "refId": "A"
         }
       ],
@@ -296,7 +296,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "last_over_time(chaos_experiment_risk_score_ratio[5m])",
+          "expr": "last_over_time(chaos_experiment_risk_score_ratio[1m])",
           "refId": "A"
         }
       ],
@@ -380,7 +380,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "last_over_time(chaos_experiment_complexity_score_ratio[5m])",
+          "expr": "last_over_time(chaos_experiment_complexity_score_ratio[1m])",
           "refId": "A"
         }
       ],
@@ -535,7 +535,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "last_over_time(chaos_experiment_success[5m]) * 100",
+          "expr": "last_over_time(chaos_experiment_success[1m]) * 100",
           "refId": "A"
         }
       ],
