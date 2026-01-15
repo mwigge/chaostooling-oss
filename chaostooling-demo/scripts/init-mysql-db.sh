@@ -3,7 +3,7 @@
 
 set -e
 
-MYSQL_HOST=${MYSQL_HOST:-mysql}
+MYSQL_HOST=${MYSQL_HOST:-localhost}
 MYSQL_PORT=${MYSQL_PORT:-3306}
 MYSQL_DB=${MYSQL_DB:-testdb}
 MYSQL_USER=${MYSQL_USER:-root}

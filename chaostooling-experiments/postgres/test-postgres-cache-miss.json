@@ -1,102 +1,109 @@
 {
-    "version": "1.0.0",
-    "title": "Postgres Cache Miss Experiment",
-    "description": "Force sequential scans to degrade cache hit ratio",
-    "tags": [
-        "postgres",
-        "cache",
-        "performance"
-    ],
-    "controls": [
-        {
-            "name": "chaosotel",
-            "provider": {
-                "type": "python",
-                "module": "chaosotel.control"
-            }
-        }
-    ],
-    "configuration": {
-        "postgres_host": {
-            "type": "env",
-            "key": "POSTGRES_HOST",
-            "default": "postgres"
-        },
-        "postgres_port": {
-            "type": "env",
-            "key": "POSTGRES_PORT",
-            "default": "5432"
-        },
-        "postgres_db": {
-            "type": "env",
-            "key": "POSTGRES_DB",
-            "default": "testdb"
-        },
-        "postgres_user": {
-            "type": "env",
-            "key": "POSTGRES_USER",
-            "default": "postgres"
-        },
-        "postgres_password": {
-            "type": "env",
-            "key": "POSTGRES_PASSWORD",
-            "default": "postgres"
-        }
+  "version": "1.0.0",
+  "title": "Postgres Cache Miss Experiment",
+  "description": "Force sequential scans to degrade cache hit ratio",
+  "tags": [
+    "postgres",
+    "cache",
+    "performance"
+  ],
+  "controls": [
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
     },
-    "steady-state-hypothesis": {
-        "title": "Cache Hit Ratio is high",
-        "probes": [
-            {
-                "type": "probe",
-                "name": "check-cache-hit-ratio",
-                "tolerance": {
-                    "type": "range",
-                    "range": [
-                        0.90,
-                        1.0
-                    ]
-                },
-                "provider": {
-                    "type": "python",
-                    "module": "chaosdb.probes.postgres.postgres_system_metrics",
-                    "func": "collect_postgres_system_metrics",
-                    "arguments": {
-                        "host": "${postgres_host}",
-                        "port": "${postgres_port}",
-                        "database": "${postgres_db}",
-                        "user": "${postgres_user}",
-                        "password": "${postgres_password}"
-                    }
-                },
-                "pauses": {
-                    "after": 1
-                }
-            }
-        ]
+    {
+      "name": "chaosotel",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "configuration": {
+    "postgres_host": {
+      "type": "env",
+      "key": "POSTGRES_HOST",
+      "default": "postgres"
     },
-    "method": [
-        {
-            "type": "action",
-            "name": "force-sequential-scans",
-            "provider": {
-                "type": "python",
-                "module": "chaosdb.actions.postgres.postgres_load",
-                "func": "force_sequential_scans",
-                "arguments": {
-                    "host": "${postgres_host}",
-                    "port": "${postgres_port}",
-                    "database": "${postgres_db}",
-                    "user": "${postgres_user}",
-                    "password": "${postgres_password}",
-                    "table_name": "mobile_purchases",
-                    "duration_seconds": 30,
-                    "num_threads": 10
-                }
-            },
-            "pauses": {
-                "after": 5
-            }
+    "postgres_port": {
+      "type": "env",
+      "key": "POSTGRES_PORT",
+      "default": "5432"
+    },
+    "postgres_db": {
+      "type": "env",
+      "key": "POSTGRES_DB",
+      "default": "testdb"
+    },
+    "postgres_user": {
+      "type": "env",
+      "key": "POSTGRES_USER",
+      "default": "postgres"
+    },
+    "postgres_password": {
+      "type": "env",
+      "key": "POSTGRES_PASSWORD",
+      "default": "postgres"
+    }
+  },
+  "steady-state-hypothesis": {
+    "title": "Cache Hit Ratio is high",
+    "probes": [
+      {
+        "type": "probe",
+        "name": "check-cache-hit-ratio",
+        "tolerance": {
+          "type": "range",
+          "range": [
+            0.9,
+            1.0
+          ]
+        },
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_system_metrics",
+          "func": "collect_postgres_system_metrics",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}"
+          }
+        },
+        "pauses": {
+          "after": 1
         }
-    ],
-    "rollbacks": []
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "force-sequential-scans",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_load",
+        "func": "force_sequential_scans",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "table_name": "mobile_purchases",
+          "duration_seconds": 30,
+          "num_threads": 10
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    }
+  ],
+  "rollbacks": []
 }

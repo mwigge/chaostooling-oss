@@ -282,745 +282,315 @@
       "default": "http://transaction-load-generator:5001"
     },
     "_comment_load_generator_port": "Note: Container uses port 5001 internally, but host port is 6002 to avoid conflict with app-servers/payment-services (5001-5008)",
-    "load_generator_tps": {
-      "type": "env",
-      "key": "TRANSACTION_LOAD_GENERATOR_TPS",
-      "default": "2.0"
-    },
-    "auto_start_load_generator": {
-      "type": "env",
-      "key": "AUTO_START_LOAD_GENERATOR",
-      "default": "true"
+    "type": "env",
+    "key": "POSTGRES_PASSWORD",
+    "default": "postgres"
+  },
+  "mongodb_uri": {
+    "type": "env",
+    "key": "MONGODB_URI",
+    "default": "mongodb://mongodb:27017"
+  },
+  "mongodb_db": {
+    "type": "env",
+    "key": "MONGODB_DB",
+    "default": "test"
+  },
+  "redis_host": {
+    "type": "env",
+    "key": "REDIS_HOST",
+    "default": "redis"
+  },
+  "redis_port": {
+    "type": "env",
+    "key": "REDIS_PORT",
+    "default": "6379"
+  },
+  "mysql_host": {
+    "type": "env",
+    "key": "MYSQL_HOST",
+    "default": "mysql"
+  },
+  "mysql_port": {
+    "type": "env",
+    "key": "MYSQL_PORT",
+    "default": "3306"
+  },
+  "mysql_db": {
+    "type": "env",
+    "key": "MYSQL_DB",
+    "default": "testdb"
+  },
+  "mysql_user": {
+    "type": "env",
+    "key": "MYSQL_USER",
+    "default": "root"
+  },
+  "mysql_password": {
+    "type": "env",
+    "key": "MYSQL_PASSWORD",
+    "default": "mysql"
+  },
+  "mssql_host": {
+    "type": "env",
+    "key": "MSSQL_HOST",
+    "default": "mssql"
+  },
+  "mssql_port": {
+    "type": "env",
+    "key": "MSSQL_PORT",
+    "default": "1433"
+  },
+  "mssql_db": {
+    "type": "env",
+    "key": "MSSQL_DB",
+    "default": "master"
+  },
+  "mssql_user": {
+    "type": "env",
+    "key": "MSSQL_USER",
+    "default": "sa"
+  },
+  "mssql_password": {
+    "type": "env",
+    "key": "MSSQL_SA_PASSWORD",
+    "default": "Password123!"
+  },
+  "cassandra_host": {
+    "type": "env",
+    "key": "CASSANDRA_HOST",
+    "default": "cassandra"
+  },
+  "cassandra_port": {
+    "type": "env",
+    "key": "CASSANDRA_PORT",
+    "default": "9042"
+  },
+  "cassandra_keyspace": {
+    "type": "env",
+    "key": "CASSANDRA_KEYSPACE",
+    "default": "system"
+  },
+  "_comment4": "=== MESSAGING SYSTEMS ===",
+  "kafka_bootstrap_servers": {
+    "type": "env",
+    "key": "KAFKA_BOOTSTRAP_SERVERS",
+    "default": "kafka:9092"
+  },
+  "kafka_topic": {
+    "type": "env",
+    "key": "KAFKA_TOPIC",
+    "default": "test"
+  },
+  "rabbitmq_host": {
+    "type": "env",
+    "key": "RABBITMQ_HOST",
+    "default": "rabbitmq"
+  },
+  "rabbitmq_port": {
+    "type": "env",
+    "key": "RABBITMQ_PORT",
+    "default": "5672"
+  },
+  "rabbitmq_user": {
+    "type": "env",
+    "key": "RABBITMQ_USER",
+    "default": "chaos"
+  },
+  "rabbitmq_password": {
+    "type": "env",
+    "key": "RABBITMQ_PASSWORD",
+    "default": "password"
+  },
+  "activemq_host": {
+    "type": "env",
+    "key": "ACTIVEMQ_HOST",
+    "default": "activemq"
+  },
+  "activemq_port": {
+    "type": "env",
+    "key": "ACTIVEMQ_PORT",
+    "default": "61616"
+  },
+  "activemq_web_port": {
+    "type": "env",
+    "key": "ACTIVEMQ_WEB_PORT",
+    "default": "8161"
+  },
+  "_comment5": "=== CHAOS PARAMETERS ===",
+  "network_latency_ms": {
+    "type": "env",
+    "key": "CHAOS_NETWORK_LATENCY_MS",
+    "default": "500"
+  },
+  "network_duration_s": {
+    "type": "env",
+    "key": "CHAOS_NETWORK_DURATION_S",
+    "default": "30"
+  },
+  "cpu_stress_load": {
+    "type": "env",
+    "key": "CHAOS_CPU_LOAD",
+    "default": "80"
+  },
+  "cpu_stress_duration_s": {
+    "type": "env",
+    "key": "CHAOS_CPU_DURATION_S",
+    "default": "30"
+  },
+  "db_slow_txn_delay_ms": {
+    "type": "env",
+    "key": "CHAOS_DB_SLOW_TXN_DELAY_MS",
+    "default": "3000"
+  },
+  "db_slow_txn_duration_s": {
+    "type": "env",
+    "key": "CHAOS_DB_SLOW_TXN_DURATION_S",
+    "default": "20"
+  },
+  "_comment6": "=== TEST PARAMETERS ===",
+  "baseline_transactions": {
+    "type": "env",
+    "key": "TEST_BASELINE_TRANSACTIONS",
+    "default": "50"
+  },
+  "distributed_transaction_test_count": {
+    "type": "env",
+    "key": "TEST_DISTRIBUTED_TXN_COUNT",
+    "default": "30"
+  },
+  "dr_failover_test_count": {
+    "type": "env",
+    "key": "TEST_DR_FAILOVER_COUNT",
+    "default": "20"
+  },
+  "_comment7": "=== OBSERVABILITY ===",
+  "otel_service_name": {
+    "type": "env",
+    "key": "OTEL_SERVICE_NAME",
+    "default": "production-scale-chaos-experiment"
+  },
+  "_comment8": "=== BACKGROUND TRANSACTION LOAD ===",
+  "load_generator_url": {
+    "type": "env",
+    "key": "TRANSACTION_LOAD_GENERATOR_URL",
+    "default": "http://transaction-load-generator:5001"
+  },
+  "_comment_load_generator_port": "Note: Container uses port 5001 internally, but host port is 6002 to avoid conflict with app-servers/payment-services (5001-5008)",
+  "load_generator_tps": {
+    "type": "env",
+    "key": "TRANSACTION_LOAD_GENERATOR_TPS",
+    "default": "2.0"
+  },
+  "auto_start_load_generator": {
+    "type": "env",
+    "key": "AUTO_START_LOAD_GENERATOR",
+    "default": "true"
+  },
+  "reporting_output_dir": {
+    "type": "env",
+    "key": "CHAOS_REPORTING_OUTPUT_DIR",
+    "default": "./reporting-output"
+  },
+  "reporting_formats": {
+    "type": "env",
+    "key": "CHAOS_REPORTING_FORMATS",
+    "default": "html,json"
+  }
+},
+"controls": [
+  {
+    "name": "env-loader",
+    "provider": {
+      "type": "python",
+      "module": "chaosgeneric.control.env_loader_control"
     }
   },
-  "controls": [
-    {
-      "name": "opentelemetry",
-      "provider": {
-        "type": "python",
-        "module": "chaosotel.control"
-      }
-    },
-    {
-      "name": "reporting",
-      "provider": {
-        "type": "python",
-        "module": "chaostooling_reporting.control"
-      }
-    },
-    {
-      "name": "load_generator",
-      "provider": {
-        "type": "python",
-        "module": "chaosgeneric.control.load_generator_control"
-      }
+  {
+    "name": "opentelemetry",
+    "provider": {
+      "type": "python",
+      "module": "chaosotel.control"
     }
-  ],
-  "steady-state-hypothesis": {
-    "title": "All systems are healthy and accessible across primary and DR sites",
-    "probes": [
-      {
-        "name": "probe-site-a-haproxy",
-        "type": "probe",
-        "provider": {
-          "type": "http",
-          "url": "${site_a_haproxy_url}/haproxy?stats",
-          "method": "GET",
-          "timeout": 5
-        },
-        "tolerance": 200
-      },
-      {
-        "name": "probe-site-b-haproxy",
-        "type": "probe",
-        "provider": {
-          "type": "http",
-          "url": "${site_b_haproxy_url}/haproxy?stats",
-          "method": "GET",
-          "timeout": 5
-        },
-        "tolerance": 200
-      },
-      {
-        "name": "probe-site-a-app-servers",
-        "type": "probe",
-        "provider": {
-          "type": "http",
-          "url": "${site_a_app_server_1_url}/health",
-          "method": "GET",
-          "timeout": 5
-        },
-        "tolerance": 200
-      },
-      {
-        "name": "probe-site-b-app-server",
-        "type": "probe",
-        "provider": {
-          "type": "http",
-          "url": "${site_b_app_server_url}/health",
-          "method": "GET",
-          "timeout": 5
-        },
-        "tolerance": 200
-      },
-      {
-        "name": "probe-postgres-primary",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_connectivity",
-          "func": "probe_postgres_connectivity",
-          "arguments": {
-            "host": "${postgres_primary_host}",
-            "port": "${postgres_port}"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-postgres-replica",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_connectivity",
-          "func": "probe_postgres_connectivity",
-          "arguments": {
-            "host": "${postgres_replica_host}",
-            "port": "${postgres_port}"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-postgres-dr",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_connectivity",
-          "func": "probe_postgres_connectivity",
-          "arguments": {
-            "host": "${postgres_dr_host}",
-            "port": "${postgres_port}"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-kafka",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.kafka.kafka_connectivity",
-          "func": "probe_kafka_connectivity",
-          "arguments": {
-            "bootstrap_servers": "${kafka_bootstrap_servers}",
-            "topic": "${kafka_topic}"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-purchase-requests",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-          "func": "probe_api_transaction_flow",
-          "arguments": {
-            "api_url": "${site_a_haproxy_url}",
-            "num_transactions": 5
-          }
-        },
-        "tolerance": {
-          "type": "jsonpath",
-          "path": "$.success",
-          "expect": true
-        }
-      },
-      {
-        "name": "probe-rabbitmq",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
-          "func": "probe_rabbitmq_connectivity"
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-mongodb",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.mongodb.mongodb_connectivity",
-          "func": "probe_mongodb_connectivity",
-          "arguments": {
-            "host": "mongodb",
-            "port": 27017,
-            "database": "${mongodb_db}"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-redis",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.redis.redis_connectivity",
-          "func": "probe_redis_connectivity",
-          "arguments": {
-            "host": "${redis_host}",
-            "port": "${redis_port}"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-mysql",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.mysql.mysql_connectivity",
-          "func": "probe_mysql_connectivity",
-          "arguments": {
-            "host": "${mysql_host}",
-            "port": "${mysql_port}",
-            "database": "${mysql_db}",
-            "user": "${mysql_user}",
-            "password": "${mysql_password}"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-mssql",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.mssql.mssql_connectivity",
-          "func": "probe_mssql_connectivity",
-          "arguments": {
-            "host": "${mssql_host}",
-            "port": "${mssql_port}",
-            "database": "${mssql_db}",
-            "user": "${mssql_user}",
-            "password": "${mssql_password}"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-cassandra",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.cassandra.cassandra_connectivity",
-          "func": "probe_cassandra_connectivity",
-          "arguments": {
-            "host": "${cassandra_host}",
-            "port": "${cassandra_port}",
-            "keyspace": "${cassandra_keyspace}"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "probe-activemq",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosdb.probes.activemq.activemq_connectivity",
-          "func": "probe_activemq_connectivity",
-          "arguments": {
-            "host": "${activemq_host}",
-            "port": "${activemq_port}"
-          }
-        },
-        "tolerance": true
-      }
-    ]
   },
-  "method": [
+  {
+    "name": "reporting",
+    "provider": {
+      "type": "python",
+      "module": "chaostooling_reporting.control"
+    }
+  },
+  {
+    "name": "load_generator",
+    "provider": {
+      "type": "python",
+      "module": "chaosgeneric.control.load_generator_control"
+    }
+  }
+],
+"steady-state-hypothesis": {
+  "title": "All systems are healthy and accessible across primary and DR sites",
+  "probes": [
     {
-      "name": "baseline-distributed-transaction-flow",
-      "type": "action",
+      "name": "probe-site-a-haproxy",
+      "type": "probe",
       "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": "${baseline_transactions}"
-        }
-      }
+        "type": "http",
+        "url": "${site_a_haproxy_url}/haproxy?stats",
+        "method": "GET",
+        "timeout": 5
+      },
+      "tolerance": 200
     },
     {
-      "name": "verify-baseline-transactions",
+      "name": "probe-site-b-haproxy",
+      "type": "probe",
+      "provider": {
+        "type": "http",
+        "url": "${site_b_haproxy_url}/haproxy?stats",
+        "method": "GET",
+        "timeout": 5
+      },
+      "tolerance": 200
+    },
+    {
+      "name": "probe-site-a-app-servers",
+      "type": "probe",
+      "provider": {
+        "type": "http",
+        "url": "${site_a_app_server_1_url}/health",
+        "method": "GET",
+        "timeout": 5
+      },
+      "tolerance": 200
+    },
+    {
+      "name": "probe-site-b-app-server",
+      "type": "probe",
+      "provider": {
+        "type": "http",
+        "url": "${site_b_app_server_url}/health",
+        "method": "GET",
+        "timeout": 5
+      },
+      "tolerance": 200
+    },
+    {
+      "name": "probe-postgres-primary",
       "type": "probe",
       "provider": {
         "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_transaction_count",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
         "arguments": {
           "host": "${postgres_primary_host}",
           "port": "${postgres_port}"
         }
       },
-      "tolerance": {
-        "type": "jsonpath",
-        "path": "$.total_count",
-        "expect": 50
-      }
+      "tolerance": true
     },
     {
-      "name": "SCENARIO-1-Network-Latency-Across-Sites",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosnetwork.actions.network_latency",
-        "func": "simulate_network_conditions",
-        "arguments": {
-          "latency": "${network_latency_ms}",
-          "duration": "${network_duration_s}"
-        }
-      }
-    },
-    {
-      "name": "test-distributed-transactions-under-latency",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": "${distributed_transaction_test_count}"
-        }
-      }
-    },
-    {
-      "name": "SCENARIO-2-Database-Slow-Transactions",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_slow_transactions",
-        "func": "inject_slow_transactions",
-        "arguments": {
-          "host": "${postgres_primary_host}",
-          "num_threads": 5,
-          "duration_seconds": "${db_slow_txn_duration_s}",
-          "transaction_delay_ms": "${db_slow_txn_delay_ms}"
-        }
-      }
-    },
-    {
-      "name": "test-distributed-transactions-under-slow-db",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": "${distributed_transaction_test_count}"
-        }
-      }
-    },
-    {
-      "name": "postgres-query-saturation",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_query_saturation",
-        "func": "inject_query_saturation",
-        "arguments": {
-          "host": "${postgres_primary_host}",
-          "port": "${postgres_port}",
-          "database": "${postgres_db}",
-          "user": "${postgres_user}",
-          "password": "${postgres_password}",
-          "num_threads": 20,
-          "queries_per_thread": 1000,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "postgres-lock-storm",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_lock_storm",
-        "func": "inject_lock_storm",
-        "arguments": {
-          "host": "${postgres_primary_host}",
-          "port": "${postgres_port}",
-          "database": "${postgres_db}",
-          "user": "${postgres_user}",
-          "password": "${postgres_password}",
-          "num_threads": 10,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "postgres-pool-exhaustion",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
-        "func": "inject_connection_pool_exhaustion",
-        "arguments": {
-          "host": "${postgres_primary_host}",
-          "port": "${postgres_port}",
-          "database": "${postgres_db}",
-          "user": "${postgres_user}",
-          "password": "${postgres_password}",
-          "num_connections": 100,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "SCENARIO-2B-Multi-Database-Operations",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": 20
-        }
-      }
-    },
-    {
-      "name": "mysql-slow-transactions",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.mysql.mysql_slow_transactions",
-        "func": "inject_slow_transactions",
-        "arguments": {
-          "host": "${mysql_host}",
-          "port": "${mysql_port}",
-          "database": "${mysql_db}",
-          "user": "${mysql_user}",
-          "password": "${mysql_password}",
-          "num_threads": 5,
-          "duration_seconds": 60,
-          "transaction_delay_ms": 3000
-        }
-      }
-    },
-    {
-      "name": "mysql-query-saturation",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.mysql.mysql_query_saturation",
-        "func": "inject_query_saturation",
-        "arguments": {
-          "host": "${mysql_host}",
-          "port": "${mysql_port}",
-          "database": "${mysql_db}",
-          "user": "${mysql_user}",
-          "password": "${mysql_password}",
-          "num_threads": 20,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "mssql-slow-transactions",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.mssql.mssql_slow_transactions",
-        "func": "inject_slow_transactions",
-        "arguments": {
-          "host": "${mssql_host}",
-          "port": "${mssql_port}",
-          "database": "${mssql_db}",
-          "user": "${mssql_user}",
-          "password": "${mssql_password}",
-          "num_threads": 5,
-          "duration_seconds": 60,
-          "transaction_delay_ms": 3000
-        }
-      }
-    },
-    {
-      "name": "mongodb-document-contention",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.mongodb.mongodb_document_contention",
-        "func": "inject_document_contention",
-        "arguments": {
-          "host": "mongodb",
-          "port": 27017,
-          "database": "${mongodb_db}",
-          "num_threads": 10,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "mongodb-query-saturation",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.mongodb.mongodb_query_saturation",
-        "func": "inject_query_saturation",
-        "arguments": {
-          "host": "mongodb",
-          "port": 27017,
-          "database": "${mongodb_db}",
-          "num_threads": 20,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "redis-key-contention",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.redis.redis_key_contention",
-        "func": "inject_key_contention",
-        "arguments": {
-          "host": "${redis_host}",
-          "port": "${redis_port}",
-          "num_threads": 10,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "redis-command-saturation",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.redis.redis_command_saturation",
-        "func": "inject_command_saturation",
-        "arguments": {
-          "host": "${redis_host}",
-          "port": "${redis_port}",
-          "num_threads": 20,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "cassandra-row-contention",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.cassandra.cassandra_row_contention",
-        "func": "inject_row_contention",
-        "arguments": {
-          "host": "${cassandra_host}",
-          "port": "${cassandra_port}",
-          "num_threads": 10,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "test-multi-database-transactions",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": 30
-        }
-      }
-    },
-    {
-      "name": "SCENARIO-3-Multi-Messaging-Event-Flow",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": 20
-        }
-      }
-    },
-    {
-      "name": "kafka-message-flood",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.kafka.kafka_message_flood",
-        "func": "inject_message_flood",
-        "arguments": {
-          "bootstrap_servers": "${kafka_bootstrap_servers}",
-          "topic": "${kafka_topic}",
-          "num_producers": 10,
-          "messages_per_producer": 1000,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "kafka-topic-saturation",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.kafka.kafka_topic_saturation",
-        "func": "inject_topic_saturation",
-        "arguments": {
-          "bootstrap_servers": "${kafka_bootstrap_servers}",
-          "topic": "${kafka_topic}",
-          "num_producers": 20,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "kafka-slow-consumer",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.kafka.kafka_slow_consumer",
-        "func": "inject_slow_consumer",
-        "arguments": {
-          "bootstrap_servers": "${kafka_bootstrap_servers}",
-          "topic": "${kafka_topic}",
-          "num_consumers": 5,
-          "duration_seconds": 60,
-          "consume_delay_ms": 5000
-        }
-      }
-    },
-    {
-      "name": "rabbitmq-message-flood",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.rabbitmq.rabbitmq_message_flood",
-        "func": "inject_message_flood",
-        "arguments": {
-          "host": "${rabbitmq_host}",
-          "port": "${rabbitmq_port}",
-          "user": "${rabbitmq_user}",
-          "password": "${rabbitmq_password}",
-          "queue": "chaos_test_queue",
-          "num_producers": 10,
-          "messages_per_producer": 1000,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "rabbitmq-queue-saturation",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.rabbitmq.rabbitmq_queue_saturation",
-        "func": "inject_queue_saturation",
-        "arguments": {
-          "host": "${rabbitmq_host}",
-          "port": "${rabbitmq_port}",
-          "user": "${rabbitmq_user}",
-          "password": "${rabbitmq_password}",
-          "queue": "chaos_test_queue",
-          "num_producers": 20,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "activemq-message-flood",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.activemq.activemq_message_flood",
-        "func": "inject_message_flood",
-        "arguments": {
-          "host": "${activemq_host}",
-          "port": "${activemq_port}",
-          "user": "admin",
-          "password": "admin",
-          "queue": "chaos.test",
-          "num_producers": 10,
-          "messages_per_producer": 1000,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "test-multi-messaging-transactions",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": 30
-        }
-      }
-    },
-    {
-      "name": "SCENARIO-4-Application-Server-Failure",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_replication",
-        "func": "stop_replica",
-        "arguments": {
-          "container_name": "app-server-1-site-a"
-        }
-      }
-    },
-    {
-      "name": "test-load-balancer-failover",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": "${distributed_transaction_test_count}"
-        }
-      }
-    },
-    {
-      "name": "rollback-restart-app-server-1",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_replication",
-        "func": "start_replica",
-        "arguments": {
-          "container_name": "app-server-1-site-a"
-        }
-      }
-    },
-    {
-      "name": "SCENARIO-5-Database-Primary-Failover",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_replication",
-        "func": "stop_primary",
-        "arguments": {
-          "container_name": "${postgres_primary_host}"
-        }
-      }
-    },
-    {
-      "name": "verify-replica-connectivity-after-failover",
+      "name": "probe-postgres-replica",
       "type": "probe",
       "provider": {
         "type": "python",
@@ -1034,160 +604,92 @@
       "tolerance": true
     },
     {
-      "name": "rollback-restart-postgres-primary",
-      "type": "action",
+      "name": "probe-postgres-dr",
+      "type": "probe",
       "provider": {
         "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_replication",
-        "func": "start_replica",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
         "arguments": {
-          "container_name": "${postgres_primary_host}"
+          "host": "${postgres_dr_host}",
+          "port": "${postgres_port}"
         }
-      }
+      },
+      "tolerance": true
     },
     {
-      "name": "SCENARIO-6-Disaster-Recovery-Site-Failover",
-      "type": "action",
+      "name": "probe-kafka",
+      "type": "probe",
       "provider": {
         "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_replication",
-        "func": "stop_replica",
-        "arguments": {
-          "container_name": "haproxy-site-a"
-        }
-      }
-    },
-    {
-      "name": "test-dr-site-failover",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_b_haproxy_url}",
-          "num_transactions": "${dr_failover_test_count}"
-        }
-      }
-    },
-    {
-      "name": "rollback-restart-site-a-haproxy",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_replication",
-        "func": "start_replica",
-        "arguments": {
-          "container_name": "haproxy-site-a"
-        }
-      }
-    },
-    {
-      "name": "SCENARIO-7-Full-Stack-Stress-Test",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": 20
-        }
-      }
-    },
-    {
-      "name": "cpu-stress-during-postgres-operations",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaoscompute.actions.compute_stress",
-        "func": "stress_cpu",
-        "arguments": {
-          "duration": 60,
-          "load": 80,
-          "cores": 2
-        }
-      }
-    },
-    {
-      "name": "postgres-query-saturation-under-cpu-stress",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.postgres.postgres_query_saturation",
-        "func": "inject_query_saturation",
-        "arguments": {
-          "host": "${postgres_primary_host}",
-          "port": "${postgres_port}",
-          "database": "${postgres_db}",
-          "user": "${postgres_user}",
-          "password": "${postgres_password}",
-          "num_threads": 20,
-          "duration_seconds": 60
-        }
-      }
-    },
-    {
-      "name": "memory-stress-during-messaging",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaoscompute.actions.compute_stress",
-        "func": "stress_memory",
-        "arguments": {
-          "duration": 60,
-          "amount": "2048M"
-        }
-      }
-    },
-    {
-      "name": "kafka-topic-saturation-under-memory-stress",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.actions.kafka.kafka_topic_saturation",
-        "func": "inject_topic_saturation",
+        "module": "chaosdb.probes.kafka.kafka_connectivity",
+        "func": "probe_kafka_connectivity",
         "arguments": {
           "bootstrap_servers": "${kafka_bootstrap_servers}",
-          "topic": "${kafka_topic}",
-          "num_producers": 20,
-          "duration_seconds": 60
+          "topic": "${kafka_topic}"
         }
-      }
+      },
+      "tolerance": true
     },
     {
-      "name": "test-full-stack-under-stress",
-      "type": "action",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_api_transaction_flow",
-        "arguments": {
-          "api_url": "${site_a_haproxy_url}",
-          "num_transactions": 50
-        }
-      }
-    },
-    {
-      "name": "SCENARIO-8-Final-Transaction-Integrity-Check",
+      "name": "probe-purchase-requests",
       "type": "probe",
       "provider": {
         "type": "python",
         "module": "chaosdb.probes.postgres.postgres_transaction_validation",
-        "func": "probe_transaction_integrity",
+        "func": "probe_api_transaction_flow",
         "arguments": {
-          "host": "${postgres_primary_host}",
-          "port": "${postgres_port}"
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": 5
         }
       },
       "tolerance": {
         "type": "jsonpath",
-        "path": "$.is_integrity_ok",
+        "path": "$.success",
         "expect": true
       }
     },
     {
-      "name": "verify-mysql-connectivity-after-operations",
+      "name": "probe-rabbitmq",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
+        "func": "probe_rabbitmq_connectivity"
+      },
+      "tolerance": true
+    },
+    {
+      "name": "probe-mongodb",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.mongodb.mongodb_connectivity",
+        "func": "probe_mongodb_connectivity",
+        "arguments": {
+          "host": "mongodb",
+          "port": 27017,
+          "database": "${mongodb_db}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "probe-redis",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.redis.redis_connectivity",
+        "func": "probe_redis_connectivity",
+        "arguments": {
+          "host": "${redis_host}",
+          "port": "${redis_port}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "probe-mysql",
       "type": "probe",
       "provider": {
         "type": "python",
@@ -1204,7 +706,7 @@
       "tolerance": true
     },
     {
-      "name": "verify-mssql-connectivity-after-operations",
+      "name": "probe-mssql",
       "type": "probe",
       "provider": {
         "type": "python",
@@ -1221,7 +723,7 @@
       "tolerance": true
     },
     {
-      "name": "verify-cassandra-connectivity-after-operations",
+      "name": "probe-cassandra",
       "type": "probe",
       "provider": {
         "type": "python",
@@ -1236,7 +738,7 @@
       "tolerance": true
     },
     {
-      "name": "verify-activemq-connectivity-after-operations",
+      "name": "probe-activemq",
       "type": "probe",
       "provider": {
         "type": "python",
@@ -1248,43 +750,753 @@
         }
       },
       "tolerance": true
-    },
-    {
-      "name": "verify-data-consistency-across-sites",
-      "type": "probe",
-      "provider": {
-        "type": "python",
-        "module": "chaosdb.probes.postgres.postgres_replication",
-        "func": "probe_data_consistency",
-        "arguments": {
-          "primary_host": "${postgres_primary_host}",
-          "replica_host": "${postgres_replica_host}"
-        }
-      },
-      "tolerance": {
-        "type": "jsonpath",
-        "path": "$.is_consistent",
-        "expect": true
-      }
-    }
-  ],
-  "rollbacks": [
-    {
-      "type": "action",
-      "name": "generate-experiment-reports",
-      "provider": {
-        "type": "python",
-        "module": "chaostooling_reporting.actions",
-        "func": "generate_experiment_reports",
-        "arguments": {
-          "output_dir": "${CHAOS_REPORTING_OUTPUT_DIR:-./reporting-output}",
-          "formats": "${CHAOS_REPORTING_FORMATS:-html,json}",
-          "executive": true,
-          "compliance": true,
-          "audit": true,
-          "product_owner": true
-        }
-      }
     }
   ]
+},
+"method": [
+  {
+    "name": "baseline-distributed-transaction-flow",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": "${baseline_transactions}"
+      }
+    }
+  },
+  {
+    "name": "verify-baseline-transactions",
+    "type": "probe",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_transaction_count",
+      "arguments": {
+        "host": "${postgres_primary_host}",
+        "port": "${postgres_port}"
+      }
+    },
+    "tolerance": {
+      "type": "jsonpath",
+      "path": "$.total_count",
+      "expect": 50
+    }
+  },
+  {
+    "name": "SCENARIO-1-Network-Latency-Across-Sites",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosnetwork.actions.network_latency",
+      "func": "simulate_network_conditions",
+      "arguments": {
+        "latency": "${network_latency_ms}",
+        "duration": "${network_duration_s}"
+      }
+    }
+  },
+  {
+    "name": "test-distributed-transactions-under-latency",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": "${distributed_transaction_test_count}"
+      }
+    }
+  },
+  {
+    "name": "SCENARIO-2-Database-Slow-Transactions",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_slow_transactions",
+      "func": "inject_slow_transactions",
+      "arguments": {
+        "host": "${postgres_primary_host}",
+        "num_threads": 5,
+        "duration_seconds": "${db_slow_txn_duration_s}",
+        "transaction_delay_ms": "${db_slow_txn_delay_ms}"
+      }
+    }
+  },
+  {
+    "name": "test-distributed-transactions-under-slow-db",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": "${distributed_transaction_test_count}"
+      }
+    }
+  },
+  {
+    "name": "postgres-query-saturation",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_query_saturation",
+      "func": "inject_query_saturation",
+      "arguments": {
+        "host": "${postgres_primary_host}",
+        "port": "${postgres_port}",
+        "database": "${postgres_db}",
+        "user": "${postgres_user}",
+        "password": "${postgres_password}",
+        "num_threads": 20,
+        "queries_per_thread": 1000,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "postgres-lock-storm",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_lock_storm",
+      "func": "inject_lock_storm",
+      "arguments": {
+        "host": "${postgres_primary_host}",
+        "port": "${postgres_port}",
+        "database": "${postgres_db}",
+        "user": "${postgres_user}",
+        "password": "${postgres_password}",
+        "num_threads": 10,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "postgres-pool-exhaustion",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+      "func": "inject_connection_pool_exhaustion",
+      "arguments": {
+        "host": "${postgres_primary_host}",
+        "port": "${postgres_port}",
+        "database": "${postgres_db}",
+        "user": "${postgres_user}",
+        "password": "${postgres_password}",
+        "num_connections": 100,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "SCENARIO-2B-Multi-Database-Operations",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": 20
+      }
+    }
+  },
+  {
+    "name": "mysql-slow-transactions",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.mysql.mysql_slow_transactions",
+      "func": "inject_slow_transactions",
+      "arguments": {
+        "host": "${mysql_host}",
+        "port": "${mysql_port}",
+        "database": "${mysql_db}",
+        "user": "${mysql_user}",
+        "password": "${mysql_password}",
+        "num_threads": 5,
+        "duration_seconds": 60,
+        "transaction_delay_ms": 3000
+      }
+    }
+  },
+  {
+    "name": "mysql-query-saturation",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.mysql.mysql_query_saturation",
+      "func": "inject_query_saturation",
+      "arguments": {
+        "host": "${mysql_host}",
+        "port": "${mysql_port}",
+        "database": "${mysql_db}",
+        "user": "${mysql_user}",
+        "password": "${mysql_password}",
+        "num_threads": 20,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "mssql-slow-transactions",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.mssql.mssql_slow_transactions",
+      "func": "inject_slow_transactions",
+      "arguments": {
+        "host": "${mssql_host}",
+        "port": "${mssql_port}",
+        "database": "${mssql_db}",
+        "user": "${mssql_user}",
+        "password": "${mssql_password}",
+        "num_threads": 5,
+        "duration_seconds": 60,
+        "transaction_delay_ms": 3000
+      }
+    }
+  },
+  {
+    "name": "mongodb-document-contention",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.mongodb.mongodb_document_contention",
+      "func": "inject_document_contention",
+      "arguments": {
+        "host": "mongodb",
+        "port": 27017,
+        "database": "${mongodb_db}",
+        "num_threads": 10,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "mongodb-query-saturation",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.mongodb.mongodb_query_saturation",
+      "func": "inject_query_saturation",
+      "arguments": {
+        "host": "mongodb",
+        "port": 27017,
+        "database": "${mongodb_db}",
+        "num_threads": 20,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "redis-key-contention",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.redis.redis_key_contention",
+      "func": "inject_key_contention",
+      "arguments": {
+        "host": "${redis_host}",
+        "port": "${redis_port}",
+        "num_threads": 10,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "redis-command-saturation",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.redis.redis_command_saturation",
+      "func": "inject_command_saturation",
+      "arguments": {
+        "host": "${redis_host}",
+        "port": "${redis_port}",
+        "num_threads": 20,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "cassandra-row-contention",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.cassandra.cassandra_row_contention",
+      "func": "inject_row_contention",
+      "arguments": {
+        "host": "${cassandra_host}",
+        "port": "${cassandra_port}",
+        "num_threads": 10,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "test-multi-database-transactions",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": 30
+      }
+    }
+  },
+  {
+    "name": "SCENARIO-3-Multi-Messaging-Event-Flow",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": 20
+      }
+    }
+  },
+  {
+    "name": "kafka-message-flood",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.kafka.kafka_message_flood",
+      "func": "inject_message_flood",
+      "arguments": {
+        "bootstrap_servers": "${kafka_bootstrap_servers}",
+        "topic": "${kafka_topic}",
+        "num_producers": 10,
+        "messages_per_producer": 1000,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "kafka-topic-saturation",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.kafka.kafka_topic_saturation",
+      "func": "inject_topic_saturation",
+      "arguments": {
+        "bootstrap_servers": "${kafka_bootstrap_servers}",
+        "topic": "${kafka_topic}",
+        "num_producers": 20,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "kafka-slow-consumer",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.kafka.kafka_slow_consumer",
+      "func": "inject_slow_consumer",
+      "arguments": {
+        "bootstrap_servers": "${kafka_bootstrap_servers}",
+        "topic": "${kafka_topic}",
+        "num_consumers": 5,
+        "duration_seconds": 60,
+        "consume_delay_ms": 5000
+      }
+    }
+  },
+  {
+    "name": "rabbitmq-message-flood",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.rabbitmq.rabbitmq_message_flood",
+      "func": "inject_message_flood",
+      "arguments": {
+        "host": "${rabbitmq_host}",
+        "port": "${rabbitmq_port}",
+        "user": "${rabbitmq_user}",
+        "password": "${rabbitmq_password}",
+        "queue": "chaos_test_queue",
+        "num_producers": 10,
+        "messages_per_producer": 1000,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "rabbitmq-queue-saturation",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.rabbitmq.rabbitmq_queue_saturation",
+      "func": "inject_queue_saturation",
+      "arguments": {
+        "host": "${rabbitmq_host}",
+        "port": "${rabbitmq_port}",
+        "user": "${rabbitmq_user}",
+        "password": "${rabbitmq_password}",
+        "queue": "chaos_test_queue",
+        "num_producers": 20,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "activemq-message-flood",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.activemq.activemq_message_flood",
+      "func": "inject_message_flood",
+      "arguments": {
+        "host": "${activemq_host}",
+        "port": "${activemq_port}",
+        "user": "admin",
+        "password": "admin",
+        "queue": "chaos.test",
+        "num_producers": 10,
+        "messages_per_producer": 1000,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "test-multi-messaging-transactions",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": 30
+      }
+    }
+  },
+  {
+    "name": "SCENARIO-4-Application-Server-Failure",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_replication",
+      "func": "stop_replica",
+      "arguments": {
+        "container_name": "app-server-1-site-a"
+      }
+    }
+  },
+  {
+    "name": "test-load-balancer-failover",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": "${distributed_transaction_test_count}"
+      }
+    }
+  },
+  {
+    "name": "rollback-restart-app-server-1",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_replication",
+      "func": "start_replica",
+      "arguments": {
+        "container_name": "app-server-1-site-a"
+      }
+    }
+  },
+  {
+    "name": "SCENARIO-5-Database-Primary-Failover",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_replication",
+      "func": "stop_primary",
+      "arguments": {
+        "container_name": "${postgres_primary_host}"
+      }
+    }
+  },
+  {
+    "name": "verify-replica-connectivity-after-failover",
+    "type": "probe",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_connectivity",
+      "func": "probe_postgres_connectivity",
+      "arguments": {
+        "host": "${postgres_replica_host}",
+        "port": "${postgres_port}"
+      }
+    },
+    "tolerance": true
+  },
+  {
+    "name": "rollback-restart-postgres-primary",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_replication",
+      "func": "start_replica",
+      "arguments": {
+        "container_name": "${postgres_primary_host}"
+      }
+    }
+  },
+  {
+    "name": "SCENARIO-6-Disaster-Recovery-Site-Failover",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_replication",
+      "func": "stop_replica",
+      "arguments": {
+        "container_name": "haproxy-site-a"
+      }
+    }
+  },
+  {
+    "name": "test-dr-site-failover",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_b_haproxy_url}",
+        "num_transactions": "${dr_failover_test_count}"
+      }
+    }
+  },
+  {
+    "name": "rollback-restart-site-a-haproxy",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_replication",
+      "func": "start_replica",
+      "arguments": {
+        "container_name": "haproxy-site-a"
+      }
+    }
+  },
+  {
+    "name": "SCENARIO-7-Full-Stack-Stress-Test",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": 20
+      }
+    }
+  },
+  {
+    "name": "cpu-stress-during-postgres-operations",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaoscompute.actions.compute_stress",
+      "func": "stress_cpu",
+      "arguments": {
+        "duration": 60,
+        "load": 80,
+        "cores": 2
+      }
+    }
+  },
+  {
+    "name": "postgres-query-saturation-under-cpu-stress",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.postgres.postgres_query_saturation",
+      "func": "inject_query_saturation",
+      "arguments": {
+        "host": "${postgres_primary_host}",
+        "port": "${postgres_port}",
+        "database": "${postgres_db}",
+        "user": "${postgres_user}",
+        "password": "${postgres_password}",
+        "num_threads": 20,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "memory-stress-during-messaging",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaoscompute.actions.compute_stress",
+      "func": "stress_memory",
+      "arguments": {
+        "duration": 60,
+        "amount": "2048M"
+      }
+    }
+  },
+  {
+    "name": "kafka-topic-saturation-under-memory-stress",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.actions.kafka.kafka_topic_saturation",
+      "func": "inject_topic_saturation",
+      "arguments": {
+        "bootstrap_servers": "${kafka_bootstrap_servers}",
+        "topic": "${kafka_topic}",
+        "num_producers": 20,
+        "duration_seconds": 60
+      }
+    }
+  },
+  {
+    "name": "test-full-stack-under-stress",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_api_transaction_flow",
+      "arguments": {
+        "api_url": "${site_a_haproxy_url}",
+        "num_transactions": 50
+      }
+    }
+  },
+  {
+    "name": "SCENARIO-8-Final-Transaction-Integrity-Check",
+    "type": "probe",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+      "func": "probe_transaction_integrity",
+      "arguments": {
+        "host": "${postgres_primary_host}",
+        "port": "${postgres_port}"
+      }
+    },
+    "tolerance": {
+      "type": "jsonpath",
+      "path": "$.is_integrity_ok",
+      "expect": true
+    }
+  },
+  {
+    "name": "verify-mysql-connectivity-after-operations",
+    "type": "probe",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.mysql.mysql_connectivity",
+      "func": "probe_mysql_connectivity",
+      "arguments": {
+        "host": "${mysql_host}",
+        "port": "${mysql_port}",
+        "database": "${mysql_db}",
+        "user": "${mysql_user}",
+        "password": "${mysql_password}"
+      }
+    },
+    "tolerance": true
+  },
+  {
+    "name": "verify-mssql-connectivity-after-operations",
+    "type": "probe",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.mssql.mssql_connectivity",
+      "func": "probe_mssql_connectivity",
+      "arguments": {
+        "host": "${mssql_host}",
+        "port": "${mssql_port}",
+        "database": "${mssql_db}",
+        "user": "${mssql_user}",
+        "password": "${mssql_password}"
+      }
+    },
+    "tolerance": true
+  },
+  {
+    "name": "verify-cassandra-connectivity-after-operations",
+    "type": "probe",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.cassandra.cassandra_connectivity",
+      "func": "probe_cassandra_connectivity",
+      "arguments": {
+        "host": "${cassandra_host}",
+        "port": "${cassandra_port}",
+        "keyspace": "${cassandra_keyspace}"
+      }
+    },
+    "tolerance": true
+  },
+  {
+    "name": "verify-activemq-connectivity-after-operations",
+    "type": "probe",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.activemq.activemq_connectivity",
+      "func": "probe_activemq_connectivity",
+      "arguments": {
+        "host": "${activemq_host}",
+        "port": "${activemq_port}"
+      }
+    },
+    "tolerance": true
+  },
+  {
+    "name": "verify-data-consistency-across-sites",
+    "type": "probe",
+    "provider": {
+      "type": "python",
+      "module": "chaosdb.probes.postgres.postgres_replication",
+      "func": "probe_data_consistency",
+      "arguments": {
+        "primary_host": "${postgres_primary_host}",
+        "replica_host": "${postgres_replica_host}"
+      }
+    },
+    "tolerance": {
+      "type": "jsonpath",
+      "path": "$.is_consistent",
+      "expect": true
+    }
+  }
+],
+"rollbacks": [
+  {
+    "type": "action",
+    "name": "generate-experiment-reports",
+    "provider": {
+      "type": "python",
+      "module": "chaostooling_reporting.actions",
+      "func": "generate_experiment_reports",
+      "arguments": {
+        "output_dir": "${reporting_output_dir}",
+        "formats": "${reporting_formats}",
+        "executive": true,
+        "compliance": true,
+        "audit": true,
+        "product_owner": true
+      }
+    }
+  }
+]
 }

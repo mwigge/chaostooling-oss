@@ -62,6 +62,13 @@ scrape_configs:
           service_name: chaostoolkit-demo
           log_type: experiment
           __path__: /var/log/chaostoolkit/chaostoolkit.log
+      - targets:
+          - localhost
+        labels:
+          job: chaostoolkit-experiment-logs
+          service_name: chaostoolkit-demo
+          log_type: experiment
+          __path__: /experiments/chaostoolkit.log
     pipeline_stages:
       - regex:
           expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<level>\w+)\] (?P<message>.*)'

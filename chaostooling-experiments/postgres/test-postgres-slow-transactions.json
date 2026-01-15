@@ -41,6 +41,13 @@
   },
   "controls": [
     {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
       "name": "opentelemetry",
       "provider": {
         "type": "python",

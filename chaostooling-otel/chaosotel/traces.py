@@ -167,68 +167,26 @@ class ServiceNameSpanProcessor(SpanProcessor):
                     )
 
         # Update service name - CRITICAL for Tempo service graph visibility
-        # NOTE: In on_end(), the span is a ReadableSpan which is read-only.
-        # We can't call set_attribute() or modify span.resource here.
-        # The actual resource update should happen during span creation (in set_db_span_attributes/set_messaging_span_attributes).
+        # We now use peer.service attribute which is the standard way to identify remote services.
         if service_name:
             try:
-                # ReadableSpan doesn't have set_attribute - attributes are set during span creation
-                # We can only try to update _resource if it exists and is writable
-                if hasattr(span, "_resource"):
-                    try:
-                        # Get current resource attributes
-                        if hasattr(span, "resource") and span.resource:
-                            current_attrs = dict(span.resource.attributes)
-                        elif hasattr(span, "_resource") and span._resource:
-                            current_attrs = dict(span._resource.attributes)
-                        else:
-                            current_attrs = {}
-
-                        # Only update if different
-                        if current_attrs.get("service.name") != service_name:
-                            current_attrs["service.name"] = service_name
-                            new_resource = Resource.create(current_attrs)
-
-                            # Try to update _resource (this may work for some SDK versions)
-                            try:
-                                span._resource = new_resource
-                                logger.debug(
-                                    f"Updated span._resource.service.name to {service_name}"
-                                )
-                            except (AttributeError, TypeError):
-                                # If _resource is read-only, try to update the internal dict directly
-                                try:
-                                    if hasattr(
-                                        span._resource, "attributes"
-                                    ) and hasattr(
-                                        span._resource.attributes, "__setitem__"
-                                    ):
-                                        span._resource.attributes["service.name"] = (
-                                            service_name
-                                        )
-                                        logger.debug(
-                                            f"Updated span._resource.attributes.service.name to {service_name}"
-                                        )
-                                    else:
-                                        logger.debug(
-                                            "Could not update _resource (read-only), but resource was set during span creation"
-                                        )
-                                except Exception as e2:
-                                    logger.debug(
-                                        f"Could not update _resource attributes: {e2}"
-                                    )
-                    except Exception as e:
-                        logger.debug(f"Could not update _resource in on_end: {e}")
+                # Set peer.service attribute (standard OTEL way)
+                # Note: In on_end(), the span is a ReadableSpan, but we can still try to set attributes
+                # if the SDK allows it, or better yet, this processor should have been on_start.
+                # However, for backward compatibility with the existing design, we'll try to set it.
+                if hasattr(span, "set_attribute"):
+                    span.set_attribute("peer.service", service_name)
+                    # Also set service.name for backward compatibility
+                    span.set_attribute("service.name", service_name)
+                    logger.debug(f"Set peer.service to {service_name} in on_end")
                 else:
-                    # Resource update should have happened during span creation
+                    # If it's a ReadableSpan, we might not be able to set attributes.
+                    # The best practice is to set these during span creation (which we now do in trace_core.py).
                     logger.debug(
-                        f"Resource update should have occurred during span creation for {service_name}"
+                        "Could not set peer.service on read-only span in on_end"
                     )
             except Exception as e:
-                # Don't log warnings for read-only spans - this is expected
-                logger.debug(
-                    f"Could not update service name in on_end (read-only span): {e}"
-                )
+                logger.debug(f"Error setting peer.service in on_end: {e}")
 
     def shutdown(self):
         """Shutdown processor - no cleanup needed."""

@@ -3,7 +3,7 @@
 
 set -e
 
-CASSANDRA_HOST=${CASSANDRA_HOST:-cassandra}
+CASSANDRA_HOST=${CASSANDRA_HOST:-localhost}
 CASSANDRA_PORT=${CASSANDRA_PORT:-9042}
 
 echo "Waiting for Cassandra to be ready..."

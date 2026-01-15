@@ -8,6 +8,11 @@ extensions:
   zpages:
     endpoint: 0.0.0.0:55679
 
+connectors:
+  servicegraph:
+    latency_histogram_buckets: [100ms, 250ms, 1s, 5s, 10s]
+    metrics_flush_interval: 10s
+
 receivers:
   otlp:
     protocols:
@@ -35,6 +40,8 @@ receivers:
     timeout: 20s
     api_version: "1.45"
     metrics:
+      container.cpu.usage.total:
+        enabled: true
       container.network.io.usage.rx_bytes:
         enabled: true
       container.network.io.usage.tx_bytes:
@@ -66,7 +73,6 @@ exporters:
 
   prometheus:
     endpoint: "0.0.0.0:8889"
-    namespace: chaos
     resource_to_telemetry_conversion:
       enabled: true
 
@@ -75,10 +81,10 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/tempo, debug]
+      exporters: [otlphttp/tempo, servicegraph, debug]
 
     metrics:
-      receivers: [otlp, prometheus, docker_stats]
+      receivers: [otlp, prometheus, docker_stats, servicegraph]
       processors: [batch]
       exporters: [prometheus]
 

@@ -1,8 +1,8 @@
 {
   "Production-Scale Distributed Transaction Chaos Experiment": {
-    "total_runs": 11,
-    "successful_runs": 9,
-    "failed_runs": 2,
+    "total_runs": 16,
+    "successful_runs": 13,
+    "failed_runs": 3,
     "runs": [
       {
         "experiment_id": "4136-20260113122051-12805cc1",
@@ -80,6 +80,41 @@
         "status": "completed",
         "success": true,
         "duration": 20.9805748462677
+      },
+      {
+        "experiment_id": "4795-20260115095624-d3b86630",
+        "run_timestamp": "2026-01-15T08:42:20.378053+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 10.144611835479736
+      },
+      {
+        "experiment_id": "8895-20260115102957-10a44c58",
+        "run_timestamp": "2026-01-15T09:59:40.800709+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 469.3527321815491
+      },
+      {
+        "experiment_id": "8638-20260115115415-b90859a2",
+        "run_timestamp": "2026-01-15T10:12:08.585420+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 1068.7949702739716
+      },
+      {
+        "experiment_id": "0527-20260115121750-940458dc",
+        "run_timestamp": "2026-01-15T11:54:10.397535+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 4.9465858936309814
+      },
+      {
+        "experiment_id": "6493-20260115125734-17afe2e8",
+        "run_timestamp": "2026-01-15T11:59:48.709616+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 1082.0802085399628
       }
     ]
   },

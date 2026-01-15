@@ -67,7 +67,7 @@ if [ -d "$BASE_DIR/chaostooling-generic" ]; then
     install_extension "$BASE_DIR/chaostooling-generic" "chaostooling-generic"
     echo "   ✓ chaosgeneric module available"
 else
-    echo "1. chaostooling-generic - not found"
+    echo "1. chaostooling-generic - not found at $BASE_DIR/chaostooling-generic"
 fi
 
 # chaostooling-otel (OpenTelemetry observability)

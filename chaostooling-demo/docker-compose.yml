@@ -19,6 +19,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - chaos-experiment-logs:/var/log/chaostoolkit:ro
+      - ../chaostooling-experiments:/experiments:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
@@ -33,10 +34,10 @@ services:
       - "9096:9096" # gRPC (if needed)
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    command: [ "--config=/etc/otelcol-contrib/config.yaml" ]
+    build: ./otel-collector
+    command: [ "--config=/etc/otelcol-custom/config.yaml" ]
     volumes:
-      - ./otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - ./otel-collector/config.yaml:/etc/otelcol-custom/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "8327:4317" # OTLP gRPC (changed from 4317 to avoid conflicts)
@@ -671,6 +672,9 @@ services:
       - CHAOSTOOLKIT_IN_DOCKER=true
       - CHAOSTOOLKIT_LOG_FILE=/var/log/chaostoolkit/chaostoolkit.log
       - CHAOSTOOLKIT_JOURNAL_PATH=/var/log/chaostoolkit/journal.json
+      - PYTHONPATH=/chaostooling-oss/chaostooling-generic:/chaostooling-oss/chaostooling-otel:/chaostooling-oss/chaostooling-extension-db:/chaostooling-oss/chaostooling-extension-compute:/chaostooling-oss/chaostooling-extension-network:/chaostooling-oss/chaostooling-reporting:/chaostooling-oss/chaostoolkit-extension-app:$PYTHONPATH
+      - CHAOS_REPORTING_OUTPUT_DIR=/var/log/chaostoolkit/reports
+      - CHAOS_REPORTING_FORMATS=html,json
 
       # Postgres (for basic experiments)
       - POSTGRES_HOST=postgres-primary-site-a
