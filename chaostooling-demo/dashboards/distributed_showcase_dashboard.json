@@ -612,7 +612,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "((sum(chaos_operation_success_total) / clamp_min(sum(chaos_operation_success_total) + sum(chaos_operation_error_total), 1)) * 100) or vector(0)",
+          "expr": "((sum(chaos_operation_success_total) / clamp_min(sum(chaos_operation_success_total) + sum(chaos_operation_error_total), 1)) * 100)",
           "refId": "A"
         }
       ],
@@ -669,7 +669,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_experiment_scenarios_total or count(count by (operation_name) (chaos_operation_success_total or chaos_operation_error_total)) or vector(0)",
+          "expr": "chaos_experiment_scenarios_total or count(count by (operation_name) (chaos_operation_success_total or chaos_operation_error_total))",
           "refId": "A"
         }
       ],
@@ -726,7 +726,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_experiment_activities_total or (sum(chaos_operation_success_total) + sum(chaos_operation_error_total)) or vector(0)",
+          "expr": "chaos_experiment_activities_total or (sum(chaos_operation_success_total) + sum(chaos_operation_error_total))",
           "refId": "A"
         }
       ],
@@ -783,7 +783,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_experiment_probes_total or sum(chaos_probe_executions_total) or vector(0)",
+          "expr": "chaos_experiment_probes_total or sum(chaos_probe_executions_total)",
           "refId": "A"
         }
       ],
@@ -915,7 +915,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "((sum(chaos_operation_success_total) / clamp_min(sum(chaos_operation_success_total) + sum(chaos_operation_error_total), 1)) * 100) or vector(0)",
+          "expr": "((sum(chaos_operation_success_total) / clamp_min(sum(chaos_operation_success_total) + sum(chaos_operation_error_total), 1)) * 100)",
           "refId": "A"
         }
       ],
@@ -1284,7 +1284,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "((sum(last_over_time(chaos_transaction_successful_total[5m])) / clamp_min(sum(last_over_time(chaos_transaction_total[5m])), 1)) * 100) or vector(0)",
+          "expr": "((sum(last_over_time(chaos_transaction_successful_total[5m])) / clamp_min(sum(last_over_time(chaos_transaction_total[5m])), 1)) * 100)",
           "refId": "A"
         }
       ],
@@ -2873,7 +2873,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "kafka_controller_kafkacontroller_offlinepartitionscount or vector(0)",
+          "expr": "kafka_controller_kafkacontroller_offlinepartitionscount",
           "refId": "A",
           "legendFormat": "Offline Partitions"
         },
@@ -2882,7 +2882,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "kafka_controller_kafkacontroller_globalpartitioncount or kafka_broker_topic_metrics_count_total{metric_name=\"PartitionCount\"} or vector(0)",
+          "expr": "kafka_controller_kafkacontroller_globalpartitioncount or kafka_broker_topic_metrics_count_total{metric_name=\"PartitionCount\"}",
           "refId": "B",
           "legendFormat": "Total Partitions"
         }

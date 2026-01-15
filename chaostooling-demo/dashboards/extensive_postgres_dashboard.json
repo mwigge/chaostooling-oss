@@ -488,7 +488,7 @@
             },
             "targets": [
                 {
-                    "expr": "rate(chaos_db_query_count_total[1m]) or vector(0)",
+                    "expr": "rate(chaos_db_query_count_total[1m])",
                     "legendFormat": "Queries/s",
                     "refId": "A"
                 }

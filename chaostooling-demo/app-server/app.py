@@ -7,8 +7,6 @@ import psycopg2
 import redis
 import requests
 from flask import Flask, jsonify, request
-from kafka import KafkaProducer
-from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.pika import PikaInstrumentor
@@ -18,6 +16,8 @@ from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+from chaosotel.core.trace_core import trace_kafka_produce
 
 # Setup OpenTelemetry with proper service name
 service_name = os.getenv("OTEL_SERVICE_NAME", "app-server")
@@ -70,14 +70,6 @@ def get_db_connection():
             user=os.getenv("POSTGRES_USER", "postgres"),
             password=os.getenv("POSTGRES_PASSWORD", "postgres"),
         )
-
-
-def get_kafka_producer():
-    bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
-    return KafkaProducer(
-        bootstrap_servers=bootstrap_servers.split(","),
-        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-    )
 
 
 def get_rabbitmq_connection():
@@ -214,23 +206,18 @@ def purchase():
         return jsonify({"error": "Database error"}), 500
 
     # Publish event to Kafka for async processing
-    try:
-        producer = get_kafka_producer()
-        producer.send(
-            "purchases",
-            {
-                "transaction_id": transaction_id,
-                "user_id": user_id,
-                "amount": amount,
-                "item_id": item_id,
-                "order_id": order_id,
-                "status": "COMPLETED",
-            },
-        )
-        producer.flush()
-        producer.close()
-    except Exception as e:
-        logger.warning(f"Kafka publish failed (non-critical): {e}")
+    trace_kafka_produce(
+        "purchases",
+        {
+            "transaction_id": transaction_id,
+            "user_id": user_id,
+            "amount": amount,
+            "item_id": item_id,
+            "order_id": order_id,
+            "status": "COMPLETED",
+        },
+        additional_attributes={"transaction.id": transaction_id},
+    )
 
     return (
         jsonify(

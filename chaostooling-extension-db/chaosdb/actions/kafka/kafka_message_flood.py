@@ -28,6 +28,19 @@ def inject_message_flood(
     duration_seconds: int = 60,
 ) -> dict:
     """Flood Kafka topic with high volume of messages."""
+    # Handle string input from Chaos Toolkit configuration
+    num_producers = (
+        int(num_producers) if isinstance(num_producers, str) else num_producers
+    )
+    messages_per_producer = (
+        int(messages_per_producer)
+        if isinstance(messages_per_producer, str)
+        else messages_per_producer
+    )
+    duration_seconds = (
+        int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
+    )
+
     bootstrap_servers = bootstrap_servers or os.getenv(
         "KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"
     )

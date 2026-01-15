@@ -32,6 +32,24 @@ def inject_command_saturation(
     slow_command_threshold_ms: int = 1000,
 ) -> Dict:
     """Saturate Redis with high volume of commands."""
+    # Handle string input from Chaos Toolkit configuration
+    if port is not None:
+        port = int(port) if isinstance(port, str) else port
+    num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
+    commands_per_thread = (
+        int(commands_per_thread)
+        if isinstance(commands_per_thread, str)
+        else commands_per_thread
+    )
+    duration_seconds = (
+        int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
+    )
+    slow_command_threshold_ms = (
+        int(slow_command_threshold_ms)
+        if isinstance(slow_command_threshold_ms, str)
+        else slow_command_threshold_ms
+    )
+
     host = host or os.getenv("REDIS_HOST", "localhost")
     port = port or int(os.getenv("REDIS_PORT", "6379"))
     password = password or os.getenv("REDIS_PASSWORD", None)

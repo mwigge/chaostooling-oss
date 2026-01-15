@@ -715,6 +715,271 @@ def instrument_messaging_span(
     )
 
 
+# ============================================================================
+# KAFKA-SPECIFIC TRACING HELPERS
+# ============================================================================
+# High-level convenience functions for Kafka operations with automatic tracing.
+# These ensure Kafka appears correctly in service graphs instead of "unknown".
+# Uses the existing messaging span instrumentation helpers above.
+
+
+def get_kafka_producer(bootstrap_servers: Optional[str] = None):
+    """
+    Create a Kafka producer with standard configuration.
+
+    This is a convenience function that creates a KafkaProducer with
+    standard JSON serialization. The producer should be used within
+    traced operations (see trace_kafka_produce).
+
+    Args:
+        bootstrap_servers: Kafka bootstrap servers (defaults to KAFKA_BOOTSTRAP_SERVERS env var)
+
+    Returns:
+        KafkaProducer instance
+
+    Example:
+        from chaosotel.core.trace_core import get_kafka_producer, trace_kafka_produce
+
+        # Use with trace_kafka_produce (recommended)
+        trace_kafka_produce("my-topic", {"key": "value"})
+
+        # Or create manually if needed
+        producer = get_kafka_producer()
+        producer.send("my-topic", {"key": "value"})
+    """
+    try:
+        from kafka import KafkaProducer
+    except ImportError:
+        raise ImportError(
+            "kafka-python is required for Kafka operations. "
+            "Install with: pip install kafka-python"
+        )
+
+    if not bootstrap_servers:
+        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+
+    return KafkaProducer(
+        bootstrap_servers=bootstrap_servers.split(","),
+        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+    )
+
+
+def trace_kafka_produce(
+    topic: str,
+    value: Dict[str, Any],
+    bootstrap_servers: Optional[str] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+    **kwargs,
+) -> bool:
+    """
+    Produce a message to Kafka with proper OpenTelemetry tracing.
+
+    This ensures Kafka operations show up correctly in the service graph
+    instead of appearing as "unknown". Automatically sets all required
+    messaging attributes for service graph visibility.
+
+    Args:
+        topic: Kafka topic name
+        value: Message value (dict that will be JSON serialized)
+        bootstrap_servers: Kafka bootstrap servers (defaults to KAFKA_BOOTSTRAP_SERVERS env var)
+        additional_attributes: Optional dict of additional span attributes (e.g., {"payment.id": 123})
+        **kwargs: Additional span attributes as keyword arguments (alternative to additional_attributes)
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        from chaosotel.core.trace_core import trace_kafka_produce
+
+        # Simple usage
+        success = trace_kafka_produce(
+            "payment-events",
+            {"payment_id": 123, "amount": 100.0}
+        )
+
+        # With additional attributes (dict)
+        trace_kafka_produce(
+            "order-events",
+            {"order_id": 456, "status": "PENDING"},
+            additional_attributes={"order.id": 456, "user.id": 789}
+        )
+
+        # With additional attributes (kwargs)
+        trace_kafka_produce(
+            "purchases",
+            {"transaction_id": 789},
+            payment_id=123,
+            order_id=456
+        )
+    """
+    try:
+        from kafka import KafkaProducer
+    except ImportError:
+        logger.error("kafka-python not installed - cannot produce Kafka messages")
+        return False
+
+    span = None
+
+    try:
+        # Extract host from bootstrap_servers for network.peer.address
+        if not bootstrap_servers:
+            bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+
+        # Get first bootstrap server for network.peer.address
+        first_server = bootstrap_servers.split(",")[0].strip()
+        if ":" in first_server:
+            kafka_host, kafka_port = first_server.rsplit(":", 1)
+        else:
+            kafka_host = first_server
+            kafka_port = "9092"
+
+        # Merge additional attributes with kwargs
+        all_attributes = {}
+        if additional_attributes:
+            all_attributes.update(additional_attributes)
+        all_attributes.update(kwargs)
+
+        # Create instrumented span using existing helper
+        span = instrument_messaging_span(
+            span_name=f"kafka.produce.{topic}",
+            messaging_system="kafka",
+            destination=topic,
+            destination_kind="topic",
+            messaging_operation="publish",
+            messaging_kafka_topic=topic,
+            network_peer_address=kafka_host,
+            network_peer_port=int(kafka_port) if kafka_port.isdigit() else None,
+            **all_attributes,
+        )
+
+        # Produce message
+        producer = KafkaProducer(
+            bootstrap_servers=bootstrap_servers.split(","),
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+        )
+        producer.send(topic, value)
+        producer.flush()
+        producer.close()
+
+        span.set_status(Status(StatusCode.OK))
+        logger.debug(f"Published message to Kafka topic '{topic}'")
+        return True
+
+    except Exception as e:
+        logger.warning(f"Kafka publish failed for topic '{topic}': {e}")
+        if span:
+            span.set_status(Status(StatusCode.ERROR, str(e)))
+            span.record_exception(e)
+        return False
+    finally:
+        if span:
+            try:
+                span.end()
+            except Exception:
+                pass
+
+
+def trace_kafka_consume(
+    topic: str,
+    consumer_group: Optional[str] = None,
+    bootstrap_servers: Optional[str] = None,
+    **additional_attributes,
+):
+    """
+    Context manager for consuming Kafka messages with proper OpenTelemetry tracing.
+
+    This ensures Kafka consumer operations show up correctly in the service graph.
+    Automatically sets all required messaging attributes for service graph visibility.
+
+    Args:
+        topic: Kafka topic name
+        consumer_group: Optional consumer group name
+        bootstrap_servers: Kafka bootstrap servers (defaults to KAFKA_BOOTSTRAP_SERVERS env var)
+        **additional_attributes: Additional span attributes
+
+    Yields:
+        Span object for adding custom attributes
+
+    Example:
+        from chaosotel.core.trace_core import trace_kafka_consume
+
+        with trace_kafka_consume("purchases", "notification-service-group") as span:
+            # Consume messages
+            for message in consumer:
+                span.set_attribute("message.id", message.value.get("id"))
+                process_message(message)
+    """
+    import importlib.util
+
+    if importlib.util.find_spec("kafka") is None:
+        raise ImportError(
+            "kafka-python is required for Kafka operations. "
+            "Install with: pip install kafka-python"
+        )
+
+    # Extract host from bootstrap_servers for network.peer.address
+    if not bootstrap_servers:
+        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+
+    first_server = bootstrap_servers.split(",")[0].strip()
+    if ":" in first_server:
+        kafka_host, kafka_port = first_server.rsplit(":", 1)
+    else:
+        kafka_host = first_server
+        kafka_port = "9092"
+
+    # Create instrumented span using existing helper
+    # For consumers, we use destination (the topic we're consuming from)
+    span = instrument_messaging_span(
+        span_name=f"kafka.consume.{topic}",
+        messaging_system="kafka",
+        destination=topic,
+        destination_kind="topic",
+        messaging_operation="receive",
+        messaging_kafka_topic=topic,
+        network_peer_address=kafka_host,
+        network_peer_port=int(kafka_port) if kafka_port.isdigit() else None,
+        **additional_attributes,
+    )
+
+    # Set consumer-specific attributes
+    span.set_attribute("messaging.source", topic)
+    span.set_attribute("messaging.source_kind", "topic")
+    if consumer_group:
+        span.set_attribute("messaging.kafka.consumer.group", consumer_group)
+
+    # Context manager
+    class _KafkaConsumeContext:
+        def __init__(self, span):
+            self.span = span
+
+        def __enter__(self):
+            return self.span
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if exc_type:
+                try:
+                    self.span.record_exception(exc_val)
+                except Exception:
+                    pass
+                self.span.set_status(
+                    Status(
+                        StatusCode.ERROR, str(exc_val) if exc_val else "Unknown error"
+                    )
+                )
+            else:
+                self.span.set_status(Status(StatusCode.OK))
+
+            try:
+                self.span.end()
+            except Exception:
+                pass
+
+            return False  # Don't suppress exceptions
+
+    return _KafkaConsumeContext(span)
+
+
 class InstrumentedSpan:
     """
     Context manager for instrumented spans.

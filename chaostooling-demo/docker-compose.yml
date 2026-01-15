@@ -70,7 +70,7 @@ services:
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/e2e_dashboard.json
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/e2e_experiment_dashboard.json
     volumes:
       - ./dashboards:/var/lib/grafana/dashboards
       - ./grafana-provisioning:/etc/grafana/provisioning
@@ -80,18 +80,6 @@ services:
       - tempo
 
   # --- Application Stack (for E2E demos) ---
-  # Legacy HA-Proxy (kept for backward compatibility)
-  haproxy:
-    image: haproxy:2.8
-    ports:
-      - "80:80"
-      - "8404:8404" # Stats
-    volumes:
-      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-    depends_on:
-      - app-server-1
-      - app-server-2
-
   # --- SITE A (Primary Site) ---
   haproxy-site-a:
     image: haproxy:2.8
@@ -271,7 +259,7 @@ services:
       - kafka
       - postgres-primary-site-a
 
-  # --- SITE B (DR Site) ---
+  # --- SITE B (DR Site - HAProxy only for DR failover testing) ---
   haproxy-site-b:
     image: haproxy:2.8
     ports:
@@ -280,85 +268,10 @@ services:
     volumes:
       - ./haproxy/haproxy-site-b.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:
-      - app-server-site-b
+      - app-server-1-site-a
+      - app-server-2-site-a
     environment:
       - SITE_B_HAPROXY_URL=http://haproxy-site-b:80
-
-  app-server-site-b:
-    build:
-      context: ./app-server
-      dockerfile: Dockerfile
-    environment:
-      - POSTGRES_HOST=${POSTGRES_DR_HOST:-postgres-primary-site-b}:${POSTGRES_PORT:-5432}
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
-      - POSTGRES_DB=${POSTGRES_DB:-testdb}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_SERVICE_NAME=app-server-site-b
-    depends_on:
-      - otel-collector
-      - postgres-primary-site-b
-    ports:
-      - "5009:5000"
-
-  # Legacy app-server-1 (kept for backward compatibility)
-  app-server-1:
-    build:
-      context: ./app-server
-      dockerfile: Dockerfile
-    environment:
-      - POSTGRES_HOST=postgres-primary:5432,postgres-replica:5432
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=testdb
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - PAYMENT_SERVICE_URL=http://payment-service:5000
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_SERVICE_NAME=app-server-1
-    depends_on:
-      - otel-collector
-      - postgres-primary
-      - postgres-replica
-      - payment-service
-    ports:
-      - "5007:5000"
-
-  # Legacy app-server-2 (kept for backward compatibility)
-  app-server-2:
-    build:
-      context: ./app-server
-      dockerfile: Dockerfile
-    environment:
-      - POSTGRES_HOST=postgres-primary:5432,postgres-replica:5432
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=testdb
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - PAYMENT_SERVICE_URL=http://payment-service:5000
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_SERVICE_NAME=app-server-2
-    depends_on:
-      - otel-collector
-      - postgres-primary
-      - postgres-replica
-      - payment-service
-    ports:
-      - "5008:5000"
-
-  payment-service:
-    build:
-      context: ./payment-service
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
-    environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_SERVICE_NAME=payment-service
 
   # --- Database Stack with Replication (for E2E demos) ---
   # Site A Primary Database
@@ -422,93 +335,7 @@ services:
         chmod 700 /var/lib/postgresql/data
         exec gosu postgres postgres
 
-  # Site B DR Database
-  postgres-primary-site-b:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-testdb}
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres-primary-site-b-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # Legacy postgres-primary (kept for backward compatibility)
-  postgres-primary:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: testdb
-      POSTGRES_REPLICATION_USER: replicator
-      POSTGRES_REPLICATION_PASSWORD: replicator
-    ports:
-      - "5435:5432"
-    volumes:
-      - postgres-primary-data:/var/lib/postgresql/data
-      - ./scripts/init-primary.sh:/docker-entrypoint-initdb.d/init-primary.sh:ro
-    command:
-      - "postgres"
-      - "-c"
-      - "wal_level=replica"
-      - "-c"
-      - "max_wal_senders=3"
-      - "-c"
-      - "max_replication_slots=3"
-      - "-c"
-      - "hot_standby=on"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  postgres-replica:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: testdb
-      PGUSER: replicator
-      PGPASSWORD: replicator
-    ports:
-      - "5436:5432"
-    volumes:
-      - postgres-replica-data:/var/lib/postgresql/data
-      - ./scripts/init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh:ro
-    depends_on:
-      postgres-primary:
-        condition: service_healthy
-    command:
-      - "bash"
-      - "-c"
-      - |
-        rm -rf /var/lib/postgresql/data/*
-        until pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U replicator -v -P; do
-          echo "Waiting for primary to be ready..."
-          sleep 2
-        done
-        echo "primary_conninfo = 'host=postgres-primary port=5432 user=replicator password=replicator'" >> /var/lib/postgresql/data/postgresql.conf
-        touch /var/lib/postgresql/data/standby.signal
-        chown -R postgres:postgres /var/lib/postgresql/data
-        chmod 700 /var/lib/postgresql/data
-        exec gosu postgres postgres
-
   # --- Target Systems (Databases & Messaging) ---
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: testdb
-    ports:
-      - "5437:5432" # Changed port to avoid conflict with other postgres services
 
   mysql:
     image: mysql:8.0
@@ -615,11 +442,8 @@ services:
     cap_add:
       - NET_ADMIN
     depends_on:
-      - postgres
-      - postgres-primary
       - postgres-primary-site-a
       - postgres-replica-site-a
-      - postgres-primary-site-b
       - mysql
       - mssql
       - mongodb
@@ -628,15 +452,10 @@ services:
       - kafka
       - rabbitmq
       - activemq
-      - haproxy
       - haproxy-site-a
       - haproxy-site-b
-      - app-server-1
-      - app-server-2
       - app-server-1-site-a
       - app-server-2-site-a
-      - app-server-site-b
-      - payment-service
       - payment-service-site-a
       - order-service-site-a
       - inventory-service-site-a
@@ -689,7 +508,6 @@ services:
       - POSTGRES_PRIMARY_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_REPLICA_HOST=${POSTGRES_REPLICA_HOST:-postgres-replica-site-a}
       - POSTGRES_REPLICA_PORT=${POSTGRES_PORT:-5432}
-      - POSTGRES_DR_HOST=${POSTGRES_DR_HOST:-postgres-primary-site-b}
       # Site A URLs
       - SITE_A_HAPROXY_URL=${SITE_A_HAPROXY_URL:-http://haproxy-site-a:80}
       - SITE_A_APP_SERVER_1_URL=${SITE_A_APP_SERVER_1_URL:-http://app-server-1-site-a:5000}
@@ -699,7 +517,6 @@ services:
       - SITE_A_INVENTORY_SERVICE_URL=${SITE_A_INVENTORY_SERVICE_URL:-http://inventory-service-site-a:5000}
       # Site B URLs (DR)
       - SITE_B_HAPROXY_URL=${SITE_B_HAPROXY_URL:-http://haproxy-site-b:80}
-      - SITE_B_APP_SERVER_URL=${SITE_B_APP_SERVER_URL:-http://app-server-site-b:5000}
 
       # MySQL
       - MYSQL_HOST=mysql
@@ -738,7 +555,7 @@ services:
       - ACTIVEMQ_PASSWORD=admin
 
       # E2E Application
-      - API_URL=http://haproxy:80
+      - API_URL=http://haproxy-site-a:80
     working_dir: /experiments
     command: tail -f /dev/null
 
@@ -769,12 +586,9 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres-primary-data:
-  postgres-replica-data:
   postgres-primary-site-a-data:
   chaos-experiment-logs:
   postgres-replica-site-a-data:
-  postgres-primary-site-b-data:
   tempo-data:
 
 

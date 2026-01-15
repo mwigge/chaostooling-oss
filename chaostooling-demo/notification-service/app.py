@@ -16,6 +16,9 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Status, StatusCode
 
+# Import Kafka tracing helpers from chaosotel
+from chaosotel.core.trace_core import trace_kafka_consume
+
 # Setup OpenTelemetry with proper service name
 service_name = os.getenv("OTEL_SERVICE_NAME", "notification-service")
 resource = Resource.create(
@@ -72,91 +75,150 @@ def get_kafka_consumer():
 
 def process_message(message):
     """Process a Kafka message and update database"""
-    tracer = trace.get_tracer(__name__)
+    topic = message.topic
+    value = message.value
 
-    with tracer.start_as_current_span("kafka.consume") as span:
-        topic = message.topic
-        value = message.value
+    # Use trace_kafka_consume for proper service graph visibility
+    if trace_kafka_consume:
+        with trace_kafka_consume(
+            topic=topic,
+            consumer_group="notification-service-group",
+            bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),
+        ) as span:
+            try:
+                logger.info(f"Received message from {topic}: {value}")
 
-        span.set_attribute("messaging.system", "kafka")
-        span.set_attribute("messaging.destination", topic)
-        span.set_attribute("messaging.operation", "receive")
+                # Process orders topic
+                if topic == "orders":
+                    order_id = value.get("order_id")
+                    user_id = value.get("user_id")
+                    status = value.get("status")
 
-        try:
-            logger.info(f"Received message from {topic}: {value}")
+                    span.set_attribute("order.id", str(order_id))
+                    span.set_attribute("order.status", status)
 
-            # Process orders topic
-            if topic == "orders":
-                order_id = value.get("order_id")
-                user_id = value.get("user_id")
-                status = value.get("status")
+                    # Update order status in database
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    cur.execute(
+                        "UPDATE orders SET status = %s, updated_at = NOW() WHERE id = %s",
+                        ("PROCESSED", order_id),
+                    )
+                    conn.commit()
+                    cur.close()
+                    conn.close()
 
-                span.set_attribute("order.id", str(order_id))
-                span.set_attribute("order.status", status)
+                    logger.info(f"Updated order {order_id} status to PROCESSED")
 
-                # Update order status in database
-                conn = get_db_connection()
-                cur = conn.cursor()
-                cur.execute(
-                    "UPDATE orders SET status = %s, updated_at = NOW() WHERE id = %s",
-                    ("PROCESSED", order_id),
-                )
-                conn.commit()
-                cur.close()
-                conn.close()
+                # Process purchases topic
+                elif topic == "purchases":
+                    transaction_id = value.get("transaction_id")
+                    user_id = value.get("user_id")
+                    amount = value.get("amount")
+                    status = value.get("status")
 
-                logger.info(f"Updated order {order_id} status to PROCESSED")
-                span.set_status(Status(StatusCode.OK))
+                    span.set_attribute("transaction.id", str(transaction_id))
+                    span.set_attribute("transaction.status", status)
 
-            # Process purchases topic
-            elif topic == "purchases":
-                transaction_id = value.get("transaction_id")
-                user_id = value.get("user_id")
-                amount = value.get("amount")
-                status = value.get("status")
+                    # Log purchase notification (in real system, would send email/SMS)
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    cur.execute(
+                        """INSERT INTO notifications (user_id, type, message, status, created_at) 
+                           VALUES (%s, %s, %s, %s, NOW()) 
+                           ON CONFLICT DO NOTHING""",
+                        (user_id, "purchase", f"Purchase completed: ${amount}", "sent"),
+                    )
+                    conn.commit()
+                    cur.close()
+                    conn.close()
 
-                span.set_attribute("transaction.id", str(transaction_id))
-                span.set_attribute("transaction.status", status)
+                    logger.info(f"Sent notification for transaction {transaction_id}")
 
-                # Log purchase notification (in real system, would send email/SMS)
-                conn = get_db_connection()
-                cur = conn.cursor()
-                cur.execute(
-                    """INSERT INTO notifications (user_id, type, message, status, created_at) 
-                       VALUES (%s, %s, %s, %s, NOW()) 
-                       ON CONFLICT DO NOTHING""",
-                    (user_id, "purchase", f"Purchase completed: ${amount}", "sent"),
-                )
-                conn.commit()
-                cur.close()
-                conn.close()
+            except Exception as e:
+                logger.error(f"Error processing message: {e}")
+                raise  # Re-raise so trace_kafka_consume context manager handles it
+    else:
+        # Fallback to manual tracing if trace_kafka_consume is not available
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span("kafka.consume") as span:
+            span.set_attribute("messaging.system", "kafka")
+            span.set_attribute("messaging.destination", topic)
+            span.set_attribute("messaging.operation", "receive")
+            span.set_attribute("network.peer.address", "kafka")
+            span.set_attribute("network.peer.port", 9092)
+            span.set_attribute("peer.service", "kafka")
 
-                logger.info(f"Sent notification for transaction {transaction_id}")
-                span.set_status(Status(StatusCode.OK))
+            try:
+                logger.info(f"Received message from {topic}: {value}")
 
-        except Exception as e:
-            logger.error(f"Error processing message: {e}")
-            span.record_exception(e)
-            span.set_status(Status(StatusCode.ERROR, str(e)))
+                # Process orders topic
+                if topic == "orders":
+                    order_id = value.get("order_id")
+                    user_id = value.get("user_id")
+                    status = value.get("status")
+
+                    span.set_attribute("order.id", str(order_id))
+                    span.set_attribute("order.status", status)
+
+                    # Update order status in database
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    cur.execute(
+                        "UPDATE orders SET status = %s, updated_at = NOW() WHERE id = %s",
+                        ("PROCESSED", order_id),
+                    )
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+
+                    logger.info(f"Updated order {order_id} status to PROCESSED")
+                    span.set_status(Status(StatusCode.OK))
+
+                # Process purchases topic
+                elif topic == "purchases":
+                    transaction_id = value.get("transaction_id")
+                    user_id = value.get("user_id")
+                    amount = value.get("amount")
+                    status = value.get("status")
+
+                    span.set_attribute("transaction.id", str(transaction_id))
+                    span.set_attribute("transaction.status", status)
+
+                    # Log purchase notification (in real system, would send email/SMS)
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    cur.execute(
+                        """INSERT INTO notifications (user_id, type, message, status, created_at) 
+                           VALUES (%s, %s, %s, %s, NOW()) 
+                           ON CONFLICT DO NOTHING""",
+                        (user_id, "purchase", f"Purchase completed: ${amount}", "sent"),
+                    )
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+
+                    logger.info(f"Sent notification for transaction {transaction_id}")
+                    span.set_status(Status(StatusCode.OK))
+
+            except Exception as e:
+                logger.error(f"Error processing message: {e}")
+                span.record_exception(e)
+                span.set_status(Status(StatusCode.ERROR, str(e)))
 
 
 def consume_messages():
     """Background thread to consume Kafka messages"""
     global consumer, running
 
-    tracer = trace.get_tracer(__name__)
-
     while running:
         try:
-            with tracer.start_as_current_span("kafka.consume.batch") as span:
-                messages = consumer.poll(timeout_ms=1000)
+            messages = consumer.poll(timeout_ms=1000)
 
-                if messages:
-                    span.set_attribute("messaging.batch.size", len(messages))
-
-                    for topic_partition, message_list in messages.items():
-                        for message in message_list:
-                            process_message(message)
+            if messages:
+                for topic_partition, message_list in messages.items():
+                    for message in message_list:
+                        process_message(message)
 
         except Exception as e:
             logger.error(f"Error in consumer loop: {e}")
