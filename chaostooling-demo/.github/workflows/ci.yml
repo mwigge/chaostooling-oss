@@ -47,8 +47,9 @@ jobs:
       - name: Check Black formatting
         run: |
           echo "::group::Black Formatter"
-          black --check --diff . || (echo "::error::Code is not formatted with Black. Run 'black .' to fix." && exit 1)
+          black --check --diff . || echo "::warning::Code formatting differs from Black (using Ruff as primary formatter). Run 'black .' to see differences."
           echo "::endgroup::"
+        continue-on-error: true
 
       - name: Check isort import sorting
         run: |
@@ -84,7 +85,7 @@ jobs:
           echo "## Code Quality Checks Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ **Ruff**: Linting and formatting checks completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Black**: Code formatting check completed" >> $GITHUB_STEP_SUMMARY
+          echo "ℹ️ **Black**: Code formatting check completed (non-blocking, Ruff is primary)" >> $GITHUB_STEP_SUMMARY
           echo "✅ **isort**: Import sorting check completed" >> $GITHUB_STEP_SUMMARY
           echo "ℹ️ **MyPy**: Type checking completed (non-blocking)" >> $GITHUB_STEP_SUMMARY
           echo "ℹ️ **Bandit**: Security scan completed (non-blocking)" >> $GITHUB_STEP_SUMMARY
