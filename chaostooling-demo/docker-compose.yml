@@ -70,7 +70,7 @@ services:
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/e2e_test_dashboard.json
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/e2e_dashboard.json
     volumes:
       - ./dashboards:/var/lib/grafana/dashboards
       - ./grafana-provisioning:/etc/grafana/provisioning
@@ -612,7 +612,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: [ "/scripts/chaos-runner-entrypoint.sh" ]
     cap_add:
       - NET_ADMIN
     depends_on:
@@ -651,7 +650,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - chaos-experiment-logs:/var/log/chaostoolkit
       - ./reporting-output:/var/log/chaostoolkit/reports
-      - ./scripts/chaos-runner-entrypoint.sh:/scripts/chaos-runner-entrypoint.sh:ro
+      - ./scripts/chaos-runner-entrypoint.sh:/chaos-runner-entrypoint.sh:ro
+    entrypoint: ["/chaos-runner-entrypoint.sh"]
     environment:
       # OpenTelemetry / meta #
       # Metrics and Logs use HTTP/protobuf
@@ -672,7 +672,8 @@ services:
       - CHAOSTOOLKIT_IN_DOCKER=true
       - CHAOSTOOLKIT_LOG_FILE=/var/log/chaostoolkit/chaostoolkit.log
       - CHAOSTOOLKIT_JOURNAL_PATH=/var/log/chaostoolkit/journal.json
-      - PYTHONPATH=/chaostooling-oss/chaostooling-generic:/chaostooling-oss/chaostooling-otel:/chaostooling-oss/chaostooling-extension-db:/chaostooling-oss/chaostooling-extension-compute:/chaostooling-oss/chaostooling-extension-network:/chaostooling-oss/chaostooling-reporting:/chaostooling-oss/chaostoolkit-extension-app:$PYTHONPATH
+      # PYTHONPATH will be set by chaos-runner-entrypoint.sh via setup-extensions.sh
+      # This ensures extensions are installed and PYTHONPATH is configured automatically
       - CHAOS_REPORTING_OUTPUT_DIR=/var/log/chaostoolkit/reports
       - CHAOS_REPORTING_FORMATS=html,json
 
