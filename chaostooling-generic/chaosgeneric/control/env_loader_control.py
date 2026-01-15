@@ -85,8 +85,6 @@ def _find_env_file(experiment_path: Optional[str] = None) -> Optional[Path]:
     Returns:
         Path to the .env file if found, None otherwise
     """
-    env_file = None
-    
     # Try to find env file based on experiment path
     if experiment_path:
         exp_path = Path(experiment_path)
