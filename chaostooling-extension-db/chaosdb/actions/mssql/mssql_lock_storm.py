@@ -78,14 +78,16 @@ def inject_lock_storm(
                 conn.autocommit = False
                 cursor = conn.cursor()
 
-                cursor.execute(f"""
+                cursor.execute(
+                    f"""
                     IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '{table_name}')
                     CREATE TABLE {table_name} (
                         id INT PRIMARY KEY IDENTITY(1,1),
                         value INT,
                         locked_by INT
                     )
-                """)
+                """
+                )
                 conn.commit()
 
                 cursor.execute(f"SELECT COUNT(*) FROM {table_name}")

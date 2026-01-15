@@ -176,9 +176,9 @@ def inject_command_saturation(
                 "total_commands": total_commands,
                 "slow_commands": slow_commands,
                 "errors": errors,
-                "commands_per_second": total_commands / (duration_ms / 1000)
-                if duration_ms > 0
-                else 0,
+                "commands_per_second": (
+                    total_commands / (duration_ms / 1000) if duration_ms > 0 else 0
+                ),
                 "threads_used": num_threads,
             }
 

@@ -1294,7 +1294,7 @@ class ReportGenerator:
             test_state = "Needs Attention"
             state_class = "status-failed"
 
-        html = f'''
+        html = f"""
     <div style="background: #ecf0f1; padding: 20px; border-radius: 5px; margin: 20px 0;">
         <h3 style="margin-top: 0;">Test State / Coverage</h3>
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 15px 0;">
@@ -1324,7 +1324,7 @@ class ReportGenerator:
             </span>
         </div>
     </div>
-'''
+"""
         return html
 
     def _generate_scenario_summary(self, run: List[Dict[str, Any]]) -> str:
@@ -1364,14 +1364,14 @@ class ReportGenerator:
                 else scenario_name
             )
 
-            html += f'''
+            html += f"""
             <tr>
                 <td><strong>{display_name}</strong></td>
                 <td>{total}</td>
                 <td>{successful}</td>
                 <td class="{status_class}">{success_rate:.1f}%</td>
             </tr>
-'''
+"""
 
         html += "</table>"
         return html
@@ -1428,9 +1428,9 @@ class ReportGenerator:
         # Sort by resilience score (highest first)
         sorted_tests = sorted(
             tests_data.items(),
-            key=lambda x: (x[1]["successful"] / x[1]["total"] * 100)
-            if x[1]["total"] > 0
-            else 0,
+            key=lambda x: (
+                (x[1]["successful"] / x[1]["total"] * 100) if x[1]["total"] > 0 else 0
+            ),
             reverse=True,
         )
 
@@ -1559,13 +1559,13 @@ class ReportGenerator:
                     else ""
                 )
 
-                html += f'''
+                html += f"""
                 <tr>
                     <td>{activity_type}</td>
                     <td>{activity_name}</td>
                     <td class="{status_class}">{activity_status}</td>
                 </tr>
-'''
+"""
 
             html += "</table>"
 
@@ -1586,9 +1586,9 @@ class ReportGenerator:
         # Sort by resilience score (highest first)
         sorted_tests = sorted(
             tests_data.items(),
-            key=lambda x: (x[1]["successful"] / x[1]["total"] * 100)
-            if x[1]["total"] > 0
-            else 0,
+            key=lambda x: (
+                (x[1]["successful"] / x[1]["total"] * 100) if x[1]["total"] > 0 else 0
+            ),
             reverse=True,
         )
 

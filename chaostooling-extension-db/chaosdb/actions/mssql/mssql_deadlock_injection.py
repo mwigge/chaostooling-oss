@@ -11,8 +11,8 @@ from chaosotel import (
     flush,
     get_logger,
     get_metric_tags,
-    get_tracer,
     get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
 
@@ -86,14 +86,16 @@ def inject_deadlock(
                 cursor = conn.cursor()
 
                 # Create test table if it doesn't exist
-                cursor.execute(f"""
+                cursor.execute(
+                    f"""
                     IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{table_name}]') AND type in (N'U'))
                     CREATE TABLE [dbo].[{table_name}] (
                         id INT IDENTITY(1,1) PRIMARY KEY,
                         value INT,
                         data NVARCHAR(255)
                     )
-                """)
+                """
+                )
                 conn.commit()
 
                 # Insert test data if needed

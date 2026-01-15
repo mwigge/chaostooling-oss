@@ -11,8 +11,8 @@ from chaosotel import (
     flush,
     get_logger,
     get_metric_tags,
-    get_tracer,
     get_metrics_core,
+    get_tracer,
 )
 from opentelemetry.trace import StatusCode
 

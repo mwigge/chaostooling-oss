@@ -33,9 +33,9 @@ jobs:
           pip install -e ./chaostooling-reporting[dev] || echo "Failed to install chaostooling-reporting"
           pip install -e ./chaostoolkit-extension-app[dev] || echo "Failed to install chaostoolkit-extension-app"
 
-      - name: Run Ruff linter
+      - name: Run Ruff linter (includes import sorting)
         run: |
-          echo "::group::Ruff Linter"
+          echo "::group::Ruff Linter & Import Sorter"
           ruff check --ignore F811,F821 . --output-format=github
           echo "::endgroup::"
 
@@ -48,14 +48,16 @@ jobs:
       - name: Check Black formatting
         run: |
           echo "::group::Black Formatter"
-          black --check --diff . || (echo "::error::Code is not formatted with Black. Run 'black .' to fix." && exit 1)
+          black --check --diff . || echo "::warning::Code formatting differs from Black (using Ruff as primary formatter). Run 'black .' to see differences."
           echo "::endgroup::"
+        continue-on-error: true
 
       - name: Check isort import sorting
         run: |
           echo "::group::isort Import Sorter"
-          isort --check-only --diff . || (echo "::error::Imports are not sorted with isort. Run 'isort .' to fix." && exit 1)
+          isort --check-only --diff . || echo "::warning::Imports differ from isort (using Ruff as primary import sorter). Run 'isort .' to see differences."
           echo "::endgroup::"
+        continue-on-error: true
 
       - name: Run MyPy type checking
         run: |
@@ -84,8 +86,8 @@ jobs:
         run: |
           echo "## Code Quality Checks Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Ruff**: Linting and formatting checks completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Black**: Code formatting check completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **isort**: Import sorting check completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Ruff**: Linting, formatting, and import sorting checks completed" >> $GITHUB_STEP_SUMMARY
+          echo "ℹ️ **Black**: Code formatting check completed (non-blocking, Ruff is primary)" >> $GITHUB_STEP_SUMMARY
+          echo "ℹ️ **isort**: Import sorting check completed (non-blocking, Ruff is primary)" >> $GITHUB_STEP_SUMMARY
           echo "ℹ️ **MyPy**: Type checking completed (non-blocking)" >> $GITHUB_STEP_SUMMARY
           echo "ℹ️ **Bandit**: Security scan completed (non-blocking)" >> $GITHUB_STEP_SUMMARY

@@ -12,9 +12,7 @@ import logging
 import os
 from typing import Optional
 
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import (
-    OTLPMetricExporter,
-)
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource

@@ -25,7 +25,8 @@ def ensure_purchase_table_exists():
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS mobile_purchases (
                     id SERIAL PRIMARY KEY,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -34,7 +35,8 @@ def ensure_purchase_table_exists():
                     item_id VARCHAR(255) NOT NULL,
                     status VARCHAR(50)
                 );
-            """)
+            """
+            )
         conn.commit()
     finally:
         conn.close()

@@ -1,18 +1,19 @@
-import os
-import logging
 import json
+import logging
+import os
 import threading
 import time
+
+import psycopg2
 from flask import Flask, jsonify
 from kafka import KafkaConsumer
-import psycopg2
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Status, StatusCode
 
 # Setup OpenTelemetry with proper service name
@@ -164,9 +165,16 @@ def consume_messages():
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify(
-        {"status": "ok", "consumer_running": running, "service": "notification-service"}
-    ), 200
+    return (
+        jsonify(
+            {
+                "status": "ok",
+                "consumer_running": running,
+                "service": "notification-service",
+            }
+        ),
+        200,
+    )
 
 
 @app.route("/start-consumer", methods=["POST"])

@@ -61,67 +61,77 @@ echo ""
 echo "Installing extensions from $BASE_DIR:"
 echo ""
 
+# chaostooling-generic (Generic controls and utilities)
+if [ -d "$BASE_DIR/chaostooling-generic" ]; then
+    echo "1. chaostooling-generic (chaosgeneric)"
+    install_extension "$BASE_DIR/chaostooling-generic" "chaostooling-generic"
+    echo "   ✓ chaosgeneric module available"
+else
+    echo "1. chaostooling-generic - not found"
+fi
+
 # chaostooling-otel (OpenTelemetry observability)
 if [ -d "$BASE_DIR/chaostooling-otel" ]; then
-    echo "1. chaostooling-otel (chaosotel)"
+    echo ""
+    echo "2. chaostooling-otel (chaosotel)"
     install_extension "$BASE_DIR/chaostooling-otel" "chaostooling-otel"
     echo "   ✓ chaosotel module available"
 else
-    echo "1. chaostooling-otel - not found"
+    echo "2. chaostooling-otel - not found"
 fi
 
 # chaostooling-extension-db (Database and messaging extensions)
 if [ -d "$BASE_DIR/chaostooling-extension-db" ]; then
     echo ""
-    echo "2. chaostooling-extension-db (chaosdb)"
+    echo "3. chaostooling-extension-db (chaosdb)"
     install_extension "$BASE_DIR/chaostooling-extension-db" "chaostooling-extension-db"
     echo "   ✓ chaosdb module available"
 else
-    echo "2. chaostooling-extension-db - not found"
+    echo "3. chaostooling-extension-db - not found"
 fi
 
 # chaostooling-extension-compute (Compute resource extensions)
 if [ -d "$BASE_DIR/chaostooling-extension-compute" ]; then
     echo ""
-    echo "3. chaostooling-extension-compute (chaoscompute)"
+    echo "4. chaostooling-extension-compute (chaoscompute)"
     install_extension "$BASE_DIR/chaostooling-extension-compute" "chaostooling-extension-compute"
     echo "   ✓ chaoscompute module available"
 else
-    echo "3. chaostooling-extension-compute - not found"
+    echo "4. chaostooling-extension-compute - not found"
 fi
 
 # chaostooling-extension-network (Network extensions)
 if [ -d "$BASE_DIR/chaostooling-extension-network" ]; then
     echo ""
-    echo "4. chaostooling-extension-network (chaosnetwork)"
+    echo "5. chaostooling-extension-network (chaosnetwork)"
     install_extension "$BASE_DIR/chaostooling-extension-network" "chaostooling-extension-network"
     echo "   ✓ chaosnetwork module available"
 else
-    echo "4. chaostooling-extension-network - not found"
+    echo "5. chaostooling-extension-network - not found"
 fi
 
 # chaostooling-reporting (Reporting and analytics)
 if [ -d "$BASE_DIR/chaostooling-reporting" ]; then
     echo ""
-    echo "5. chaostooling-reporting"
+    echo "6. chaostooling-reporting"
     install_extension "$BASE_DIR/chaostooling-reporting" "chaostooling-reporting"
     echo "   ✓ chaostooling_reporting module available"
 else
-    echo "5. chaostooling-reporting - not found"
+    echo "6. chaostooling-reporting - not found"
 fi
 
 # chaostoolkit-extension-app (Application extensions)
 if [ -d "$BASE_DIR/chaostoolkit-extension-app" ]; then
     echo ""
-    echo "6. chaostoolkit-extension-app (chaosapp)"
+    echo "7. chaostoolkit-extension-app (chaosapp)"
     install_extension "$BASE_DIR/chaostoolkit-extension-app" "chaostoolkit-extension-app"
     echo "   ✓ chaosapp module available"
 else
-    echo "6. chaostoolkit-extension-app - not found"
+    echo "7. chaostoolkit-extension-app - not found"
 fi
 
 # Add all extension directories to PYTHONPATH as fallback
-export PYTHONPATH="$BASE_DIR/chaostooling-otel:$BASE_DIR/chaostooling-extension-db:$BASE_DIR/chaostooling-extension-compute:$BASE_DIR/chaostooling-extension-network:$BASE_DIR/chaostooling-reporting:$BASE_DIR/chaostoolkit-extension-app:$PYTHONPATH"
+export PYTHONPATH="$BASE_DIR/chaostooling-generic:$BASE_DIR/chaostooling-otel:$BASE_DIR/chaostooling-extension-db:$BASE_DIR/chaostooling-extension-compute:$BASE_DIR/chaostooling-extension-network:$BASE_DIR/chaostooling-reporting:$BASE_DIR/chaostoolkit-extension-app:$PYTHONPATH"
 
 # Write PYTHONPATH to a file so it can be sourced by the shell
 PYTHONPATH_FILE="/etc/profile.d/chaostooling-pythonpath.sh"
@@ -136,6 +146,7 @@ echo "Verification"
 echo "=========================================="
 
 # Test imports
+python3 -c "import chaosgeneric; print('  ✓ chaosgeneric imported successfully')" 2>/dev/null || echo "  ⚠ chaosgeneric import failed"
 python3 -c "import chaosotel; print('  ✓ chaosotel imported successfully')" 2>/dev/null || echo "  ⚠ chaosotel import failed"
 python3 -c "import chaosdb; print('  ✓ chaosdb imported successfully')" 2>/dev/null || echo "  ⚠ chaosdb import failed"
 python3 -c "import chaoscompute; print('  ✓ chaoscompute imported successfully')" 2>/dev/null || echo "  ⚠ chaoscompute import failed (optional)"

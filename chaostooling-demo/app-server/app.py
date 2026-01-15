@@ -1,22 +1,23 @@
-import os
-import requests
-import psycopg2
-import logging
 import json
-import redis
-from flask import Flask, request, jsonify
-from kafka import KafkaProducer
+import logging
+import os
+
 import pika
+import psycopg2
+import redis
+import requests
+from flask import Flask, jsonify, request
+from kafka import KafkaProducer
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
-from opentelemetry.instrumentation.requests import RequestsInstrumentor
-from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 from opentelemetry.instrumentation.pika import PikaInstrumentor
+from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 # Setup OpenTelemetry with proper service name
 service_name = os.getenv("OTEL_SERVICE_NAME", "app-server")
@@ -231,14 +232,17 @@ def purchase():
     except Exception as e:
         logger.warning(f"Kafka publish failed (non-critical): {e}")
 
-    return jsonify(
-        {
-            "status": "success",
-            "message": "Purchase completed",
-            "transaction_id": transaction_id,
-            "order_id": order_id,
-        }
-    ), 200
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "message": "Purchase completed",
+                "transaction_id": transaction_id,
+                "order_id": order_id,
+            }
+        ),
+        200,
+    )
 
 
 @app.route("/health", methods=["GET"])

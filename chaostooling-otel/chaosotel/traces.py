@@ -13,11 +13,9 @@ import logging
 import os
 from typing import Optional
 
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-    OTLPSpanExporter,
-)
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider, SpanProcessor
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 logger = logging.getLogger("chaosotel.traces")
@@ -200,8 +198,14 @@ class ServiceNameSpanProcessor(SpanProcessor):
                             except (AttributeError, TypeError):
                                 # If _resource is read-only, try to update the internal dict directly
                                 try:
-                                    if hasattr(span._resource, "attributes") and hasattr(span._resource.attributes, "__setitem__"):
-                                        span._resource.attributes["service.name"] = service_name
+                                    if hasattr(
+                                        span._resource, "attributes"
+                                    ) and hasattr(
+                                        span._resource.attributes, "__setitem__"
+                                    ):
+                                        span._resource.attributes["service.name"] = (
+                                            service_name
+                                        )
                                         logger.debug(
                                             f"Updated span._resource.attributes.service.name to {service_name}"
                                         )

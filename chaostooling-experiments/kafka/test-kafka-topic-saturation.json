@@ -3,9 +3,26 @@
   "title": "Kafka Topic Saturation Test",
   "description": "Test messaging system resilience under topic saturation by flooding Kafka topics with high message volume.",
   "configuration": {
-    "otelservicename": "kafka-topic-saturation-test"
+    "otelservicename": "kafka-topic-saturation-test",
+    "kafka_bootstrap_servers": {
+      "type": "env",
+      "key": "KAFKA_BOOTSTRAP_SERVERS",
+      "default": "localhost:9092"
+    },
+    "kafka_topic": {
+      "type": "env",
+      "key": "KAFKA_TOPIC",
+      "default": "test"
+    }
   },
   "controls": [
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
     {
       "name": "opentelemetry",
       "provider": {
@@ -23,7 +40,11 @@
         "provider": {
           "type": "python",
           "module": "chaosdb.probes.kafka.kafka_connectivity",
-          "func": "probe_kafka_connectivity"
+          "func": "probe_kafka_connectivity",
+          "arguments": {
+            "bootstrap_servers": "${kafka_bootstrap_servers}",
+            "topic": "${kafka_topic}"
+          }
         },
         "tolerance": true
       }
@@ -38,6 +59,8 @@
         "module": "chaosdb.actions.kafka.kafka_topic_saturation",
         "func": "inject_topic_saturation",
         "arguments": {
+          "bootstrap_servers": "${kafka_bootstrap_servers}",
+          "topic": "${kafka_topic}",
           "num_producers": 20,
           "messages_per_producer": 1000,
           "duration_seconds": 60

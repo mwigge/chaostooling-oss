@@ -183,9 +183,9 @@ def inject_connection_pool_exhaustion(
                 "duration_ms": duration_ms,
                 "connections_created": connections_created,
                 "connections_failed": connections_failed,
-                "connections_leaked": len(_active_connections)
-                if leak_connections
-                else 0,
+                "connections_leaked": (
+                    len(_active_connections) if leak_connections else 0
+                ),
                 "errors": errors,
                 "target_connections": num_connections,
             }

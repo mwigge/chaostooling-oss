@@ -95,14 +95,16 @@ def inject_row_contention(
                 session = cluster.connect(keyspace)
 
                 # Create table if needed
-                session.execute(f"""
+                session.execute(
+                    f"""
                     CREATE TABLE IF NOT EXISTS {table_name} (
                         id TEXT PRIMARY KEY,
                         value INT,
                         thread_id INT,
                         updated_at TIMESTAMP
                     )
-                """)
+                """
+                )
 
                 # Insert initial row
                 session.execute(

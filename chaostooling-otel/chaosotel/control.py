@@ -543,8 +543,8 @@ def before_activity_control(
     }
 
     # Create activity span - will automatically be child of current (root experiment) span
-    from opentelemetry.trace import SpanKind
     from opentelemetry import trace
+    from opentelemetry.trace import SpanKind
 
     tracer = get_tracer()
     # Use start_span and manually set as current (similar to root span pattern)
