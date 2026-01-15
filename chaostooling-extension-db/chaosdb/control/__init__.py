@@ -1,21 +1,10 @@
 """
 Chaos Toolkit controls for chaosdb extension.
+
+Note: Generic controls (env_loader, load_generator) have been moved to
+chaostooling-generic package. Use:
+- chaosgeneric.control.env_loader_control
+- chaosgeneric.control.load_generator_control
 """
 
-from .load_generator_control import (
-    after_experiment_control,
-    before_experiment_control,
-    cleanup_control,
-    configure_control,
-    load_control,
-    unload_control,
-)
-
-__all__ = [
-    "configure_control",
-    "load_control",
-    "unload_control",
-    "before_experiment_control",
-    "after_experiment_control",
-    "cleanup_control",
-]
+__all__ = []

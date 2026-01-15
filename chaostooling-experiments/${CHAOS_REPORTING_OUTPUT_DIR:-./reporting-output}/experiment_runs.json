@@ -82,5 +82,33 @@
         "duration": 20.9805748462677
       }
     ]
+  },
+  "Kafka Topic Saturation Test": {
+    "total_runs": 1,
+    "successful_runs": 1,
+    "failed_runs": 0,
+    "runs": [
+      {
+        "experiment_id": "4570-20260115082449-5c44ec08",
+        "run_timestamp": "2026-01-15T08:23:51.485345+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 10.087872505187988
+      }
+    ]
+  },
+  "E2E Test Scenario": {
+    "total_runs": 1,
+    "successful_runs": 1,
+    "failed_runs": 0,
+    "runs": [
+      {
+        "experiment_id": "9980-20260115084230-1518096d",
+        "run_timestamp": "2026-01-15T08:36:34.100122+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 326.2735917568207
+      }
+    ]
   }
 }

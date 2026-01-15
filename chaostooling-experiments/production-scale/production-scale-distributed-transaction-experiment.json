@@ -312,7 +312,7 @@
       "name": "load_generator",
       "provider": {
         "type": "python",
-        "module": "chaosdb.control.load_generator_control"
+        "module": "chaosgeneric.control.load_generator_control"
       }
     }
   ],
