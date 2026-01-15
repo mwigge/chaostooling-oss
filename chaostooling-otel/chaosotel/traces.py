@@ -183,7 +183,7 @@ class ServiceNameSpanProcessor(SpanProcessor):
                     # If it's a ReadableSpan, we might not be able to set attributes.
                     # The best practice is to set these during span creation (which we now do in trace_core.py).
                     logger.debug(
-                        f"Could not set peer.service on read-only span in on_end"
+                        "Could not set peer.service on read-only span in on_end"
                     )
             except Exception as e:
                 logger.debug(f"Error setting peer.service in on_end: {e}")
