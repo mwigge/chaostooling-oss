@@ -61,7 +61,8 @@ def _parse_env_file(file_path: Path) -> dict[str, str]:
                         env_vars[key] = value
                     elif key in os.environ:
                         logger.debug(
-                            f"Skipping {key} from .env file (already set in environment)"
+                            f"Skipping {key} from .env file "
+                            "(already set in environment)"
                         )
 
     except Exception as e:
@@ -141,7 +142,9 @@ def configure_control(
             else:
                 logger.debug("No .env file found for experiment")
         else:
-            logger.debug("No experiment path provided, will search in current directory")
+            logger.debug(
+                "No experiment path provided, will search in current directory"
+            )
 
     logger.info("Environment loader control configured")
 
@@ -215,10 +218,15 @@ def before_experiment_control(
         )
 
         if vars_set == 0:
-            logger.info("No new environment variables were set (all already in environment)")
+            logger.info(
+                "No new environment variables were set "
+                "(all already in environment)"
+            )
 
     except Exception as e:
-        logger.warning(f"Failed to load environment variables from {env_file_path}: {e}")
+        logger.warning(
+            f"Failed to load environment variables from {env_file_path}: {e}"
+        )
 
 
 def load_control(

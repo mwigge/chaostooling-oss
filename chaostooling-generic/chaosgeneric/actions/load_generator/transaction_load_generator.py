@@ -2,7 +2,8 @@
 Chaos Toolkit actions for controlling background transaction load generator.
 
 This allows Chaos Toolkit experiments to start/stop background transaction load
-that simulates real-world distributed transactions across databases and messaging systems.
+that simulates real-world distributed transactions across databases and messaging
+systems.
 """
 
 import logging
@@ -29,7 +30,8 @@ def start_background_transaction_load(
     - Event-driven updates to MSSQL, Cassandra via messaging
 
     Args:
-        load_generator_url: URL of the load generator service (default: http://transaction-load-generator:5001)
+        load_generator_url: URL of the load generator service
+            (default: http://transaction-load-generator:5001)
         transactions_per_second: Target transactions per second (default: 2.0)
         timeout: Request timeout in seconds (default: 10)
 
@@ -65,7 +67,8 @@ def stop_background_transaction_load(
     Stop background transaction load generator.
 
     Args:
-        load_generator_url: URL of the load generator service (default: http://transaction-load-generator:5001)
+        load_generator_url: URL of the load generator service
+            (default: http://transaction-load-generator:5001)
         timeout: Request timeout in seconds (default: 10)
 
     Returns:
@@ -98,7 +101,8 @@ def get_background_load_stats(
     Get current background transaction load statistics.
 
     Args:
-        load_generator_url: URL of the load generator service (default: http://transaction-load-generator:5001)
+        load_generator_url: URL of the load generator service
+            (default: http://transaction-load-generator:5001)
         timeout: Request timeout in seconds (default: 10)
 
     Returns:
