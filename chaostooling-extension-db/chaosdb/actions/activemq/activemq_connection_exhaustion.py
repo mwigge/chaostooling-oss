@@ -6,8 +6,14 @@ import time
 from typing import Optional
 
 import stomp
-from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags,
-                       get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 _active_connections = []
@@ -53,8 +59,7 @@ def inject_connection_exhaustion(
             ) as span:
                 # Get metrics in the function scope
                 metrics = get_metrics_core()
-                from chaosotel.core.trace_core import \
-                    set_messaging_span_attributes
+                from chaosotel.core.trace_core import set_messaging_span_attributes
 
                 set_messaging_span_attributes(
                     span,

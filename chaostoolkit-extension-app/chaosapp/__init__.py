@@ -1,7 +1,6 @@
 from typing import List
 
-from chaosotel import (ensure_initialized, flush, get_logger, get_tracer,
-                       initialize)
+from chaosotel import ensure_initialized, flush, get_logger, get_tracer, initialize
 
 __version__ = "0.1.0"
 __all__ = [

@@ -8,7 +8,9 @@ import logging
 from typing import Any, Optional
 
 from ..actions.load_generator.transaction_load_generator import (
-    start_background_transaction_load, stop_background_transaction_load)
+    start_background_transaction_load,
+    stop_background_transaction_load,
+)
 
 logger = logging.getLogger("chaosgeneric.control.load_generator")
 
@@ -80,8 +82,9 @@ def before_experiment_control(
         logger.info(f"Load generator started successfully: {result}")
 
         # Verify load generator is actually running
-        from ..actions.load_generator.transaction_load_generator import \
-            get_background_load_stats
+        from ..actions.load_generator.transaction_load_generator import (
+            get_background_load_stats,
+        )
 
         try:
             stats = get_background_load_stats(load_generator_url=url)

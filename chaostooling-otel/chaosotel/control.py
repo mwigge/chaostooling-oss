@@ -9,8 +9,15 @@ import logging
 from typing import Any, Dict, Optional
 
 from .calculator import calculate_complexity_score, calculate_risk_level
-from .otel import (ensure_initialized, flush, get_log_core, get_metric_tags,
-                   get_metrics_core, get_tracer, initialize)
+from .otel import (
+    ensure_initialized,
+    flush,
+    get_log_core,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+    initialize,
+)
 
 logger = logging.getLogger("chaosotel.control")
 
@@ -210,6 +217,7 @@ def before_experiment_control(
 
     # Start root span and make it current (so all child spans link to it)
     from opentelemetry import trace
+
     # Create the root span and make it current using use_span context manager
     # This ensures the span stays in context across function calls
     from opentelemetry.trace import SpanKind

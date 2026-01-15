@@ -3,8 +3,14 @@ import time
 from typing import Optional
 
 from cassandra.cluster import Cluster
-from chaosotel import (ensure_initialized, flush, get_logger, get_metric_tags,
-                       get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 

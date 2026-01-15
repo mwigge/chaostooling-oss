@@ -6,8 +6,13 @@ import time
 from typing import Dict, Optional
 
 import stomp
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
-                       get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 _active_threads = []
@@ -52,8 +57,7 @@ def inject_queue_saturation(
             with tracer.start_as_current_span(
                 f"queue_saturation.producer.{producer_id}"
             ) as span:
-                from chaosotel.core.trace_core import \
-                    set_messaging_span_attributes
+                from chaosotel.core.trace_core import set_messaging_span_attributes
 
                 set_messaging_span_attributes(
                     span,

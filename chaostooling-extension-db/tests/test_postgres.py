@@ -1,8 +1,9 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from chaosdb.probes.postgres.postgres_query_saturation_status import \
-    probe_query_saturation_status
+from chaosdb.probes.postgres.postgres_query_saturation_status import (
+    probe_query_saturation_status,
+)
 
 
 class TestPostgresProbe(unittest.TestCase):

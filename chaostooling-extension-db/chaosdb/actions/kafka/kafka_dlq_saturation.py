@@ -53,8 +53,7 @@ def inject_dlq_saturation(
             with tracer.start_as_current_span(
                 f"dlq_saturation.producer.{producer_id}"
             ) as span:
-                from chaosotel.core.trace_core import \
-                    set_messaging_span_attributes
+                from chaosotel.core.trace_core import set_messaging_span_attributes
 
                 # Extract host/port from bootstrap_servers for network attributes
                 bootstrap_host = (

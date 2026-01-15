@@ -1,7 +1,6 @@
 """RabbitMQ chaos probes."""
 
-from .rabbitmq_connection_exhaustion_status import \
-    probe_connection_exhaustion_status
+from .rabbitmq_connection_exhaustion_status import probe_connection_exhaustion_status
 from .rabbitmq_connectivity import probe_rabbitmq_connectivity
 from .rabbitmq_message_flood_status import probe_message_flood_status
 from .rabbitmq_queue_saturation_status import probe_queue_saturation_status

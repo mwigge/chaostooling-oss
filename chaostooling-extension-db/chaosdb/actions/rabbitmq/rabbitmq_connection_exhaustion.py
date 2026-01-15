@@ -6,8 +6,13 @@ import time
 from typing import Dict, Optional
 
 import pika
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
-                       get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 _active_connections = []
@@ -53,8 +58,7 @@ def inject_connection_exhaustion(
             with tracer.start_as_current_span(
                 f"connection_exhaustion.connection.{conn_id}"
             ) as span:
-                from chaosotel.core.trace_core import \
-                    set_messaging_span_attributes
+                from chaosotel.core.trace_core import set_messaging_span_attributes
 
                 set_messaging_span_attributes(
                     span,

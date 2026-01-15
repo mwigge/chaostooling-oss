@@ -8,8 +8,13 @@ from typing import Dict, Optional
 
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
-from chaosotel import (ensure_initialized, flush, get_metric_tags,
-                       get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry._logs import get_logger_provider
 from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode

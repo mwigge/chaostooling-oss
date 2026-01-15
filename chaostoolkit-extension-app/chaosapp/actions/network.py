@@ -2,8 +2,13 @@ import logging
 import subprocess
 import time
 
-from chaosotel import (ensure_initialized, flush, get_metric_tags,
-                       get_metrics_core, get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_metric_tags,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 logger = logging.getLogger("chaostoolkit")

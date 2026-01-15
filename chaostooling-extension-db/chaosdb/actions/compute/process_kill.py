@@ -5,8 +5,13 @@ import signal
 from typing import Dict
 
 import psutil
-from chaosotel import (ensure_initialized, flush, get_logger, get_metrics_core,
-                       get_tracer)
+from chaosotel import (
+    ensure_initialized,
+    flush,
+    get_logger,
+    get_metrics_core,
+    get_tracer,
+)
 from opentelemetry.trace import StatusCode
 
 

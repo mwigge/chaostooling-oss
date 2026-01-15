@@ -129,10 +129,8 @@ def initialize(
         # ====================================================================
         if auto_instrument:
             try:
-                from opentelemetry.instrumentation.requests import \
-                    RequestsInstrumentor
-                from opentelemetry.instrumentation.urllib3 import \
-                    URLLib3Instrumentor
+                from opentelemetry.instrumentation.requests import RequestsInstrumentor
+                from opentelemetry.instrumentation.urllib3 import URLLib3Instrumentor
 
                 RequestsInstrumentor().instrument()
                 URLLib3Instrumentor().instrument()

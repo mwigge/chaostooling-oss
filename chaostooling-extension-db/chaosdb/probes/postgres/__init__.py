@@ -8,9 +8,11 @@ from .postgres_replication import probe_data_consistency, probe_replication_lag
 from .postgres_replication_lag import check_replication_lag
 from .postgres_slow_transactions_status import probe_slow_transactions_status
 from .postgres_system_metrics import collect_postgres_system_metrics
-from .postgres_transaction_validation import (probe_api_transaction_flow,
-                                              probe_transaction_count,
-                                              probe_transaction_integrity)
+from .postgres_transaction_validation import (
+    probe_api_transaction_flow,
+    probe_transaction_count,
+    probe_transaction_integrity,
+)
 
 __all__ = [
     "probe_postgres_connectivity",

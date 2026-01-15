@@ -7,8 +7,7 @@ import psycopg2
 from flask import Flask, jsonify, request
 from kafka import KafkaProducer
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
-    OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.pika import PikaInstrumentor
 from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
