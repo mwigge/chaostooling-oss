@@ -39,11 +39,13 @@ metrics_generator:
   processor:
     service_graphs:
       dimensions:
+        - peer.service
         - service.namespace
         - http.method
         - http.status_code
       enable_client_server_prefix: true
       peer_attributes:
+        - peer.service
         - service.name
         - db.name
         - db.system
@@ -73,9 +75,9 @@ storage:
 
 overrides:
   defaults:
-    metrics_generator:
-      processors: [service-graphs, span-metrics, local-blocks]
-      generate_native_histograms: both
+      metrics_generator:
+        processors: [local-blocks, service-graphs, span-metrics]
+        generate_native_histograms: both
     # Search is enabled by default in recent versions, but explicit config is fine
     # query_frontend configuration is often not strictly required for basic setups 
     # unless you are doing backend splitting.

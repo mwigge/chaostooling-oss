@@ -3,7 +3,7 @@
 
 set -e
 
-REDIS_HOST=${REDIS_HOST:-redis}
+REDIS_HOST=${REDIS_HOST:-localhost}
 REDIS_PORT=${REDIS_PORT:-6379}
 
 echo "Waiting for Redis to be ready..."

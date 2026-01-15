@@ -325,7 +325,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "chaos_chaos_experiment_risk_level_ratio",
+                    "expr": "chaos_chaos_experiment_risk_level",
                     "refId": "A"
                 }
             ],
@@ -395,7 +395,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "chaos_chaos_experiment_complexity_score_ratio",
+                    "expr": "chaos_chaos_experiment_complexity_score",
                     "refId": "A"
                 }
             ],
