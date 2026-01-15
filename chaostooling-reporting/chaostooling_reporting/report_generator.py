@@ -373,7 +373,9 @@ class ReportGenerator:
         run = journal.get("run", [])
         e2e_tests = {}  # test_name -> {activities, total, successful, failed}
         application_tests = {}  # test_name -> {activities, total, successful, failed}
-        infrastructure_components = {}  # component_name -> {activities, total, successful, failed, component_type}
+        infrastructure_components = (
+            {}
+        )  # component_name -> {activities, total, successful, failed, component_type}
 
         # Extract and categorize activities
         for activity_entry in run:
@@ -1352,9 +1354,7 @@ class ReportGenerator:
             status_class = (
                 "status-passed"
                 if success_rate == 100.0
-                else "status-failed"
-                if success_rate < 50.0
-                else ""
+                else "status-failed" if success_rate < 50.0 else ""
             )
 
             # Format scenario name (remove SCENARIO- prefix if present)
@@ -1554,9 +1554,7 @@ class ReportGenerator:
                 status_class = (
                     "status-passed"
                     if activity_status == "succeeded"
-                    else "status-failed"
-                    if activity_status == "failed"
-                    else ""
+                    else "status-failed" if activity_status == "failed" else ""
                 )
 
                 html += f"""
