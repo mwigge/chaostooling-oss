@@ -164,9 +164,16 @@ def consume_messages():
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify(
-        {"status": "ok", "consumer_running": running, "service": "notification-service"}
-    ), 200
+    return (
+        jsonify(
+            {
+                "status": "ok",
+                "consumer_running": running,
+                "service": "notification-service",
+            }
+        ),
+        200,
+    )
 
 
 @app.route("/start-consumer", methods=["POST"])

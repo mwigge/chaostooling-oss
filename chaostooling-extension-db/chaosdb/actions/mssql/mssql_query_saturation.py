@@ -195,9 +195,9 @@ def inject_query_saturation(
                 "slow_queries": slow_queries,
                 "timeouts": timeouts,
                 "errors": errors,
-                "queries_per_second": total_queries / (duration_ms / 1000)
-                if duration_ms > 0
-                else 0,
+                "queries_per_second": (
+                    total_queries / (duration_ms / 1000) if duration_ms > 0 else 0
+                ),
                 "threads_used": num_threads,
             }
 

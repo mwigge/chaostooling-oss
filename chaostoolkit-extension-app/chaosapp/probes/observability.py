@@ -19,7 +19,8 @@ def ensure_table_exists():
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS mobile_edge_metrics (
                     id SERIAL PRIMARY KEY,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -27,7 +28,8 @@ def ensure_table_exists():
                     value FLOAT NOT NULL,
                     tags JSONB
                 );
-            """)
+            """
+            )
         conn.commit()
     finally:
         conn.close()

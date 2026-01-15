@@ -83,9 +83,10 @@ def check_inventory():
                 pass
             return jsonify({"status": "available", "source": "database"}), 200
         else:
-            return jsonify(
-                {"status": "unavailable", "reason": "insufficient_stock"}
-            ), 200
+            return (
+                jsonify({"status": "unavailable", "reason": "insufficient_stock"}),
+                200,
+            )
     except Exception as e:
         logger.error(f"MongoDB failed: {e}")
         return jsonify({"error": "Database error"}), 500

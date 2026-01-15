@@ -163,9 +163,9 @@ def inject_dlq_saturation(
                 "duration_ms": duration_ms,
                 "total_messages_sent": total_messages_sent,
                 "errors": errors,
-                "messages_per_second": total_messages_sent / (duration_ms / 1000)
-                if duration_ms > 0
-                else 0,
+                "messages_per_second": (
+                    total_messages_sent / (duration_ms / 1000) if duration_ms > 0 else 0
+                ),
                 "producers_used": num_producers,
             }
 

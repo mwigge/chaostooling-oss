@@ -11,9 +11,9 @@ def get_db_connection():
     host = os.getenv("POSTGRES_HOST", "postgres")
     # Simple connection for now
     return psycopg2.connect(
-        host=host.split(",")[0].split(":")[0]
-        if "," in host
-        else host,  # Take first host if list
+        host=(
+            host.split(",")[0].split(":")[0] if "," in host else host
+        ),  # Take first host if list
         port=os.getenv("POSTGRES_PORT", "5432"),
         dbname=os.getenv("POSTGRES_DB", "testdb"),
         user=os.getenv("POSTGRES_USER", "postgres"),

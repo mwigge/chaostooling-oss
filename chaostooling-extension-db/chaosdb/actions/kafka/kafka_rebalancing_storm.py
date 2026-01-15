@@ -105,9 +105,11 @@ def inject_rebalancing_storm(
                         # Leave group by closing consumer
                         consumer.close()
                         consumer = None
-                        _active_consumers.remove(
-                            consumer
-                        ) if consumer in _active_consumers else None
+                        (
+                            _active_consumers.remove(consumer)
+                            if consumer in _active_consumers
+                            else None
+                        )
 
                         # Wait before rejoining
                         time.sleep(rebalance_interval_seconds)

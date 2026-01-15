@@ -231,14 +231,17 @@ def purchase():
     except Exception as e:
         logger.warning(f"Kafka publish failed (non-critical): {e}")
 
-    return jsonify(
-        {
-            "status": "success",
-            "message": "Purchase completed",
-            "transaction_id": transaction_id,
-            "order_id": order_id,
-        }
-    ), 200
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "message": "Purchase completed",
+                "transaction_id": transaction_id,
+                "order_id": order_id,
+            }
+        ),
+        200,
+    )
 
 
 @app.route("/health", methods=["GET"])

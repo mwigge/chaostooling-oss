@@ -79,18 +79,27 @@ def generate_experiment_reports(
         formats_list = [f.strip() for f in formats.split(",")]
 
         templates = {
-            "executive": executive
-            if isinstance(executive, bool)
-            else os.getenv("CHAOS_REPORTING_EXECUTIVE", "true").lower() == "true",
-            "compliance": compliance
-            if isinstance(compliance, bool)
-            else os.getenv("CHAOS_REPORTING_COMPLIANCE", "true").lower() == "true",
-            "audit": audit
-            if isinstance(audit, bool)
-            else os.getenv("CHAOS_REPORTING_AUDIT", "true").lower() == "true",
-            "product_owner": product_owner
-            if isinstance(product_owner, bool)
-            else os.getenv("CHAOS_REPORTING_PRODUCT_OWNER", "true").lower() == "true",
+            "executive": (
+                executive
+                if isinstance(executive, bool)
+                else os.getenv("CHAOS_REPORTING_EXECUTIVE", "true").lower() == "true"
+            ),
+            "compliance": (
+                compliance
+                if isinstance(compliance, bool)
+                else os.getenv("CHAOS_REPORTING_COMPLIANCE", "true").lower() == "true"
+            ),
+            "audit": (
+                audit
+                if isinstance(audit, bool)
+                else os.getenv("CHAOS_REPORTING_AUDIT", "true").lower() == "true"
+            ),
+            "product_owner": (
+                product_owner
+                if isinstance(product_owner, bool)
+                else os.getenv("CHAOS_REPORTING_PRODUCT_OWNER", "true").lower()
+                == "true"
+            ),
         }
 
         # Find journal.json file
@@ -234,9 +243,9 @@ def generate_experiment_reports(
                     "chaostoolkit_journal_path": os.getenv("CHAOSTOOLKIT_JOURNAL_PATH"),
                     "chaos_experiment_dir": os.getenv("CHAOS_EXPERIMENT_DIR"),
                     "current_working_directory": str(Path.cwd()),
-                    "log_directory_exists": log_dir.exists()
-                    if log_dir.exists()
-                    else False,
+                    "log_directory_exists": (
+                        log_dir.exists() if log_dir.exists() else False
+                    ),
                 },
             }
 
