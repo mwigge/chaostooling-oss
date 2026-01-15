@@ -909,9 +909,9 @@ def trace_kafka_consume(
                 span.set_attribute("message.id", message.value.get("id"))
                 process_message(message)
     """
-    try:
-        from kafka import KafkaConsumer
-    except ImportError:
+    import importlib.util
+    
+    if importlib.util.find_spec("kafka") is None:
         raise ImportError(
             "kafka-python is required for Kafka operations. "
             "Install with: pip install kafka-python"
