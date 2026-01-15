@@ -183,11 +183,17 @@ def _update_resource_service_name(span: trace.Span, service_name: str):
             except (AttributeError, TypeError) as e:
                 # If _resource is read-only, try to update the internal dict directly
                 try:
-                    if hasattr(span._resource, "attributes") and hasattr(span._resource.attributes, "__setitem__"):
+                    if hasattr(span._resource, "attributes") and hasattr(
+                        span._resource.attributes, "__setitem__"
+                    ):
                         span._resource.attributes["service.name"] = service_name
-                        logger.debug(f"Updated span._resource.attributes.service.name to {service_name}")
+                        logger.debug(
+                            f"Updated span._resource.attributes.service.name to {service_name}"
+                        )
                     else:
-                        logger.debug(f"Could not update _resource (may be read-only): {e}")
+                        logger.debug(
+                            f"Could not update _resource (may be read-only): {e}"
+                        )
                 except Exception as e2:
                     logger.debug(f"Could not update _resource attributes: {e2}")
 

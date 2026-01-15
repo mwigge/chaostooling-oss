@@ -200,8 +200,14 @@ class ServiceNameSpanProcessor(SpanProcessor):
                             except (AttributeError, TypeError):
                                 # If _resource is read-only, try to update the internal dict directly
                                 try:
-                                    if hasattr(span._resource, "attributes") and hasattr(span._resource.attributes, "__setitem__"):
-                                        span._resource.attributes["service.name"] = service_name
+                                    if hasattr(
+                                        span._resource, "attributes"
+                                    ) and hasattr(
+                                        span._resource.attributes, "__setitem__"
+                                    ):
+                                        span._resource.attributes["service.name"] = (
+                                            service_name
+                                        )
                                         logger.debug(
                                             f"Updated span._resource.attributes.service.name to {service_name}"
                                         )
