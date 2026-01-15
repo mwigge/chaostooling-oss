@@ -30,14 +30,16 @@ def inject_slow_consumer(
 ) -> dict:
     """Inject slow Kafka consumers to create consumer lag."""
     # Handle string input from Chaos Toolkit configuration
-    num_consumers = int(num_consumers) if isinstance(num_consumers, str) else num_consumers
+    num_consumers = (
+        int(num_consumers) if isinstance(num_consumers, str) else num_consumers
+    )
     duration_seconds = (
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
     )
     consume_delay_ms = (
         int(consume_delay_ms) if isinstance(consume_delay_ms, str) else consume_delay_ms
     )
-    
+
     bootstrap_servers = bootstrap_servers or os.getenv(
         "KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"
     )

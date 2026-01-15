@@ -36,14 +36,18 @@ def inject_message_flood(
     # Handle string input from Chaos Toolkit configuration
     if port is not None:
         port = int(port) if isinstance(port, str) else port
-    num_producers = int(num_producers) if isinstance(num_producers, str) else num_producers
+    num_producers = (
+        int(num_producers) if isinstance(num_producers, str) else num_producers
+    )
     messages_per_producer = (
-        int(messages_per_producer) if isinstance(messages_per_producer, str) else messages_per_producer
+        int(messages_per_producer)
+        if isinstance(messages_per_producer, str)
+        else messages_per_producer
     )
     duration_seconds = (
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
     )
-    
+
     host = host or os.getenv("ACTIVEMQ_HOST", "localhost")
     port = port or int(os.getenv("ACTIVEMQ_PORT", "61613"))
     user = user or os.getenv("ACTIVEMQ_USER", "admin")

@@ -41,7 +41,7 @@ def inject_row_contention(
     duration_seconds = (
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
     )
-    
+
     host = host or os.getenv("CASSANDRA_HOST", "localhost")
     port = port or int(os.getenv("CASSANDRA_PORT", "9042"))
     keyspace = keyspace or os.getenv("CASSANDRA_KEYSPACE", "system")

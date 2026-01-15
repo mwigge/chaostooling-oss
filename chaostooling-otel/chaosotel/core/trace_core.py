@@ -910,7 +910,7 @@ def trace_kafka_consume(
                 process_message(message)
     """
     import importlib.util
-    
+
     if importlib.util.find_spec("kafka") is None:
         raise ImportError(
             "kafka-python is required for Kafka operations. "

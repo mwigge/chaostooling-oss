@@ -38,7 +38,7 @@ def inject_key_contention(
     duration_seconds = (
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
     )
-    
+
     host = host or os.getenv("REDIS_HOST", "localhost")
     port = port or int(os.getenv("REDIS_PORT", "6379"))
     password = password or os.getenv("REDIS_PASSWORD", None)

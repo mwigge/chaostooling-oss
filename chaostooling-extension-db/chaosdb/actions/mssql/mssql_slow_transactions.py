@@ -47,7 +47,7 @@ def inject_slow_transactions(
         if isinstance(transaction_delay_ms, str)
         else transaction_delay_ms
     )
-    
+
     host = host or os.getenv("MSSQL_HOST", "localhost")
     port = port or int(os.getenv("MSSQL_PORT", "1433"))
     database = database or os.getenv("MSSQL_DB", "master")

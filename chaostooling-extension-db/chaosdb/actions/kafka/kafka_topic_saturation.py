@@ -30,17 +30,23 @@ def inject_topic_saturation(
 ) -> dict:
     """Saturate Kafka topic with high message volume."""
     # Handle string input from Chaos Toolkit configuration
-    num_producers = int(num_producers) if isinstance(num_producers, str) else num_producers
+    num_producers = (
+        int(num_producers) if isinstance(num_producers, str) else num_producers
+    )
     messages_per_producer = (
-        int(messages_per_producer) if isinstance(messages_per_producer, str) else messages_per_producer
+        int(messages_per_producer)
+        if isinstance(messages_per_producer, str)
+        else messages_per_producer
     )
     duration_seconds = (
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
     )
     message_size_bytes = (
-        int(message_size_bytes) if isinstance(message_size_bytes, str) else message_size_bytes
+        int(message_size_bytes)
+        if isinstance(message_size_bytes, str)
+        else message_size_bytes
     )
-    
+
     bootstrap_servers = bootstrap_servers or os.getenv(
         "KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"
     )
