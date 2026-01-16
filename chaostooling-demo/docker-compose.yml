@@ -96,8 +96,8 @@ services:
 
   app-server-1-site-a:
     build:
-      context: ./app-server
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: ./chaostooling-demo/app-server/Dockerfile
     environment:
       - POSTGRES_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}:${POSTGRES_PORT:-5432},${POSTGRES_REPLICA_HOST:-postgres-replica-site-a}:${POSTGRES_PORT:-5432}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
@@ -134,8 +134,8 @@ services:
 
   app-server-2-site-a:
     build:
-      context: ./app-server
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: ./chaostooling-demo/app-server/Dockerfile
     environment:
       - POSTGRES_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}:${POSTGRES_PORT:-5432},${POSTGRES_REPLICA_HOST:-postgres-replica-site-a}:${POSTGRES_PORT:-5432}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
@@ -173,8 +173,8 @@ services:
   payment-service-site-a:
     # Option 1: Build from source (requires internet and certificates)
     build:
-      context: ./payment-service
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: ./chaostooling-demo/payment-service/Dockerfile
     # Option 2: Use pre-built image (circumvents build requirements)
     # Uncomment the line below and comment out the build section to use a pre-built image
     # image: payment-service:latest
@@ -200,8 +200,8 @@ services:
 
   order-service-site-a:
     build:
-      context: ./order-service
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: ./chaostooling-demo/order-service/Dockerfile
     ports:
       - "5004:5000"
     environment:
@@ -240,8 +240,8 @@ services:
 
   notification-service-site-a:
     build:
-      context: ./notification-service
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: ./chaostooling-demo/notification-service/Dockerfile
     ports:
       - "5006:5000"
     environment:
@@ -561,7 +561,9 @@ services:
 
   # --- Background Transaction Load Generator ---
   transaction-load-generator:
-    build: ./transaction-load-generator
+    build:
+      context: ..
+      dockerfile: ./chaostooling-demo/transaction-load-generator/Dockerfile
     container_name: transaction-load-generator
     environment:
       - API_URL=http://haproxy-site-a:80

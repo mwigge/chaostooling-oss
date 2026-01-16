@@ -3,11 +3,14 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install dependencies
-COPY requirements.txt .
+COPY chaostooling-demo/transaction-load-generator/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy common directory (for otel_setup)
+COPY chaostooling-demo/common /app/common
+
 # Copy application
-COPY app.py .
+COPY chaostooling-demo/transaction-load-generator/app.py .
 
 # Expose port
 EXPOSE 5001
