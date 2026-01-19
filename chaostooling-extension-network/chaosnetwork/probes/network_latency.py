@@ -20,14 +20,14 @@ from opentelemetry.trace import StatusCode
 def _measure_tcp_latency(host: str, port: int = 80, timeout: float = 5.0) -> float:
     """
     Measure TCP connection latency to a host:port.
-    
+
     This is a fallback when ping is not available.
-    
+
     Args:
         host: Target hostname or IP address
         port: Target port (default: 80 for HTTP)
         timeout: Connection timeout in seconds
-    
+
     Returns:
         Latency in milliseconds, or -1 if connection failed
     """
@@ -46,10 +46,10 @@ def _measure_tcp_latency(host: str, port: int = 80, timeout: float = 5.0) -> flo
 def _detect_default_port(host: str) -> int:
     """
     Try to detect the appropriate port based on hostname patterns.
-    
+
     Args:
         host: Hostname or IP address
-    
+
     Returns:
         Default port number (80 for HTTP, 5432 for PostgreSQL, etc.)
     """
@@ -126,10 +126,12 @@ def probe_network_latency(
                     text=True,
                     timeout=timeout * count + 5,
                 )
-                
+
                 probe_time_ms = (time.time() - start) * 1000
                 tags = get_metric_tags(
-                    network_interface="default", protocol="ICMP", operation="latency_probe"
+                    network_interface="default",
+                    protocol="ICMP",
+                    operation="latency_probe",
                 )
 
                 # Parse ping output
@@ -141,7 +143,8 @@ def probe_network_latency(
 
                 # Extract latency stats (min/avg/max/mdev)
                 stats_match = re.search(
-                    r"rtt min/avg/max/mdev = ([\d.]+)/([\d.]+)/([\d.]+)/([\d.]+)", output
+                    r"rtt min/avg/max/mdev = ([\d.]+)/([\d.]+)/([\d.]+)/([\d.]+)",
+                    output,
                 )
 
                 if stats_match:
@@ -200,12 +203,16 @@ def probe_network_latency(
                 # Auto-detect port if not specified
                 if tcp_port is None:
                     tcp_port = _detect_default_port(target_host)
-                    logger.debug(f"Auto-detected port {tcp_port} for host {target_host}")
-                
-                logger.info(f"ping not available, using TCP connection latency to {target_host}:{tcp_port}")
+                    logger.debug(
+                        f"Auto-detected port {tcp_port} for host {target_host}"
+                    )
+
+                logger.info(
+                    f"ping not available, using TCP connection latency to {target_host}:{tcp_port}"
+                )
                 span.set_attribute("network.latency.method", "tcp")
                 span.set_attribute("network.peer.port", tcp_port)
-                
+
                 latencies = []
                 successful = 0
                 for i in range(count):
@@ -214,7 +221,7 @@ def probe_network_latency(
                         latencies.append(latency)
                         successful += 1
                     time.sleep(0.1)  # Small delay between measurements
-                
+
                 if latencies:
                     min_latency = min(latencies)
                     avg_latency = sum(latencies) / len(latencies)
@@ -225,12 +232,14 @@ def probe_network_latency(
                     # All connections failed
                     min_latency = avg_latency = max_latency = jitter = 0.0
                     packet_loss = 100.0
-                
+
                 probe_time_ms = (time.time() - start) * 1000
                 tags = get_metric_tags(
-                    network_interface="default", protocol="TCP", operation="latency_probe"
+                    network_interface="default",
+                    protocol="TCP",
+                    operation="latency_probe",
                 )
-                
+
                 # Record metrics
                 if latencies:
                     metrics.record_custom_metric(
@@ -241,7 +250,7 @@ def probe_network_latency(
                         tags=tags,
                         description="Observed network latency (avg)",
                     )
-                
+
                 result_data = {
                     "success": len(latencies) > 0,
                     "target_host": target_host,
@@ -255,13 +264,13 @@ def probe_network_latency(
                     "probe_time_ms": probe_time_ms,
                     "method": "tcp",
                 }
-                
+
                 span.set_attribute("network.latency.avg_ms", avg_latency)
                 span.set_attribute("network.latency.min_ms", min_latency)
                 span.set_attribute("network.latency.max_ms", max_latency)
                 span.set_attribute("network.packet_loss.percent", packet_loss)
                 span.set_status(StatusCode.OK if latencies else StatusCode.ERROR)
-                
+
                 logger.info(
                     f"Network latency probe to {target_host}: avg={avg_latency:.2f}ms, loss={packet_loss:.1f}% (TCP method)"
                 )

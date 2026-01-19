@@ -87,9 +87,11 @@ def probe_query_saturation_status(
                     current_ops = db.current_op({"active": True})
                 except AttributeError:
                     # If current_op doesn't exist, try client.admin.command
-                    current_ops_result = client.admin.command("currentOp", {"active": True})
+                    current_ops_result = client.admin.command(
+                        "currentOp", {"active": True}
+                    )
                     current_ops = current_ops_result.get("inprog", [])
-            
+
             active_operations = len(current_ops) if isinstance(current_ops, list) else 0
 
             # Get connection stats

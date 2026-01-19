@@ -106,16 +106,22 @@ def probe_slow_operations_status(
             # Note: current_op() was removed in pymongo 4.0+, use command("currentOp") instead
             try:
                 # Try new API first (pymongo 4.0+)
-                current_ops_result = db.command("currentOp", {"active": True, "secs_running": {"$gt": 1}})
+                current_ops_result = db.command(
+                    "currentOp", {"active": True, "secs_running": {"$gt": 1}}
+                )
                 # currentOp returns a dict with "inprog" key containing the list of operations
                 current_ops = current_ops_result.get("inprog", [])
             except Exception:
                 # Fallback to old API for older pymongo versions
                 try:
-                    current_ops = db.current_op({"active": True, "secs_running": {"$gt": 1}})
+                    current_ops = db.current_op(
+                        {"active": True, "secs_running": {"$gt": 1}}
+                    )
                 except AttributeError:
                     # If current_op doesn't exist, try client.admin.command
-                    current_ops_result = client.admin.command("currentOp", {"active": True, "secs_running": {"$gt": 1}})
+                    current_ops_result = client.admin.command(
+                        "currentOp", {"active": True, "secs_running": {"$gt": 1}}
+                    )
                     current_ops = current_ops_result.get("inprog", [])
 
             slow_operations = []

@@ -193,10 +193,13 @@ def probe_host_reachable(
                 reachable = result.returncode == 0
             elif use_tcp_fallback:
                 # Fallback to TCP connection check
-                logger.debug(f"ping not available, using TCP connection check to {host}:{tcp_port}")
+                logger.debug(
+                    f"ping not available, using TCP connection check to {host}:{tcp_port}"
+                )
                 span.set_attribute("network.reachability.method", "tcp")
-                
+
                 import socket
+
                 reachable = False
                 for i in range(count):
                     try:
