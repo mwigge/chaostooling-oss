@@ -29,19 +29,20 @@ import requests
 
 # OpenTelemetry instrumentation for distributed tracing
 from opentelemetry import trace
-from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.trace import Status, StatusCode
 
-# Use common OTEL setup for consistent service graph visibility
-import sys
+# Import from chaosotel for auto-instrumentation
+from chaosotel import initialize
 
-sys.path.insert(0, "/app/common")
-from otel_setup import setup_otel
-
-# Setup OpenTelemetry for service graph visibility
+# Setup OpenTelemetry with auto-instrumentation
 service_name = os.getenv("OTEL_SERVICE_NAME", "transaction-load-generator")
-setup_otel(service_name)
-RequestsInstrumentor().instrument()  # Auto-instrument HTTP requests with trace context
+initialize(
+    target_type="service",
+    service_name=service_name,
+    service_version="1.0.0",
+    auto_instrument=True,  # Auto-instruments requests, urllib3
+)
+# RequestsInstrumentor is auto-instrumented by initialize()
 
 # Setup logging
 logging.basicConfig(
@@ -71,7 +72,9 @@ RUNNING.set()  # Start running by default
 class TransactionLoadGenerator:
     """Generates continuous transaction load across multiple systems."""
 
-    def __init__(self, api_url_primary: str, api_url_secondary: str = None, tps: float = 2.0):
+    def __init__(
+        self, api_url_primary: str, api_url_secondary: str = None, tps: float = 2.0
+    ):
         self.api_url_primary = api_url_primary
         self.api_url_secondary = api_url_secondary
         self.current_api_url = api_url_primary  # Start with primary
@@ -104,54 +107,130 @@ class TransactionLoadGenerator:
             span.set_attribute("transaction.item_id", item_id)
             span.set_attribute("http.url", f"{self.current_api_url}/purchase")
             span.set_attribute("http.method", "POST")
-            span.set_attribute("http.target", self.current_api_url.split("//")[-1] if "//" in self.current_api_url else self.current_api_url)
+            span.set_attribute(
+                "http.target",
+                self.current_api_url.split("//")[-1]
+                if "//" in self.current_api_url
+                else self.current_api_url,
+            )
 
-            # Try primary, failover to secondary if available
-            api_urls = [self.current_api_url]
-            if self.api_url_secondary and self.current_api_url != self.api_url_secondary:
-                api_urls.append(self.api_url_secondary)
+            # Try primary first
+            api_url = self.current_api_url
+            try:
+                # HTTP request is auto-instrumented by RequestsInstrumentor
+                # Trace context is automatically propagated in headers
+                span.set_attribute("http.url", f"{api_url}/purchase")
+                span.set_attribute(
+                    "http.target",
+                    api_url.split("//")[-1] if "//" in api_url else api_url,
+                )
 
-            last_error = None
-            for api_url in api_urls:
-                try:
-                    # HTTP request is auto-instrumented by RequestsInstrumentor
-                    # Trace context is automatically propagated in headers
-                    span.set_attribute("http.url", f"{api_url}/purchase")
-                    span.set_attribute("http.target", api_url.split("//")[-1] if "//" in api_url else api_url)
-                    
-                    response = requests.post(
-                        f"{api_url}/purchase", json=payload, timeout=10
+                response = requests.post(
+                    f"{api_url}/purchase", json=payload, timeout=10
+                )
+
+                span.set_attribute("http.status_code", response.status_code)
+
+                if response.status_code == 200:
+                    span.set_status(Status(StatusCode.OK))
+                    return {
+                        "status": "success",
+                        "payload": payload,
+                        "response": response.json(),
+                        "api_url": api_url,
+                    }
+                else:
+                    # Non-200 status - try failover if available
+                    last_error = f"HTTP {response.status_code}"
+                    span.set_attribute("http.error", last_error)
+                    logger.warning(
+                        f"Primary URL {api_url} returned {response.status_code}, will try failover if available"
                     )
+            except Exception as e:
+                last_error = str(e)
+                span.record_exception(e)
+                logger.warning(
+                    f"Primary URL {api_url} failed: {e}, will try failover if available"
+                )
 
-                    span.set_attribute("http.status_code", response.status_code)
+            # If primary failed, try secondary (only if configured and different)
+            if self.api_url_secondary and self.api_url_secondary != api_url:
+                # Check if secondary failover is enabled (default: true for DR scenarios)
+                enable_secondary = (
+                    os.getenv("ENABLE_SECONDARY_FAILOVER", "true").lower() == "true"
+                )
+                if not enable_secondary:
+                    logger.debug(
+                        f"Secondary failover disabled. Set ENABLE_SECONDARY_FAILOVER=true to enable."
+                    )
+                else:
+                    logger.info(
+                        f"Attempting failover to secondary URL: {self.api_url_secondary}"
+                    )
+                    try:
+                        # Create a child span for the failover attempt
+                        with tracer.start_as_current_span(
+                            "transaction.failover"
+                        ) as failover_span:
+                            failover_span.set_attribute(
+                                "http.url", f"{self.api_url_secondary}/purchase"
+                            )
+                            failover_span.set_attribute("http.method", "POST")
+                            failover_span.set_attribute("failover.from", api_url)
+                            failover_span.set_attribute(
+                                "failover.to", self.api_url_secondary
+                            )
 
-                    if response.status_code == 200:
-                        # Success - update current URL if we failed over
-                        if api_url != self.current_api_url:
-                            logger.info(f"Failover successful to {api_url}")
-                            self.current_api_url = api_url
-                            self.stats["failover_count"] += 1
-                        span.set_status(Status(StatusCode.OK))
-                        return {
-                            "status": "success",
-                            "payload": payload,
-                            "response": response.json(),
-                            "api_url": api_url,
-                        }
-                    else:
-                        # Non-200 status - try next URL if available
-                        last_error = f"HTTP {response.status_code}"
-                        span.set_attribute("http.error", last_error)
-                        continue
-                except Exception as e:
-                    last_error = str(e)
-                    span.record_exception(e)
-                    # Try next URL if available
-                    continue
+                            response = requests.post(
+                                f"{self.api_url_secondary}/purchase",
+                                json=payload,
+                                timeout=10,
+                            )
+
+                            failover_span.set_attribute(
+                                "http.status_code", response.status_code
+                            )
+
+                            if response.status_code == 200:
+                                # Success - update current URL
+                                logger.info(
+                                    f"Failover successful to {self.api_url_secondary}"
+                                )
+                                self.current_api_url = self.api_url_secondary
+                                self.stats["failover_count"] += 1
+                                failover_span.set_status(Status(StatusCode.OK))
+                                span.set_status(
+                                    Status(StatusCode.OK)
+                                )  # Mark parent span as OK too
+                                return {
+                                    "status": "success",
+                                    "payload": payload,
+                                    "response": response.json(),
+                                    "api_url": self.api_url_secondary,
+                                    "failover": True,
+                                }
+                            else:
+                                failover_span.set_status(
+                                    Status(
+                                        StatusCode.ERROR, f"HTTP {response.status_code}"
+                                    )
+                                )
+                                last_error = f"Secondary URL returned HTTP {response.status_code}"
+                    except Exception as e:
+                        logger.debug(
+                            f"Secondary URL {self.api_url_secondary} failed: {e}"
+                        )
+                        last_error = f"Secondary URL failed: {e}"
 
             # All URLs failed
-            span.set_status(Status(StatusCode.ERROR, last_error or "All endpoints failed"))
-            return {"status": "failed", "payload": payload, "error": last_error or "All endpoints failed"}
+            span.set_status(
+                Status(StatusCode.ERROR, last_error or "All endpoints failed")
+            )
+            return {
+                "status": "failed",
+                "payload": payload,
+                "error": last_error or "All endpoints failed",
+            }
 
     def run(self):
         """Run continuous transaction generation."""

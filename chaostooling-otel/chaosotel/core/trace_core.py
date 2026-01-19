@@ -684,6 +684,8 @@ def instrument_messaging_span(
     messaging_system: str,
     destination: Optional[str] = None,
     destination_kind: Optional[str] = None,
+    network_peer_address: Optional[str] = None,
+    network_peer_port: Optional[int] = None,
     **additional_attributes,
 ) -> trace.Span:
     """
@@ -696,6 +698,8 @@ def instrument_messaging_span(
         messaging_system: Messaging system name (e.g., "kafka", "rabbitmq")
         destination: Topic/queue name
         destination_kind: "topic" or "queue"
+        network_peer_address: Network peer address (hostname) for service graph visibility
+        network_peer_port: Network peer port
         **additional_attributes: Additional span attributes
 
     Returns:
@@ -707,12 +711,21 @@ def instrument_messaging_span(
         **additional_attributes,
     }
 
+    # Set network attributes for service graph visibility (CRITICAL)
+    if network_peer_address:
+        attributes["network.peer.address"] = network_peer_address
+        attributes["peer.service"] = network_peer_address  # Standard OTEL way
+        if network_peer_port:
+            attributes["network.peer.port"] = network_peer_port
+
     # Remove None values
     attributes = {k: v for k, v in attributes.items() if v is not None}
 
-    return create_instrumented_span(
+    span = create_instrumented_span(
         span_name, system_name=messaging_system, system_type="messaging", **attributes
     )
+
+    return span
 
 
 # ============================================================================
@@ -756,7 +769,8 @@ def get_kafka_producer(bootstrap_servers: Optional[str] = None):
         )
 
     if not bootstrap_servers:
-        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+        # Default to 'kafka:9092' for Docker environments, 'localhost:9092' for local dev
+        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 
     return KafkaProducer(
         bootstrap_servers=bootstrap_servers.split(","),
@@ -823,7 +837,8 @@ def trace_kafka_produce(
     try:
         # Extract host from bootstrap_servers for network.peer.address
         if not bootstrap_servers:
-            bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+            # Default to 'kafka:9092' for Docker environments, 'localhost:9092' for local dev
+            bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 
         # Get first bootstrap server for network.peer.address
         first_server = bootstrap_servers.split(",")[0].strip()
@@ -852,24 +867,80 @@ def trace_kafka_produce(
             **all_attributes,
         )
 
-        # Produce message
-        producer = KafkaProducer(
-            bootstrap_servers=bootstrap_servers.split(","),
-            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-        )
-        producer.send(topic, value)
-        producer.flush()
-        producer.close()
+        producer = None
+        try:
+            # Produce message with timeout to avoid hanging
+            # Use short timeouts to fail fast if Kafka is unavailable
+            # Setting api_version explicitly avoids version check, but we still need
+            # connection timeouts in case Kafka isn't ready
+            producer = KafkaProducer(
+                bootstrap_servers=bootstrap_servers.split(","),
+                value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+                api_version=(0, 10, 1),  # Explicit API version to skip version check
+                request_timeout_ms=3000,  # 3 second request timeout
+                connections_max_idle_ms=3000,  # Close idle connections quickly
+                metadata_max_age_ms=3000,  # Refresh metadata cache quickly
+                max_block_ms=3000,  # Max time to block during send
+                api_version_auto_timeout_ms=3000,  # Timeout for API version check (if needed)
+            )
+        except Exception as init_error:
+            # Handle errors during producer initialization (e.g., NoBrokersAvailable)
+            error_type = type(init_error).__name__
+            if "NoBrokersAvailable" in error_type or "NoBrokersAvailable" in str(
+                init_error
+            ):
+                logger.debug(
+                    f"Kafka brokers unavailable during producer initialization for topic '{topic}' - Kafka may not be ready yet"
+                )
+            else:
+                logger.warning(
+                    f"Kafka producer initialization failed for topic '{topic}': {init_error}"
+                )
+            if span:
+                span.set_status(Status(StatusCode.ERROR, str(init_error)))
+                span.record_exception(init_error)
+                span.set_attribute("error.type", error_type)
+            return False
 
-        span.set_status(Status(StatusCode.OK))
-        logger.debug(f"Published message to Kafka topic '{topic}'")
-        return True
+        # Send message (non-blocking)
+        try:
+            future = producer.send(topic, value)
+
+            # Wait for send with timeout
+            record_metadata = future.get(timeout=5)  # 5 second timeout
+            producer.flush(timeout=2)  # 2 second flush timeout
+            producer.close()
+
+            span.set_status(Status(StatusCode.OK))
+            span.set_attribute("kafka.partition", record_metadata.partition)
+            span.set_attribute("kafka.offset", record_metadata.offset)
+            logger.debug(
+                f"Published message to Kafka topic '{topic}' (partition {record_metadata.partition}, offset {record_metadata.offset})"
+            )
+            return True
+        except Exception as send_error:
+            if producer:
+                try:
+                    producer.close()
+                except Exception:
+                    pass
+            raise send_error
 
     except Exception as e:
-        logger.warning(f"Kafka publish failed for topic '{topic}': {e}")
+        # Check if it's a NoBrokersAvailable error - log at debug level to reduce noise
+        error_type = type(e).__name__
+        if "NoBrokersAvailable" in error_type or "NoBrokersAvailable" in str(e):
+            logger.debug(
+                f"Kafka brokers unavailable for topic '{topic}' - skipping message (this is expected if Kafka is down)"
+            )
+        else:
+            logger.warning(f"Kafka publish failed for topic '{topic}': {e}")
+
         if span:
             span.set_status(Status(StatusCode.ERROR, str(e)))
             span.record_exception(e)
+            # Add error type attribute for filtering
+            span.set_attribute("error.type", error_type)
         return False
     finally:
         if span:
@@ -919,7 +990,8 @@ def trace_kafka_consume(
 
     # Extract host from bootstrap_servers for network.peer.address
     if not bootstrap_servers:
-        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+        # Default to 'kafka:9092' for Docker environments, 'localhost:9092' for local dev
+        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 
     first_server = bootstrap_servers.split(",")[0].strip()
     if ":" in first_server:
@@ -978,6 +1050,216 @@ def trace_kafka_consume(
             return False  # Don't suppress exceptions
 
     return _KafkaConsumeContext(span)
+
+
+# ============================================================================
+# ACTIVEMQ-SPECIFIC TRACING HELPERS
+# ============================================================================
+# High-level convenience functions for ActiveMQ operations with automatic tracing.
+# These ensure ActiveMQ appears correctly in service graphs instead of "unknown".
+# Uses the existing messaging span instrumentation helpers above.
+# ActiveMQ uses STOMP protocol via stomp.py library (no official OTEL instrumentor).
+
+
+def trace_activemq_send(
+    queue: str,
+    body: str,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    additional_attributes: Optional[Dict[str, Any]] = None,
+    **kwargs,
+) -> bool:
+    """
+    Send a message to ActiveMQ queue with proper OpenTelemetry tracing.
+
+    This ensures ActiveMQ operations show up correctly in the service graph.
+    Automatically sets all required messaging attributes for service graph visibility.
+
+    Args:
+        queue: ActiveMQ queue name (without /queue/ prefix)
+        body: Message body (string)
+        host: ActiveMQ host (defaults to ACTIVEMQ_HOST env var)
+        port: ActiveMQ port (defaults to ACTIVEMQ_PORT env var)
+        additional_attributes: Optional dict of additional span attributes
+        **kwargs: Additional span attributes as keyword arguments
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        from chaosotel.core.trace_core import trace_activemq_send
+
+        success = trace_activemq_send(
+            "chaos.test",
+            "test message",
+            additional_attributes={"message.id": "123"}
+        )
+    """
+    try:
+        import stomp
+    except ImportError:
+        logger.error("stomp not installed - cannot send ActiveMQ messages")
+        return False
+
+    span = None
+
+    try:
+        # Get defaults from environment variables
+        if not host:
+            host = os.getenv("ACTIVEMQ_HOST", "activemq")
+        if not port:
+            port = int(os.getenv("ACTIVEMQ_PORT", "61613"))
+
+        # Merge additional attributes with kwargs
+        all_attributes = {}
+        if additional_attributes:
+            all_attributes.update(additional_attributes)
+        all_attributes.update(kwargs)
+
+        # Create instrumented span using existing helper
+        span = instrument_messaging_span(
+            span_name=f"activemq.send.{queue}",
+            messaging_system="activemq",
+            destination=queue,
+            destination_kind="queue",
+            messaging_operation="publish",
+            network_peer_address=host,
+            network_peer_port=port,
+            **all_attributes,
+        )
+
+        # Send message via STOMP
+        conn = None
+        try:
+            conn = stomp.Connection([(host, port)])
+            conn.connect(
+                os.getenv("ACTIVEMQ_USER", "admin"),
+                os.getenv("ACTIVEMQ_PASSWORD", "admin"),
+                wait=True,
+            )
+
+            # STOMP queue destination format: /queue/queuename
+            destination = f"/queue/{queue}" if not queue.startswith("/") else queue
+            conn.send(destination=destination, body=body)
+
+            span.set_status(Status(StatusCode.OK))
+            logger.debug(f"Sent message to ActiveMQ queue '{queue}'")
+            return True
+        finally:
+            if conn:
+                try:
+                    conn.disconnect()
+                except Exception:
+                    pass
+
+    except Exception as e:
+        logger.warning(f"ActiveMQ send failed for queue '{queue}': {e}")
+        if span:
+            span.set_status(Status(StatusCode.ERROR, str(e)))
+            span.record_exception(e)
+            span.set_attribute("error.type", type(e).__name__)
+        return False
+    finally:
+        if span:
+            try:
+                span.end()
+            except Exception:
+                pass
+
+
+def trace_activemq_receive(
+    queue: str,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    **additional_attributes,
+):
+    """
+    Context manager for receiving ActiveMQ messages with proper OpenTelemetry tracing.
+
+    This ensures ActiveMQ consumer operations show up correctly in the service graph.
+    Automatically sets all required messaging attributes for service graph visibility.
+
+    Args:
+        queue: ActiveMQ queue name (without /queue/ prefix)
+        host: ActiveMQ host (defaults to ACTIVEMQ_HOST env var)
+        port: ActiveMQ port (defaults to ACTIVEMQ_PORT env var)
+        **additional_attributes: Additional span attributes
+
+    Yields:
+        Span object for adding custom attributes
+
+    Example:
+        from chaosotel.core.trace_core import trace_activemq_receive
+
+        with trace_activemq_receive("chaos.test") as span:
+            # Receive messages
+            conn = stomp.Connection([(host, port)])
+            conn.set_listener('', MyListener())
+            conn.connect(user, password, wait=True)
+            conn.subscribe(destination=f"/queue/{queue}", id=1, ack='auto')
+            # ... process messages ...
+    """
+    try:
+        import stomp
+    except ImportError:
+        raise ImportError(
+            "stomp is required for ActiveMQ operations. "
+            "Install with: pip install stomp.py"
+        )
+
+    # Get defaults from environment variables
+    if not host:
+        host = os.getenv("ACTIVEMQ_HOST", "activemq")
+    if not port:
+        port = int(os.getenv("ACTIVEMQ_PORT", "61613"))
+
+    # Create instrumented span using existing helper
+    span = instrument_messaging_span(
+        span_name=f"activemq.receive.{queue}",
+        messaging_system="activemq",
+        destination=queue,
+        destination_kind="queue",
+        messaging_operation="receive",
+        network_peer_address=host,
+        network_peer_port=port,
+        **additional_attributes,
+    )
+
+    # Set consumer-specific attributes
+    span.set_attribute("messaging.source", queue)
+    span.set_attribute("messaging.source_kind", "queue")
+
+    # Context manager
+    class _ActiveMQReceiveContext:
+        def __init__(self, span):
+            self.span = span
+
+        def __enter__(self):
+            return self.span
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if exc_type:
+                try:
+                    self.span.record_exception(exc_val)
+                    self.span.set_status(
+                        Status(
+                            StatusCode.ERROR,
+                            str(exc_val) if exc_val else "Unknown error",
+                        )
+                    )
+                except Exception:
+                    pass
+            else:
+                self.span.set_status(Status(StatusCode.OK))
+
+            try:
+                self.span.end()
+            except Exception:
+                pass
+
+            return False  # Don't suppress exceptions
+
+    return _ActiveMQReceiveContext(span)
 
 
 class InstrumentedSpan:

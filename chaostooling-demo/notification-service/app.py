@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import sys
 import threading
 import time
 
@@ -10,23 +9,26 @@ from flask import Flask, jsonify
 from kafka import KafkaConsumer
 from opentelemetry import trace
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
-from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 from opentelemetry.trace import Status, StatusCode
 
-# Use common OTEL setup for consistent service graph visibility
-sys.path.insert(0, "/app/common")
-from otel_setup import setup_otel
-
-# Import Kafka tracing helpers from chaosotel
+# Import from chaosotel for auto-instrumentation
+from chaosotel import initialize
 from chaosotel.core.trace_core import trace_kafka_consume
 
-# Setup OpenTelemetry for service graph visibility
+# Setup OpenTelemetry with auto-instrumentation
 service_name = os.getenv("OTEL_SERVICE_NAME", "notification-service")
-setup_otel(service_name)
+initialize(
+    target_type="service",
+    service_name=service_name,
+    service_version="1.0.0",
+    auto_instrument=True,
+    auto_instrument_databases=True,  # Auto-instruments PostgreSQL
+    auto_instrument_messaging=True,  # Auto-instruments Kafka
+)
 
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
-Psycopg2Instrumentor().instrument()
+# No manual instrumentation needed - auto-instrumentation handles PostgreSQL
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

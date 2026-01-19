@@ -140,17 +140,21 @@ def probe_host_reachable(
     host: str,
     count: int = 3,
     timeout: int = 5,
+    use_tcp_fallback: bool = True,
+    tcp_port: int = 80,
 ) -> bool:
     """
-    Simple probe to check if a host is reachable via ICMP ping.
+    Simple probe to check if a host is reachable via ICMP ping or TCP fallback.
 
     This is a simpler version that returns just a boolean for use
     in steady-state hypothesis checks.
 
     Args:
         host: Target hostname or IP address
-        count: Number of ping packets
+        count: Number of ping packets (or TCP connection attempts for fallback)
         timeout: Timeout in seconds
+        use_tcp_fallback: If True, use TCP connection check if ping is unavailable
+        tcp_port: Port to use for TCP reachability check (default: 80)
 
     Returns:
         True if host is reachable, False otherwise
@@ -166,17 +170,59 @@ def probe_host_reachable(
             span.set_attribute("network.peer.address", host)
             span.set_attribute("network.operation", "reachability_probe")
 
-            result = subprocess.run(
-                ["ping", "-c", str(count), "-W", str(timeout), host],
-                capture_output=True,
-                text=True,
-                timeout=timeout * count + 5,
-            )
+            # Try to use ping first, fallback to TCP if ping is not available
+            ping_available = True
+            try:
+                # Check if ping is available
+                subprocess.run(
+                    ["ping", "-c", "1", "-W", "1", "127.0.0.1"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2,
+                )
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                ping_available = False
 
-            reachable = result.returncode == 0
+            if ping_available:
+                result = subprocess.run(
+                    ["ping", "-c", str(count), "-W", str(timeout), host],
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout * count + 5,
+                )
+                reachable = result.returncode == 0
+            elif use_tcp_fallback:
+                # Fallback to TCP connection check
+                logger.debug(f"ping not available, using TCP connection check to {host}:{tcp_port}")
+                span.set_attribute("network.reachability.method", "tcp")
+                
+                import socket
+                reachable = False
+                for i in range(count):
+                    try:
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.settimeout(timeout)
+                        sock.connect((host, tcp_port))
+                        sock.close()
+                        reachable = True
+                        break
+                    except (socket.gaierror, socket.timeout, socket.error, OSError):
+                        continue
+                    finally:
+                        try:
+                            sock.close()
+                        except:
+                            pass
+            else:
+                # ping not available and TCP fallback disabled
+                logger.error("ping command not found and TCP fallback is disabled")
+                reachable = False
+
             probe_time_ms = (time.time() - start) * 1000
 
-            tags = get_metric_tags(protocol="ICMP", operation="reachability_probe")
+            # Determine protocol for tags
+            protocol = "TCP" if not ping_available and use_tcp_fallback else "ICMP"
+            tags = get_metric_tags(protocol=protocol, operation="reachability_probe")
 
             if reachable:
                 metrics.record_custom_metric(

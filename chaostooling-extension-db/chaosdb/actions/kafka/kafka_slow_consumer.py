@@ -107,7 +107,7 @@ def inject_slow_consumer(
                     consume_delay_ms * 2,  # At least 2x the consume delay
                     30000,  # Minimum 30 seconds
                 )
-                
+
                 consumer = KafkaConsumer(
                     topic,
                     bootstrap_servers=bootstrap_servers,

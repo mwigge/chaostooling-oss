@@ -1,29 +1,30 @@
 import json
 import logging
 import os
-import sys
 
 import pika
 import psycopg2
 from flask import Flask, jsonify, request
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
-from opentelemetry.instrumentation.pika import PikaInstrumentor
-from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 
-# Use common OTEL setup for consistent service graph visibility
-sys.path.insert(0, "/app/common")
-from otel_setup import setup_otel
-
+# Import from chaosotel for auto-instrumentation
+from chaosotel import initialize
 from chaosotel.core.trace_core import trace_kafka_produce
 
-# Setup OpenTelemetry for service graph visibility
+# Setup OpenTelemetry with auto-instrumentation
 service_name = os.getenv("OTEL_SERVICE_NAME", "payment-service")
-setup_otel(service_name)
+initialize(
+    target_type="service",
+    service_name=service_name,
+    service_version="1.0.0",
+    auto_instrument=True,  # Auto-instruments requests, urllib3
+    auto_instrument_databases=True,  # Auto-instruments PostgreSQL
+    auto_instrument_messaging=True,  # Auto-instruments RabbitMQ, Kafka
+)
 
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
-Psycopg2Instrumentor().instrument()
-PikaInstrumentor().instrument()
+# No manual instrumentation needed - auto-instrumentation handles PostgreSQL and RabbitMQ
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

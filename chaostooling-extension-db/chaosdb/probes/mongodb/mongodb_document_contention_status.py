@@ -87,8 +87,22 @@ def probe_document_contention_status(
             )
 
             # Get active operations
-            current_ops = db.current_op({"active": True})
-            active_operations = len(list(current_ops))
+            # Note: current_op() was removed in pymongo 4.0+, use command("currentOp") instead
+            try:
+                # Try new API first (pymongo 4.0+)
+                current_ops_result = db.command("currentOp", {"active": True})
+                # currentOp returns a dict with "inprog" key containing the list of operations
+                current_ops = current_ops_result.get("inprog", [])
+            except Exception:
+                # Fallback to old API for older pymongo versions
+                try:
+                    current_ops = db.current_op({"active": True})
+                except AttributeError:
+                    # If current_op doesn't exist, try client.admin.command
+                    current_ops_result = client.admin.command("currentOp", {"active": True})
+                    current_ops = current_ops_result.get("inprog", [])
+            
+            active_operations = len(current_ops) if isinstance(current_ops, list) else 0
 
             # Get connection stats
             conn_stats = server_status.get("connections", {})

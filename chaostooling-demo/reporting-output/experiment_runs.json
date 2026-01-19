@@ -399,9 +399,9 @@
     ]
   },
   "Comprehensive E2E Distributed Transaction Chaos Experiment": {
-    "total_runs": 7,
-    "successful_runs": 4,
-    "failed_runs": 3,
+    "total_runs": 19,
+    "successful_runs": 9,
+    "failed_runs": 10,
     "runs": [
       {
         "experiment_id": "0467-20260115194528-5eb4763c",
@@ -451,6 +451,90 @@
         "status": "completed",
         "success": true,
         "duration": 324.2815215587616
+      },
+      {
+        "experiment_id": "5068-20260119073727-aaca24b4",
+        "run_timestamp": "2026-01-16T12:43:08.099499+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 8076.965699911118
+      },
+      {
+        "experiment_id": "4523-20260119073815-fb15db7e",
+        "run_timestamp": "2026-01-19T07:31:17.268776+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 370.4301574230194
+      },
+      {
+        "experiment_id": "4523-20260119073815-d16f65ea",
+        "run_timestamp": "2026-01-19T07:31:17.268776+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 370.4301574230194
+      },
+      {
+        "experiment_id": "9223-20260119082423-c8a7b46a",
+        "run_timestamp": "2026-01-19T07:38:05.101559+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 10.422942399978638
+      },
+      {
+        "experiment_id": "1994-20260119092530-46b0c4ba",
+        "run_timestamp": "2026-01-19T07:39:24.506739+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 2699.086089849472
+      },
+      {
+        "experiment_id": "5502-20260119094930-32fffd69",
+        "run_timestamp": "2026-01-19T09:28:06.596910+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 10.226716756820679
+      },
+      {
+        "experiment_id": "3037-20260119095609-395cf788",
+        "run_timestamp": "2026-01-19T09:28:06.596910+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 10.226716756820679
+      },
+      {
+        "experiment_id": "9936-20260119103422-e33a884d",
+        "run_timestamp": "2026-01-19T09:53:25.767225+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 163.71374678611755
+      },
+      {
+        "experiment_id": "9936-20260119103422-451c7a64",
+        "run_timestamp": "2026-01-19T09:53:25.767225+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 163.71374678611755
+      },
+      {
+        "experiment_id": "1348-20260119105949-3660c735",
+        "run_timestamp": "2026-01-19T10:34:12.487134+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 10.156789541244507
+      },
+      {
+        "experiment_id": "4437-20260119110816-acf89ba3",
+        "run_timestamp": "2026-01-19T10:36:24.342810+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 1404.8198449611664
+      },
+      {
+        "experiment_id": "4437-20260119110816-da638643",
+        "run_timestamp": "2026-01-19T10:36:24.342810+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 1404.8198449611664
       }
     ]
   },

@@ -115,8 +115,12 @@ services:
       - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
+      # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
+      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=app-server-1-site-a
     depends_on:
       - otel-collector
@@ -153,8 +157,12 @@ services:
       - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
+      # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
+      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=app-server-2-site-a
     depends_on:
       - otel-collector
@@ -190,11 +198,17 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-testdb}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
+      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=payment-service-site-a
     depends_on:
       - otel-collector
+      - kafka
       - rabbitmq
       - postgres-primary-site-a
 
@@ -211,8 +225,12 @@ services:
       - MYSQL_DB=${MYSQL_DB:-testdb}
       - MYSQL_USER=${MYSQL_USER:-root}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mysql}
+      # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
+      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=order-service-site-a
     depends_on:
       - otel-collector
@@ -221,8 +239,8 @@ services:
 
   inventory-service-site-a:
     build:
-      context: ./inventory-service
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: ./chaostooling-demo/inventory-service/Dockerfile
     ports:
       - "5005:5000"
     environment:
@@ -230,8 +248,12 @@ services:
       - MONGODB_DB=${MONGODB_DB:-test}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
+      # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
+      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=inventory-service-site-a
     depends_on:
       - otel-collector
@@ -251,8 +273,12 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-testdb}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
+      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=notification-service-site-a
     depends_on:
       - otel-collector
@@ -579,8 +605,12 @@ services:
       - ACTIVEMQ_PORT=61616
       - ACTIVEMQ_USER=admin
       - ACTIVEMQ_PASSWORD=admin
+      # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
+      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=transaction-load-generator
     ports:
       - "6002:5001"

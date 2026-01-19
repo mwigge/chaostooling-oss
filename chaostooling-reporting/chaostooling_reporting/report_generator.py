@@ -1264,20 +1264,24 @@ class ReportGenerator:
                 if isinstance(step, dict):
                     # Handle both action and probe types
                     if "action" in step:
-                        run.append({
-                            "activity": step.get("action", {}),
-                            "type": "action",
-                            "status": "unknown",  # Can't determine from definition
-                            "name": step.get("action", {}).get("name", "unknown")
-                        })
+                        run.append(
+                            {
+                                "activity": step.get("action", {}),
+                                "type": "action",
+                                "status": "unknown",  # Can't determine from definition
+                                "name": step.get("action", {}).get("name", "unknown"),
+                            }
+                        )
                     elif "probe" in step:
-                        run.append({
-                            "activity": step.get("probe", {}),
-                            "type": "probe",
-                            "status": "unknown",  # Can't determine from definition
-                            "name": step.get("probe", {}).get("name", "unknown")
-                        })
-        
+                        run.append(
+                            {
+                                "activity": step.get("probe", {}),
+                                "type": "probe",
+                                "status": "unknown",  # Can't determine from definition
+                                "name": step.get("probe", {}).get("name", "unknown"),
+                            }
+                        )
+
         scenarios = self._group_activities_by_scenario(run)
 
         # Calculate overall metrics
@@ -1286,7 +1290,9 @@ class ReportGenerator:
             activity_entry
             for activity_entry in run
             if not (
-                activity_entry.get("activity", {}).get("name", "").startswith("SCENARIO-")
+                activity_entry.get("activity", {})
+                .get("name", "")
+                .startswith("SCENARIO-")
                 or activity_entry.get("name", "").startswith("SCENARIO-")
             )
         ]
@@ -1304,10 +1310,13 @@ class ReportGenerator:
 
         # Count scenarios - count all scenarios, not just those starting with "SCENARIO-"
         # But exclude the "Baseline/Other" default scenario if it's empty
-        scenario_count = len([
-            s for s in scenarios.keys()
-            if s != "Baseline/Other" or len(scenarios.get(s, [])) > 0
-        ])
+        scenario_count = len(
+            [
+                s
+                for s in scenarios.keys()
+                if s != "Baseline/Other" or len(scenarios.get(s, [])) > 0
+            ]
+        )
 
         # Count steady state probes
         probes = steady_state.get("probes", [])

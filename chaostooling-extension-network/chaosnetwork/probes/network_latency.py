@@ -2,8 +2,10 @@
 
 import logging
 import re
+import socket
 import subprocess
 import time
+from typing import Optional
 
 from chaosotel import (
     ensure_initialized,
@@ -15,18 +17,78 @@ from chaosotel import (
 from opentelemetry.trace import StatusCode
 
 
+def _measure_tcp_latency(host: str, port: int = 80, timeout: float = 5.0) -> float:
+    """
+    Measure TCP connection latency to a host:port.
+    
+    This is a fallback when ping is not available.
+    
+    Args:
+        host: Target hostname or IP address
+        port: Target port (default: 80 for HTTP)
+        timeout: Connection timeout in seconds
+    
+    Returns:
+        Latency in milliseconds, or -1 if connection failed
+    """
+    try:
+        start = time.time()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((host, port))
+        sock.close()
+        latency_ms = (time.time() - start) * 1000
+        return latency_ms
+    except (socket.gaierror, socket.timeout, socket.error, OSError):
+        return -1
+
+
+def _detect_default_port(host: str) -> int:
+    """
+    Try to detect the appropriate port based on hostname patterns.
+    
+    Args:
+        host: Hostname or IP address
+    
+    Returns:
+        Default port number (80 for HTTP, 5432 for PostgreSQL, etc.)
+    """
+    host_lower = host.lower()
+    # Check for common database patterns
+    if "postgres" in host_lower or "pgsql" in host_lower:
+        return 5432
+    elif "mysql" in host_lower or "mariadb" in host_lower:
+        return 3306
+    elif "mongodb" in host_lower or "mongo" in host_lower:
+        return 27017
+    elif "redis" in host_lower:
+        return 6379
+    elif "kafka" in host_lower:
+        return 9092
+    elif "rabbitmq" in host_lower or "rabbit" in host_lower:
+        return 5672
+    elif "activemq" in host_lower:
+        return 61613
+    # Default to HTTP port
+    return 80
+
+
 def probe_network_latency(
     target_host: str,
     count: int = 5,
     timeout: int = 5,
+    use_tcp_fallback: bool = True,
+    tcp_port: Optional[int] = None,
 ) -> dict:
     """
-    Probe network latency to a target host using ping.
+    Probe network latency to a target host using ping or TCP fallback.
 
     Args:
         target_host: Target hostname or IP address to measure latency to
-        count: Number of ping packets to send
-        timeout: Timeout in seconds for each ping
+        count: Number of ping packets to send (or TCP connections for fallback)
+        timeout: Timeout in seconds for each ping/connection
+        use_tcp_fallback: If True, use TCP connection latency if ping is unavailable
+        tcp_port: Port to use for TCP latency measurement (default: 80)
 
     Returns:
         Dict with latency measurements (min, avg, max, packet_loss)
@@ -43,13 +105,174 @@ def probe_network_latency(
             span.set_attribute("network.operation", "latency_probe")
             span.set_attribute("network.ping.count", count)
 
-            # Run ping command
-            result = subprocess.run(
-                ["ping", "-c", str(count), "-W", str(timeout), target_host],
-                capture_output=True,
-                text=True,
-                timeout=timeout * count + 5,
-            )
+            # Try to use ping first, fallback to TCP if ping is not available
+            ping_available = True
+            try:
+                # Check if ping is available
+                subprocess.run(
+                    ["ping", "-c", "1", "-W", "1", "127.0.0.1"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2,
+                )
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                ping_available = False
+
+            if ping_available:
+                # Use ping command
+                result = subprocess.run(
+                    ["ping", "-c", str(count), "-W", str(timeout), target_host],
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout * count + 5,
+                )
+                
+                probe_time_ms = (time.time() - start) * 1000
+                tags = get_metric_tags(
+                    network_interface="default", protocol="ICMP", operation="latency_probe"
+                )
+
+                # Parse ping output
+                output = result.stdout
+
+                # Extract packet loss
+                loss_match = re.search(r"(\d+)% packet loss", output)
+                packet_loss = float(loss_match.group(1)) if loss_match else 100.0
+
+                # Extract latency stats (min/avg/max/mdev)
+                stats_match = re.search(
+                    r"rtt min/avg/max/mdev = ([\d.]+)/([\d.]+)/([\d.]+)/([\d.]+)", output
+                )
+
+                if stats_match:
+                    min_latency = float(stats_match.group(1))
+                    avg_latency = float(stats_match.group(2))
+                    max_latency = float(stats_match.group(3))
+                    jitter = float(stats_match.group(4))
+                else:
+                    min_latency = avg_latency = max_latency = jitter = 0.0
+
+                # Record metrics
+                metrics.record_custom_metric(
+                    "network.latency.ms",
+                    avg_latency,
+                    metric_type="histogram",
+                    unit="ms",
+                    tags=tags,
+                    description="Observed network latency (avg)",
+                )
+
+                if packet_loss > 0:
+                    metrics.record_custom_metric(
+                        "network.packet_loss.count",
+                        int(count * packet_loss / 100),
+                        metric_type="counter",
+                        tags=tags,
+                        description="Lost packets during probe",
+                    )
+
+                result_data = {
+                    "success": result.returncode == 0,
+                    "target_host": target_host,
+                    "packets_sent": count,
+                    "packet_loss_percent": packet_loss,
+                    "latency_min_ms": min_latency,
+                    "latency_avg_ms": avg_latency,
+                    "latency_max_ms": max_latency,
+                    "jitter_ms": jitter,
+                    "probe_time_ms": probe_time_ms,
+                    "method": "icmp",
+                }
+
+                span.set_attribute("network.latency.avg_ms", avg_latency)
+                span.set_attribute("network.latency.min_ms", min_latency)
+                span.set_attribute("network.latency.max_ms", max_latency)
+                span.set_attribute("network.packet_loss.percent", packet_loss)
+                span.set_status(StatusCode.OK)
+
+                logger.info(
+                    f"Network latency probe to {target_host}: avg={avg_latency}ms, loss={packet_loss}%"
+                )
+                flush()
+                return result_data
+            elif use_tcp_fallback:
+                # Fallback to TCP connection latency
+                # Auto-detect port if not specified
+                if tcp_port is None:
+                    tcp_port = _detect_default_port(target_host)
+                    logger.debug(f"Auto-detected port {tcp_port} for host {target_host}")
+                
+                logger.info(f"ping not available, using TCP connection latency to {target_host}:{tcp_port}")
+                span.set_attribute("network.latency.method", "tcp")
+                span.set_attribute("network.peer.port", tcp_port)
+                
+                latencies = []
+                successful = 0
+                for i in range(count):
+                    latency = _measure_tcp_latency(target_host, tcp_port, timeout)
+                    if latency >= 0:
+                        latencies.append(latency)
+                        successful += 1
+                    time.sleep(0.1)  # Small delay between measurements
+                
+                if latencies:
+                    min_latency = min(latencies)
+                    avg_latency = sum(latencies) / len(latencies)
+                    max_latency = max(latencies)
+                    jitter = max_latency - min_latency if len(latencies) > 1 else 0.0
+                    packet_loss = ((count - successful) / count) * 100.0
+                else:
+                    # All connections failed
+                    min_latency = avg_latency = max_latency = jitter = 0.0
+                    packet_loss = 100.0
+                
+                probe_time_ms = (time.time() - start) * 1000
+                tags = get_metric_tags(
+                    network_interface="default", protocol="TCP", operation="latency_probe"
+                )
+                
+                # Record metrics
+                if latencies:
+                    metrics.record_custom_metric(
+                        "network.latency.ms",
+                        avg_latency,
+                        metric_type="histogram",
+                        unit="ms",
+                        tags=tags,
+                        description="Observed network latency (avg)",
+                    )
+                
+                result_data = {
+                    "success": len(latencies) > 0,
+                    "target_host": target_host,
+                    "packets_sent": count,
+                    "packets_received": successful,
+                    "packet_loss_percent": packet_loss,
+                    "latency_min_ms": min_latency,
+                    "latency_avg_ms": avg_latency,
+                    "latency_max_ms": max_latency,
+                    "jitter_ms": jitter,
+                    "probe_time_ms": probe_time_ms,
+                    "method": "tcp",
+                }
+                
+                span.set_attribute("network.latency.avg_ms", avg_latency)
+                span.set_attribute("network.latency.min_ms", min_latency)
+                span.set_attribute("network.latency.max_ms", max_latency)
+                span.set_attribute("network.packet_loss.percent", packet_loss)
+                span.set_status(StatusCode.OK if latencies else StatusCode.ERROR)
+                
+                logger.info(
+                    f"Network latency probe to {target_host}: avg={avg_latency:.2f}ms, loss={packet_loss:.1f}% (TCP method)"
+                )
+                flush()
+                return result_data
+            else:
+                # ping not available and TCP fallback disabled
+                raise FileNotFoundError(
+                    "ping command not found and TCP fallback is disabled. "
+                    "Install ping (iputils-ping) or enable TCP fallback."
+                )
 
             probe_time_ms = (time.time() - start) * 1000
             tags = get_metric_tags(

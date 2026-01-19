@@ -4,11 +4,12 @@ psycopg2-binary==2.9.9
 kafka-python==2.0.2
 pika==1.3.2
 redis==5.0.1
-opentelemetry-api==1.21.0
-opentelemetry-sdk==1.21.0
-opentelemetry-exporter-otlp-proto-grpc==1.21.0
-opentelemetry-instrumentation-flask==0.42b0
-opentelemetry-instrumentation-requests==0.42b0
-opentelemetry-instrumentation-psycopg2==0.42b0
-opentelemetry-instrumentation-pika==0.42b0
-opentelemetry-instrumentation-redis==0.42b0
+# OpenTelemetry versions must match chaosotel requirements (>=1.24.0)
+opentelemetry-api>=1.24.0
+opentelemetry-sdk>=1.24.0
+opentelemetry-exporter-otlp-proto-grpc>=0.45b0
+opentelemetry-instrumentation-flask>=0.45b0
+opentelemetry-instrumentation-requests>=0.45b0
+opentelemetry-instrumentation-psycopg2>=0.45b0
+opentelemetry-instrumentation-pika>=0.45b0
+opentelemetry-instrumentation-redis>=0.45b0

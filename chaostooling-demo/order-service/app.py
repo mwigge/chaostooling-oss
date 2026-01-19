@@ -1,25 +1,30 @@
 import logging
 import os
-import sys
 
 import pymysql
 from flask import Flask, jsonify, request
 from opentelemetry import trace
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
-# Use common OTEL setup for consistent service graph visibility
-sys.path.insert(0, "/app/common")
-from otel_setup import setup_otel
-
+# Import from chaosotel for auto-instrumentation
+from chaosotel import initialize
 from chaosotel.core.trace_core import trace_kafka_produce, set_db_span_attributes
 
-# Setup OpenTelemetry for service graph visibility
+# Setup OpenTelemetry with auto-instrumentation
 service_name = os.getenv("OTEL_SERVICE_NAME", "order-service")
-setup_otel(service_name)
+initialize(
+    target_type="service",
+    service_name=service_name,
+    service_version="1.0.0",
+    auto_instrument=True,
+    auto_instrument_databases=True,  # Auto-instruments MySQL
+    auto_instrument_messaging=True,  # Auto-instruments Kafka
+)
 tracer = trace.get_tracer(__name__)
 
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
+# No manual instrumentation needed - auto-instrumentation handles MySQL
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -67,7 +72,7 @@ def create_order():
     mysql_host = os.getenv("MYSQL_HOST", "mysql")
     mysql_port = int(os.getenv("MYSQL_PORT", "3306"))
     mysql_db = os.getenv("MYSQL_DB", "testdb")
-    
+
     try:
         with tracer.start_as_current_span("mysql.insert") as span:
             # Set database span attributes for service graph visibility
@@ -79,7 +84,7 @@ def create_order():
                 host=mysql_host,
                 port=mysql_port,
             )
-            
+
             conn = get_db_connection()
             cur = conn.cursor()
             cur.execute(

@@ -22,6 +22,8 @@ from .trace_core import (
     get_system_name_from_module,
     instrument_db_span,
     instrument_messaging_span,
+    trace_activemq_receive,
+    trace_activemq_send,
     trace_kafka_consume,
     trace_kafka_produce,
 )
@@ -44,4 +46,7 @@ __all__ = [
     "get_kafka_producer",
     "trace_kafka_produce",
     "trace_kafka_consume",
+    # ActiveMQ-specific helpers
+    "trace_activemq_send",
+    "trace_activemq_receive",
 ]

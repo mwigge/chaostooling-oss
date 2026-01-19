@@ -35,6 +35,7 @@ from .decorators import (
     track_impact,
 )
 from .otel import (
+    auto_instrument_databases_and_messaging,
     ensure_initialized,
     flush,
     force_flush_telemetry,
@@ -54,6 +55,13 @@ from .otel import (
     print_status,
     shutdown,
 )
+from .traces import (
+    create_activemq_span_callback,
+    create_db_span_callback,
+    create_mongodb_span_callback,
+    create_rabbitmq_span_callback,
+    create_redis_span_callback,
+)
 
 __all__ = [
     # Version info
@@ -63,12 +71,19 @@ __all__ = [
     "__license__",
     # Initialization
     "initialize",
+    "auto_instrument_databases_and_messaging",
     "ensure_initialized",
     "get_initialization_status",
     "print_status",
     "flush",
     "force_flush_telemetry",
     "shutdown",
+    # Instrumentation callbacks
+    "create_db_span_callback",
+    "create_redis_span_callback",
+    "create_mongodb_span_callback",
+    "create_rabbitmq_span_callback",
+    "create_activemq_span_callback",
     # Providers (for advanced usage)
     "get_meter_provider",
     "get_tracer_provider",

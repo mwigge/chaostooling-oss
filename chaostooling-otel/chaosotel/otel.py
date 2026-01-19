@@ -41,11 +41,153 @@ _trace_core: Optional[TraceCore] = None
 _compliance_core: Optional[ComplianceCore] = None
 
 
+def auto_instrument_databases_and_messaging(
+    databases: Optional[list] = None,
+    messaging: Optional[list] = None,
+) -> None:
+    """
+    Auto-instrument database and messaging libraries with proper callbacks.
+
+    Automatically detects installed libraries and applies instrumentation with
+    callbacks to set peer.service for proper service graph visibility.
+
+    Args:
+        databases: List of database systems to instrument (e.g., ["postgresql", "mysql", "redis", "mongodb"])
+                  If None, auto-detects installed libraries
+        messaging: List of messaging systems to instrument (e.g., ["kafka", "rabbitmq"])
+                  If None, auto-detects installed libraries
+
+    Example:
+        from chaosotel import auto_instrument_databases_and_messaging
+
+        # Auto-detect and instrument all installed DB/messaging libraries
+        auto_instrument_databases_and_messaging()
+
+        # Or specify which ones to instrument
+        auto_instrument_databases_and_messaging(
+            databases=["postgresql", "mysql"],
+            messaging=["kafka"]
+        )
+    """
+    from chaosotel.traces import (
+        create_db_span_callback,
+        create_redis_span_callback,
+        create_mongodb_span_callback,
+        create_rabbitmq_span_callback,
+    )
+
+    # Default to all supported systems if not specified
+    if databases is None:
+        databases = ["postgresql", "mysql", "redis", "mongodb"]
+    if messaging is None:
+        messaging = ["kafka", "rabbitmq"]
+
+    # Instrument PostgreSQL
+    if "postgresql" in databases:
+        try:
+            from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+            import psycopg2
+
+            Psycopg2Instrumentor().instrument(
+                skip_dep_check=True,  # Handle psycopg2-binary
+                request_hook=create_db_span_callback(
+                    "POSTGRES_HOST", "postgres-primary-site-a"
+                ),
+            )
+            logger.info("✓ PostgreSQL instrumentation enabled")
+        except ImportError:
+            logger.debug("psycopg2 not installed, skipping PostgreSQL instrumentation")
+        except Exception as e:
+            logger.warning(f"Failed to instrument PostgreSQL: {e}")
+
+    # Instrument MySQL
+    if "mysql" in databases:
+        try:
+            from opentelemetry.instrumentation.pymysql import PyMySQLInstrumentor
+            import pymysql
+
+            PyMySQLInstrumentor().instrument(
+                request_hook=create_db_span_callback("MYSQL_HOST", "mysql")
+            )
+            logger.info("✓ MySQL instrumentation enabled")
+        except ImportError:
+            logger.debug("pymysql not installed, skipping MySQL instrumentation")
+        except Exception as e:
+            logger.warning(f"Failed to instrument MySQL: {e}")
+
+    # Instrument Redis
+    if "redis" in databases:
+        try:
+            from opentelemetry.instrumentation.redis import RedisInstrumentor
+            import redis
+
+            RedisInstrumentor().instrument(
+                request_hook=create_redis_span_callback("REDIS_HOST", "redis")
+            )
+            logger.info("✓ Redis instrumentation enabled")
+        except ImportError:
+            logger.debug("redis not installed, skipping Redis instrumentation")
+        except Exception as e:
+            logger.warning(f"Failed to instrument Redis: {e}")
+
+    # Instrument MongoDB
+    if "mongodb" in databases:
+        try:
+            from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
+            from pymongo import MongoClient
+
+            PymongoInstrumentor().instrument(
+                request_hook=create_mongodb_span_callback("MONGODB_HOST", "mongodb")
+            )
+            logger.info("✓ MongoDB instrumentation enabled")
+        except ImportError:
+            logger.debug("pymongo not installed, skipping MongoDB instrumentation")
+        except Exception as e:
+            logger.warning(f"Failed to instrument MongoDB: {e}")
+
+    # Instrument RabbitMQ
+    if "rabbitmq" in messaging:
+        try:
+            from opentelemetry.instrumentation.pika import PikaInstrumentor
+            import pika
+
+            PikaInstrumentor().instrument(
+                request_hook=create_rabbitmq_span_callback("RABBITMQ_HOST", "rabbitmq")
+            )
+            logger.info("✓ RabbitMQ instrumentation enabled")
+        except ImportError:
+            logger.debug("pika not installed, skipping RabbitMQ instrumentation")
+        except Exception as e:
+            logger.warning(f"Failed to instrument RabbitMQ: {e}")
+
+    # Instrument ActiveMQ (STOMP protocol via stomp.py)
+    if "activemq" in messaging:
+        try:
+            import stomp
+
+            # Note: There's no official OpenTelemetry instrumentor for stomp.py
+            # ActiveMQ instrumentation is handled via trace_activemq_send/trace_activemq_receive
+            # helpers in chaosotel.core.trace_core for manual instrumentation
+            logger.info(
+                "✓ ActiveMQ (STOMP) support available - use trace_activemq_send/trace_activemq_receive helpers"
+            )
+        except ImportError:
+            logger.debug("stomp not installed, skipping ActiveMQ instrumentation")
+        except Exception as e:
+            logger.warning(f"Failed to check ActiveMQ support: {e}")
+
+    # Note: Kafka instrumentation is handled via trace_kafka_produce/trace_kafka_consume
+    # in chaosotel.core.trace_core, so we don't need to instrument kafka-python here
+
+
 def initialize(
     target_type: str = "unknown",
+    service_name: str = "chaostoolkit",
     service_version: str = "1.0.0",
     regulations: Optional[list] = None,
     auto_instrument: bool = True,
+    auto_instrument_databases: bool = False,
+    auto_instrument_messaging: bool = False,
 ) -> None:
     """
     Initialize ChaoSOTEL observability layer.
@@ -57,15 +199,19 @@ def initialize(
 
     Args:
         target_type: Type of target (database, network, compute, etc.)
+        service_name: Service name for resource attributes (default: "chaostoolkit")
         service_version: Service version for tracing
         regulations: List of regulations to track (SOX, GDPR, PCI-DSS, HIPAA)
-        auto_instrument: Whether to auto-instrument popular frameworks
+        auto_instrument: Whether to auto-instrument popular frameworks (requests, urllib3)
+        auto_instrument_databases: Whether to auto-instrument database libraries (PostgreSQL, MySQL, Redis, MongoDB)
+        auto_instrument_messaging: Whether to auto-instrument messaging libraries (Kafka, RabbitMQ)
 
     Example:
         from chaosotel import initialize, get_metric_tags, get_metrics_core
 
         initialize(
             target_type="database",
+            service_name="payment-service",
             regulations=["SOX", "PCI-DSS"]
         )
     """
@@ -78,7 +224,9 @@ def initialize(
         return
 
     try:
-        logger.info("Initializing ChaoSOTEL observability layer...")
+        logger.info(
+            f"Initializing ChaoSOTEL observability layer for service: {service_name}..."
+        )
 
         # ====================================================================
         # 1. Import and setup signal exporters
@@ -89,20 +237,20 @@ def initialize(
 
         # Setup metrics (OTLP HTTP exporter → OTEL Collector → Prometheus)
         _meter_provider = metrics_setup.setup_metrics(
-            service_name="chaostoolkit", service_version=service_version
+            service_name=service_name, service_version=service_version
         )
         otel_metrics.set_meter_provider(_meter_provider)
         logger.info("✓ Metrics provider initialized (→ OTEL Collector → Prometheus)")
 
         # Setup logs (Loki exporter via OTEL)
         _logger_provider = logs_setup.setup_logs(
-            service_name="chaostoolkit", service_version=service_version
+            service_name=service_name, service_version=service_version
         )
         logger.info("✓ Logger provider initialized (→ Loki)")
 
         # Setup traces (Tempo exporter via OTEL)
         _tracer_provider = traces_setup.setup_traces(
-            service_name="chaostoolkit", service_version=service_version
+            service_name=service_name, service_version=service_version
         )
         otel_trace.set_tracer_provider(_tracer_provider)
         logger.info("✓ Tracer provider initialized (→ Tempo)")
@@ -138,6 +286,22 @@ def initialize(
                 logger.info("✓ Auto-instrumentation enabled (requests, urllib3)")
             except Exception as e:
                 logger.warning(f"Could not setup auto-instrumentation: {e}")
+
+        # Auto-instrument databases and messaging systems
+        if auto_instrument_databases or auto_instrument_messaging:
+            try:
+                auto_instrument_databases_and_messaging(
+                    databases=["postgresql", "mysql", "redis", "mongodb"]
+                    if auto_instrument_databases
+                    else None,
+                    messaging=["kafka", "rabbitmq"]
+                    if auto_instrument_messaging
+                    else None,
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Could not setup database/messaging auto-instrumentation: {e}"
+                )
 
         # ====================================================================
         # 4. Log initialization metrics
