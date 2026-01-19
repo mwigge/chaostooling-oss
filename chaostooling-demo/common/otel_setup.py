@@ -27,8 +27,81 @@ class ServiceNameSpanProcessor(SpanProcessor):
     to ensure proper service graph visibility (e.g., "postgres-primary-site-a" vs "test").
     """
 
-    def on_end(self, span):
+    def on_start(self, span, parent_context):
+        """Set peer.service during span creation when span is still writable"""
         if not hasattr(span, "attributes") or not span.attributes:
+            return
+
+        # Check if peer.service is already set (don't override)
+        if span.attributes.get("peer.service"):
+            return
+
+        service_name = None
+
+        # Industry standard: Prefer hostname/network peer address for service identification
+        # This provides better service graph visibility (e.g., "postgres-primary-site-a" vs "test")
+        network_peer = span.attributes.get(
+            "network.peer.address"
+        ) or span.attributes.get("net.peer.name")
+        hostname = span.attributes.get("host.name")
+
+        # Check for database system
+        db_system = span.attributes.get("db.system")
+        if db_system:
+            # Use hostname/network peer if available (industry standard), otherwise use system name
+            # NEVER use db.name as service identifier - it's just the database name (e.g., "test", "testdb")
+            if network_peer:
+                # Extract hostname from network peer (remove port if present)
+                peer_host = (
+                    str(network_peer).split(":")[0]
+                    if ":" in str(network_peer)
+                    else str(network_peer)
+                )
+                service_name = peer_host
+            elif hostname:
+                service_name = str(hostname)
+            else:
+                # Fallback to system name only if no hostname available
+                db_system_str = str(db_system).lower()
+                service_name = db_system_str
+
+        # Check for messaging system
+        if not service_name:
+            messaging_system = span.attributes.get("messaging.system")
+            if messaging_system:
+                # Use hostname/network peer if available (industry standard)
+                if network_peer:
+                    peer_host = (
+                        str(network_peer).split(":")[0]
+                        if ":" in str(network_peer)
+                        else str(network_peer)
+                    )
+                    service_name = peer_host
+                elif hostname:
+                    service_name = str(hostname)
+                else:
+                    # Fallback to system name only if no hostname available
+                    messaging_system_str = str(messaging_system).lower()
+                    service_name = messaging_system_str
+
+        # Set peer.service attribute (standard OTEL way for service graph visibility)
+        # This is what Tempo uses to identify services in the service graph
+        if service_name:
+            try:
+                span.set_attribute("peer.service", service_name)
+                # Also set service.name as span attribute for backward compatibility
+                span.set_attribute("service.name", service_name)
+            except Exception:
+                # Silently ignore errors
+                pass
+
+    def on_end(self, span):
+        """Fallback: Try to set peer.service in on_end if not set in on_start"""
+        if not hasattr(span, "attributes") or not span.attributes:
+            return
+
+        # If peer.service is already set, we're done
+        if span.attributes.get("peer.service"):
             return
 
         service_name = None

@@ -197,7 +197,7 @@ def inject_deadlock(
                                 db_system="postgresql",
                                 db_operation="deadlock",
                             )
-                            metrics.record_db_deadlock_count(
+                            metrics.record_db_deadlock(
                                 db_system=db_system,
                                 db_name=database,
                                 tags=tags,

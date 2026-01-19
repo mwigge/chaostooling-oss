@@ -1,0 +1,654 @@
+{
+  "version": "1.0.0",
+  "title": "PostgreSQL Chaos Engineering Experiment",
+  "description": "Focused chaos engineering experiment for PostgreSQL database system. Tests PostgreSQL resilience under various failure scenarios with continuous transaction load. Includes scenarios: Cache Miss Storm, Vacuum Starvation, Temp File Spill, Lock Storm, Pool Exhaustion, Query Saturation, and Slow Transactions. All scenarios run with background transaction load targeting PostgreSQL.",
+  "tags": [
+    "postgresql",
+    "database",
+    "chaos",
+    "resilience",
+    "observability",
+    "production"
+  ],
+  "configuration": {
+    "_comment": "=== PRIMARY SITE (Site A) ===",
+    "site_a_haproxy_url": {
+      "type": "env",
+      "key": "SITE_A_HAPROXY_URL",
+      "default": "http://haproxy-site-a:80"
+    },
+    "_comment2": "=== POSTGRESQL CONFIGURATION ===",
+    "postgres_primary_host": {
+      "type": "env",
+      "key": "POSTGRES_PRIMARY_HOST",
+      "default": "postgres-primary-site-a"
+    },
+    "postgres_replica_host": {
+      "type": "env",
+      "key": "POSTGRES_REPLICA_HOST",
+      "default": "postgres-replica-site-a"
+    },
+    "postgres_port": {
+      "type": "env",
+      "key": "POSTGRES_PORT",
+      "default": "5432"
+    },
+    "postgres_db": {
+      "type": "env",
+      "key": "POSTGRES_DB",
+      "default": "testdb"
+    },
+    "postgres_user": {
+      "type": "env",
+      "key": "POSTGRES_USER",
+      "default": "postgres"
+    },
+    "postgres_password": {
+      "type": "env",
+      "key": "POSTGRES_PASSWORD",
+      "default": "postgres"
+    },
+    "_comment3": "=== CHAOS PARAMETERS ===",
+    "stress_duration": {
+      "type": "env",
+      "key": "STRESS_DURATION",
+      "default": "300"
+    },
+    "num_threads": {
+      "type": "env",
+      "key": "NUM_THREADS",
+      "default": "10"
+    },
+    "row_count": {
+      "type": "env",
+      "key": "ROW_COUNT",
+      "default": "1000"
+    },
+    "db_slow_txn_delay_ms": {
+      "type": "env",
+      "key": "CHAOS_DB_SLOW_TXN_DELAY_MS",
+      "default": "3000"
+    },
+    "_comment4": "=== TEST PARAMETERS ===",
+    "baseline_transactions": {
+      "type": "env",
+      "key": "TEST_BASELINE_TRANSACTIONS",
+      "default": "50"
+    },
+    "distributed_transaction_test_count": {
+      "type": "env",
+      "key": "TEST_DISTRIBUTED_TXN_COUNT",
+      "default": "30"
+    },
+    "_comment5": "=== OBSERVABILITY ===",
+    "otel_service_name": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "postgresql-chaos-experiment"
+    },
+    "_comment6": "=== BACKGROUND TRANSACTION LOAD ===",
+    "load_generator_url": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_URL",
+      "default": "http://transaction-load-generator:5001"
+    },
+    "load_generator_tps": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_TPS",
+      "default": "2.0"
+    },
+    "auto_start_load_generator": {
+      "type": "env",
+      "key": "AUTO_START_LOAD_GENERATOR",
+      "default": "true"
+    },
+    "reporting_output_dir": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_OUTPUT_DIR",
+      "default": "/var/log/chaostoolkit/reports"
+    },
+    "reporting_formats": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_FORMATS",
+      "default": "html,json"
+    }
+  },
+  "controls": [
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "load_generator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.load_generator_control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "PostgreSQL system is healthy and accessible",
+    "probes": [
+      {
+        "name": "probe-site-a-haproxy",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "${site_a_haproxy_url}/haproxy?stats",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": 200
+      },
+      {
+        "name": "probe-postgres-primary",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity",
+          "arguments": {
+            "host": "${postgres_primary_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-postgres-replica",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity",
+          "arguments": {
+            "host": "${postgres_replica_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-purchase-requests",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+          "func": "probe_api_transaction_flow",
+          "arguments": {
+            "api_url": "${site_a_haproxy_url}",
+            "num_transactions": 5
+          }
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.success",
+          "expect": true
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "_comment_phase": "=== PHASE 1: BASELINE - Establish baseline with load generator starting ===",
+      "name": "baseline-postgresql-transaction-flow",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${baseline_transactions}"
+        }
+      }
+    },
+    {
+      "name": "verify-baseline-transactions",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_transaction_count",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "table_name": "mobile_purchases"
+        }
+      },
+      "tolerance": {
+        "type": "jsonpath",
+        "path": "$.total_count",
+        "expect": 50
+      }
+    },
+    {
+      "_comment_phase": "=== PHASE 2: POSTGRESQL CHAOS SCENARIOS (During transaction load) ===",
+      "name": "SCENARIO-1-PostgreSQL-Cache-Miss-Storm",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_load",
+        "func": "force_sequential_scans",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "table_name": "mobile_purchases",
+          "duration_seconds": "${stress_duration}",
+          "num_threads": "${num_threads}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-cache-miss",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-postgres-cache-miss-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_system_metrics",
+        "func": "collect_postgres_system_metrics",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-2-PostgreSQL-Vacuum-Starvation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_load",
+        "func": "generate_dead_tuples",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "table_name": "mobile_purchases",
+          "count": "${row_count}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-vacuum-starvation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-postgres-vacuum-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_system_metrics",
+        "func": "collect_postgres_system_metrics",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-3-PostgreSQL-Temp-File-Spill",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_load",
+        "func": "complex_sort_query",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "table_name": "mobile_purchases",
+          "duration_seconds": "${stress_duration}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-temp-spill",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-postgres-temp-file-usage",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_system_metrics",
+        "func": "collect_postgres_system_metrics",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-4-PostgreSQL-Lock-Storm",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_lock_storm",
+        "func": "inject_lock_storm",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "num_threads": "${num_threads}",
+          "duration_seconds": "${stress_duration}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-lock-storm",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-postgres-lock-storm-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_lock_storm_status",
+        "func": "probe_lock_storm_status",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-5-PostgreSQL-Pool-Exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "inject_connection_pool_exhaustion",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "num_connections": 100,
+          "duration_seconds": "${stress_duration}",
+          "leak_connections": false
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-postgres-pool-exhaustion-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_pool_exhaustion_status",
+        "func": "probe_pool_exhaustion_status",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-6-PostgreSQL-Query-Saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_query_saturation",
+        "func": "inject_query_saturation",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "num_threads": 20,
+          "queries_per_thread": 1000,
+          "duration_seconds": "${stress_duration}",
+          "slow_query_threshold_ms": 1000
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-postgres-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-postgres-query-saturation-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_query_saturation_status",
+        "func": "probe_query_saturation_status",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-7-PostgreSQL-Slow-Transactions",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_slow_transactions",
+        "func": "inject_slow_transactions",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "num_threads": "${num_threads}",
+          "duration_seconds": "${stress_duration}",
+          "transaction_delay_ms": "${db_slow_txn_delay_ms}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-slow-postgres",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-postgres-slow-transactions-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_slow_transactions_status",
+        "func": "probe_slow_transactions_status",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "_comment_phase": "=== PHASE 3: FINAL VALIDATION ===",
+      "name": "verify-final-postgresql-transaction-counts",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_transaction_count",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "table_name": "mobile_purchases"
+        }
+      },
+      "tolerance": {
+        "type": "jsonpath",
+        "path": "$.success",
+        "expect": true
+      }
+    },
+    {
+      "name": "verify-postgresql-connectivity-after-operations",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_primary_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "tolerance": true
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "generate-experiment-reports",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.actions",
+        "func": "generate_experiment_reports",
+        "arguments": {
+          "output_dir": "${reporting_output_dir}",
+          "formats": "${reporting_formats}",
+          "executive": true,
+          "compliance": true,
+          "audit": true,
+          "product_owner": true
+        }
+      }
+    }
+  ]
+}
+

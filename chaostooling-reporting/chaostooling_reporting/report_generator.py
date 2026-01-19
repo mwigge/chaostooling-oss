@@ -80,14 +80,19 @@ class ReportGenerator:
             journal["experiment"] = {}
         journal["experiment"]["id"] = experiment_id
 
-        # Generate filename-friendly version for file naming
+        # Generate filename using experiment_id (matches experiment run) with optional title prefix
+        # This ensures the report filename matches the actual experiment run identifier
         experiment_title = experiment.get("title", "")
         if experiment_title:
-            filename_id = re.sub(r"[^a-zA-Z0-9_-]", "-", experiment_title.lower())
-            filename_id = re.sub(r"-+", "-", filename_id)
-            filename_id = filename_id.strip("-")[:50]
+            # Create a short, filename-friendly version of the title (max 30 chars for prefix)
+            title_prefix = re.sub(r"[^a-zA-Z0-9_-]", "-", experiment_title.lower())
+            title_prefix = re.sub(r"-+", "-", title_prefix)
+            title_prefix = title_prefix.strip("-")[:30]
+            # Use experiment_id as the primary identifier (matches experiment run)
+            filename_id = f"{title_prefix}_{experiment_id}"
         else:
-            filename_id = "chaos-experiment"
+            # Use experiment_id directly if no title
+            filename_id = experiment_id
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         base_filename = f"{filename_id}_{timestamp}"
@@ -1249,13 +1254,46 @@ class ReportGenerator:
         """
         Generate Test State/Coverage metric as an initial overview.
         """
+        # If run is empty, try to extract from experiment definition as fallback
+        if not run or len(run) == 0:
+            # Extract activities from experiment method steps
+            method_steps = experiment.get("method", []) or []
+            # Reconstruct run-like structure from method steps
+            run = []
+            for step in method_steps:
+                if isinstance(step, dict):
+                    # Handle both action and probe types
+                    if "action" in step:
+                        run.append({
+                            "activity": step.get("action", {}),
+                            "type": "action",
+                            "status": "unknown",  # Can't determine from definition
+                            "name": step.get("action", {}).get("name", "unknown")
+                        })
+                    elif "probe" in step:
+                        run.append({
+                            "activity": step.get("probe", {}),
+                            "type": "probe",
+                            "status": "unknown",  # Can't determine from definition
+                            "name": step.get("probe", {}).get("name", "unknown")
+                        })
+        
         scenarios = self._group_activities_by_scenario(run)
 
         # Calculate overall metrics
-        total_activities = len(run)
+        # Filter out SCENARIO actions themselves when counting activities (they're just markers)
+        actual_activities = [
+            activity_entry
+            for activity_entry in run
+            if not (
+                activity_entry.get("activity", {}).get("name", "").startswith("SCENARIO-")
+                or activity_entry.get("name", "").startswith("SCENARIO-")
+            )
+        ]
+        total_activities = len(actual_activities)
         successful_activities = sum(
             1
-            for activity_entry in run
+            for activity_entry in actual_activities
             if activity_entry.get("status") in ["succeeded", "success"]
         )
         overall_success_rate = (
@@ -1264,8 +1302,12 @@ class ReportGenerator:
             else 0.0
         )
 
-        # Count scenarios
-        scenario_count = len([s for s in scenarios.keys() if s.startswith("SCENARIO-")])
+        # Count scenarios - count all scenarios, not just those starting with "SCENARIO-"
+        # But exclude the "Baseline/Other" default scenario if it's empty
+        scenario_count = len([
+            s for s in scenarios.keys()
+            if s != "Baseline/Other" or len(scenarios.get(s, [])) > 0
+        ])
 
         # Count steady state probes
         probes = steady_state.get("probes", [])

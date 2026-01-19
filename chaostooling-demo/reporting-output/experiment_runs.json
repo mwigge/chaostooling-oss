@@ -399,9 +399,9 @@
     ]
   },
   "Comprehensive E2E Distributed Transaction Chaos Experiment": {
-    "total_runs": 2,
-    "successful_runs": 1,
-    "failed_runs": 1,
+    "total_runs": 7,
+    "successful_runs": 4,
+    "failed_runs": 3,
     "runs": [
       {
         "experiment_id": "0467-20260115194528-5eb4763c",
@@ -416,6 +416,55 @@
         "status": "failed",
         "success": false,
         "duration": 12.32859206199646
+      },
+      {
+        "experiment_id": "7748-20260116104007-bd4d63ec",
+        "run_timestamp": "2026-01-16T08:59:57.762057+00:00",
+        "status": "failed",
+        "success": false,
+        "duration": 10.155955791473389
+      },
+      {
+        "experiment_id": "7748-20260116104007-ec6d790f",
+        "run_timestamp": "2026-01-16T08:59:57.762057+00:00",
+        "status": "failed",
+        "success": false,
+        "duration": 10.155955791473389
+      },
+      {
+        "experiment_id": "5541-20260116105812-ee340ee7",
+        "run_timestamp": "2026-01-16T09:17:57.134730+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 4930.3471755981445
+      },
+      {
+        "experiment_id": "9228-20260116115404-e65876c1",
+        "run_timestamp": "2026-01-16T09:17:57.134730+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 4930.3471755981445
+      },
+      {
+        "experiment_id": "9724-20260116145745-fd1ffc91",
+        "run_timestamp": "2026-01-16T12:02:31.573227+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 324.2815215587616
+      }
+    ]
+  },
+  "Extensive PostgreSQL Chaos Experiment": {
+    "total_runs": 1,
+    "successful_runs": 1,
+    "failed_runs": 0,
+    "runs": [
+      {
+        "experiment_id": "2905-20260116145745-3bb72ddc",
+        "run_timestamp": "2026-01-16T12:02:31.573227+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 324.2815215587616
       }
     ]
   }

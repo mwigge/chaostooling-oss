@@ -409,20 +409,21 @@ def after_experiment_control(
     )
 
     # Record experiment success/failure
+    # Record experiment success/failed metrics (using underscores for Prometheus compatibility)
     metrics.record_custom_metric(
-        "chaos.experiment.success",
+        "chaos_experiment_success_ratio",
         1.0 if experiment_success else 0.0,
         metric_type="gauge",
         tags={**tags, "status": experiment_status or "completed"},
-        description="Experiment success (1.0 = success, 0.0 = failed)",
+        description="Experiment success ratio (1.0 = success, 0.0 = failed)",
     )
 
     metrics.record_custom_metric(
-        "chaos.experiment.failed",
+        "chaos_experiment_failed_ratio",
         1.0 if not experiment_success else 0.0,
         metric_type="gauge",
         tags={**tags, "status": experiment_status or "completed"},
-        description="Experiment failure (1.0 = failed, 0.0 = success)",
+        description="Experiment failure ratio (1.0 = failed, 0.0 = success)",
     )
 
     # Record experiment duration

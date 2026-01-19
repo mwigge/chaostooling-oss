@@ -49,8 +49,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("transaction_load_generator")
 
-# Configuration from environment
-API_URL = os.getenv("API_URL", "http://haproxy-site-a:80")
+# Configuration from environment - support HAProxy failover
+API_URL_PRIMARY = os.getenv("API_URL", "http://haproxy-site-a:80")
+API_URL_SECONDARY = os.getenv("API_URL_SECONDARY", "http://haproxy-site-b:80")
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
@@ -70,8 +71,10 @@ RUNNING.set()  # Start running by default
 class TransactionLoadGenerator:
     """Generates continuous transaction load across multiple systems."""
 
-    def __init__(self, api_url: str, tps: float = 2.0):
-        self.api_url = api_url
+    def __init__(self, api_url_primary: str, api_url_secondary: str = None, tps: float = 2.0):
+        self.api_url_primary = api_url_primary
+        self.api_url_secondary = api_url_secondary
+        self.current_api_url = api_url_primary  # Start with primary
         self.tps = tps
         self.interval = 1.0 / tps if tps > 0 else 1.0
         self.stats = {
@@ -80,6 +83,7 @@ class TransactionLoadGenerator:
             "failed": 0,
             "start_time": None,
             "last_transaction_time": None,
+            "failover_count": 0,
         }
         self.thread = None
 
@@ -98,38 +102,56 @@ class TransactionLoadGenerator:
             span.set_attribute("transaction.user_id", user_id)
             span.set_attribute("transaction.amount", amount)
             span.set_attribute("transaction.item_id", item_id)
-            span.set_attribute("http.url", f"{self.api_url}/purchase")
+            span.set_attribute("http.url", f"{self.current_api_url}/purchase")
             span.set_attribute("http.method", "POST")
+            span.set_attribute("http.target", self.current_api_url.split("//")[-1] if "//" in self.current_api_url else self.current_api_url)
 
-            try:
-                # HTTP request is auto-instrumented by RequestsInstrumentor
-                # Trace context is automatically propagated in headers
-                response = requests.post(
-                    f"{self.api_url}/purchase", json=payload, timeout=10
-                )
+            # Try primary, failover to secondary if available
+            api_urls = [self.current_api_url]
+            if self.api_url_secondary and self.current_api_url != self.api_url_secondary:
+                api_urls.append(self.api_url_secondary)
 
-                span.set_attribute("http.status_code", response.status_code)
-
-                if response.status_code == 200:
-                    span.set_status(Status(StatusCode.OK))
-                    return {
-                        "status": "success",
-                        "payload": payload,
-                        "response": response.json(),
-                    }
-                else:
-                    span.set_status(
-                        Status(StatusCode.ERROR, f"HTTP {response.status_code}")
+            last_error = None
+            for api_url in api_urls:
+                try:
+                    # HTTP request is auto-instrumented by RequestsInstrumentor
+                    # Trace context is automatically propagated in headers
+                    span.set_attribute("http.url", f"{api_url}/purchase")
+                    span.set_attribute("http.target", api_url.split("//")[-1] if "//" in api_url else api_url)
+                    
+                    response = requests.post(
+                        f"{api_url}/purchase", json=payload, timeout=10
                     )
-                    return {
-                        "status": "failed",
-                        "payload": payload,
-                        "error": f"HTTP {response.status_code}",
-                    }
-            except Exception as e:
-                span.record_exception(e)
-                span.set_status(Status(StatusCode.ERROR, str(e)))
-                return {"status": "failed", "payload": payload, "error": str(e)}
+
+                    span.set_attribute("http.status_code", response.status_code)
+
+                    if response.status_code == 200:
+                        # Success - update current URL if we failed over
+                        if api_url != self.current_api_url:
+                            logger.info(f"Failover successful to {api_url}")
+                            self.current_api_url = api_url
+                            self.stats["failover_count"] += 1
+                        span.set_status(Status(StatusCode.OK))
+                        return {
+                            "status": "success",
+                            "payload": payload,
+                            "response": response.json(),
+                            "api_url": api_url,
+                        }
+                    else:
+                        # Non-200 status - try next URL if available
+                        last_error = f"HTTP {response.status_code}"
+                        span.set_attribute("http.error", last_error)
+                        continue
+                except Exception as e:
+                    last_error = str(e)
+                    span.record_exception(e)
+                    # Try next URL if available
+                    continue
+
+            # All URLs failed
+            span.set_status(Status(StatusCode.ERROR, last_error or "All endpoints failed"))
+            return {"status": "failed", "payload": payload, "error": last_error or "All endpoints failed"}
 
     def run(self):
         """Run continuous transaction generation."""
@@ -198,7 +220,7 @@ def start_load_generator(tps: float = 2.0):
     """Start the background transaction load generator."""
     global _generator
     if _generator is None:
-        _generator = TransactionLoadGenerator(API_URL, tps)
+        _generator = TransactionLoadGenerator(API_URL_PRIMARY, API_URL_SECONDARY, tps)
     _generator.start()
     return {"status": "started", "tps": tps}
 

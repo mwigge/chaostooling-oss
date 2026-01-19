@@ -1,0 +1,358 @@
+{
+  "version": "1.0.0",
+  "title": "Kafka Chaos Engineering Experiment",
+  "description": "Focused chaos engineering experiment for Kafka messaging system. Tests Kafka resilience under various failure scenarios with continuous transaction load. Includes scenarios: Message Flood, Topic Saturation, and Slow Consumer. All scenarios run with background transaction load targeting Kafka.",
+  "tags": [
+    "kafka",
+    "messaging",
+    "chaos",
+    "resilience",
+    "observability",
+    "production"
+  ],
+  "configuration": {
+    "_comment": "=== PRIMARY SITE (Site A) ===",
+    "site_a_haproxy_url": {
+      "type": "env",
+      "key": "SITE_A_HAPROXY_URL",
+      "default": "http://haproxy-site-a:80"
+    },
+    "_comment2": "=== KAFKA CONFIGURATION ===",
+    "kafka_bootstrap_servers": {
+      "type": "env",
+      "key": "KAFKA_BOOTSTRAP_SERVERS",
+      "default": "kafka:9092"
+    },
+    "kafka_topic": {
+      "type": "env",
+      "key": "KAFKA_TOPIC",
+      "default": "test"
+    },
+    "_comment3": "=== CHAOS PARAMETERS ===",
+    "stress_duration": {
+      "type": "env",
+      "key": "STRESS_DURATION",
+      "default": "300"
+    },
+    "num_threads": {
+      "type": "env",
+      "key": "NUM_THREADS",
+      "default": "10"
+    },
+    "_comment4": "=== TEST PARAMETERS ===",
+    "baseline_transactions": {
+      "type": "env",
+      "key": "TEST_BASELINE_TRANSACTIONS",
+      "default": "50"
+    },
+    "distributed_transaction_test_count": {
+      "type": "env",
+      "key": "TEST_DISTRIBUTED_TXN_COUNT",
+      "default": "30"
+    },
+    "_comment5": "=== OBSERVABILITY ===",
+    "otel_service_name": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "kafka-chaos-experiment"
+    },
+    "_comment6": "=== BACKGROUND TRANSACTION LOAD ===",
+    "load_generator_url": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_URL",
+      "default": "http://transaction-load-generator:5001"
+    },
+    "load_generator_tps": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_TPS",
+      "default": "2.0"
+    },
+    "auto_start_load_generator": {
+      "type": "env",
+      "key": "AUTO_START_LOAD_GENERATOR",
+      "default": "true"
+    },
+    "reporting_output_dir": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_OUTPUT_DIR",
+      "default": "/var/log/chaostoolkit/reports"
+    },
+    "reporting_formats": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_FORMATS",
+      "default": "html,json"
+    }
+  },
+  "controls": [
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "load_generator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.load_generator_control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Kafka system is healthy and accessible",
+    "probes": [
+      {
+        "name": "probe-site-a-haproxy",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "${site_a_haproxy_url}/haproxy?stats",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": 200
+      },
+      {
+        "name": "probe-kafka",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.kafka.kafka_connectivity",
+          "func": "probe_kafka_connectivity",
+          "arguments": {
+            "bootstrap_servers": "${kafka_bootstrap_servers}",
+            "topic": "${kafka_topic}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-purchase-requests",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+          "func": "probe_api_transaction_flow",
+          "arguments": {
+            "api_url": "${site_a_haproxy_url}",
+            "num_transactions": 5
+          }
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.success",
+          "expect": true
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "_comment_phase": "=== PHASE 1: BASELINE - Establish baseline with load generator starting ===",
+      "name": "baseline-kafka-transaction-flow",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${baseline_transactions}"
+        }
+      }
+    },
+    {
+      "name": "verify-baseline-kafka-connectivity",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.kafka.kafka_connectivity",
+        "func": "probe_kafka_connectivity",
+        "arguments": {
+          "bootstrap_servers": "${kafka_bootstrap_servers}",
+          "topic": "${kafka_topic}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "_comment_phase": "=== PHASE 2: KAFKA CHAOS SCENARIOS (During transaction load) ===",
+      "name": "SCENARIO-17-Kafka-Message-Flood",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.kafka.kafka_message_flood",
+        "func": "inject_message_flood",
+        "arguments": {
+          "bootstrap_servers": "${kafka_bootstrap_servers}",
+          "topic": "${kafka_topic}",
+          "num_producers": 10,
+          "messages_per_producer": 1000,
+          "duration_seconds": "${stress_duration}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-kafka-message-flood",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-kafka-message-flood-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.kafka.kafka_message_flood_status",
+        "func": "probe_message_flood_status",
+        "arguments": {
+          "bootstrap_servers": "${kafka_bootstrap_servers}",
+          "topic": "${kafka_topic}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-18-Kafka-Topic-Saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.kafka.kafka_topic_saturation",
+        "func": "inject_topic_saturation",
+        "arguments": {
+          "bootstrap_servers": "${kafka_bootstrap_servers}",
+          "topic": "${kafka_topic}",
+          "num_producers": 20,
+          "duration_seconds": "${stress_duration}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-kafka-topic-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-kafka-topic-saturation-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.kafka.kafka_topic_saturation_status",
+        "func": "probe_topic_saturation_status",
+        "arguments": {
+          "bootstrap_servers": "${kafka_bootstrap_servers}",
+          "topic": "${kafka_topic}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-19-Kafka-Slow-Consumer",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.kafka.kafka_slow_consumer",
+        "func": "inject_slow_consumer",
+        "arguments": {
+          "bootstrap_servers": "${kafka_bootstrap_servers}",
+          "topic": "${kafka_topic}",
+          "num_consumers": 5,
+          "duration_seconds": "${stress_duration}",
+          "consume_delay_ms": 5000
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-kafka-slow-consumer",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-kafka-slow-consumer-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.kafka.kafka_slow_consumer_status",
+        "func": "probe_slow_consumer_status",
+        "arguments": {
+          "bootstrap_servers": "${kafka_bootstrap_servers}",
+          "topic": "${kafka_topic}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "_comment_phase": "=== PHASE 3: FINAL VALIDATION ===",
+      "name": "verify-kafka-connectivity-after-operations",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.kafka.kafka_connectivity",
+        "func": "probe_kafka_connectivity",
+        "arguments": {
+          "bootstrap_servers": "${kafka_bootstrap_servers}",
+          "topic": "${kafka_topic}"
+        }
+      },
+      "tolerance": true
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "generate-experiment-reports",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.actions",
+        "func": "generate_experiment_reports",
+        "arguments": {
+          "output_dir": "${reporting_output_dir}",
+          "formats": "${reporting_formats}",
+          "executive": true,
+          "compliance": true,
+          "audit": true,
+          "product_owner": true
+        }
+      }
+    }
+  ]
+}
+

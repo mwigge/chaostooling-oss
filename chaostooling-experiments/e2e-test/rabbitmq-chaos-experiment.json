@@ -1,0 +1,343 @@
+{
+  "version": "1.0.0",
+  "title": "RabbitMQ Chaos Engineering Experiment",
+  "description": "Focused chaos engineering experiment for RabbitMQ messaging system. Tests RabbitMQ resilience under various failure scenarios with continuous transaction load. Includes scenarios: Message Flood and Queue Saturation. All scenarios run with background transaction load targeting RabbitMQ.",
+  "tags": [
+    "rabbitmq",
+    "messaging",
+    "chaos",
+    "resilience",
+    "observability",
+    "production"
+  ],
+  "configuration": {
+    "_comment": "=== PRIMARY SITE (Site A) ===",
+    "site_a_haproxy_url": {
+      "type": "env",
+      "key": "SITE_A_HAPROXY_URL",
+      "default": "http://haproxy-site-a:80"
+    },
+    "_comment2": "=== RABBITMQ CONFIGURATION ===",
+    "rabbitmq_host": {
+      "type": "env",
+      "key": "RABBITMQ_HOST",
+      "default": "rabbitmq"
+    },
+    "rabbitmq_port": {
+      "type": "env",
+      "key": "RABBITMQ_PORT",
+      "default": "5672"
+    },
+    "rabbitmq_user": {
+      "type": "env",
+      "key": "RABBITMQ_USER",
+      "default": "chaos"
+    },
+    "rabbitmq_password": {
+      "type": "env",
+      "key": "RABBITMQ_PASSWORD",
+      "default": "password"
+    },
+    "_comment3": "=== CHAOS PARAMETERS ===",
+    "stress_duration": {
+      "type": "env",
+      "key": "STRESS_DURATION",
+      "default": "300"
+    },
+    "num_threads": {
+      "type": "env",
+      "key": "NUM_THREADS",
+      "default": "10"
+    },
+    "_comment4": "=== TEST PARAMETERS ===",
+    "baseline_transactions": {
+      "type": "env",
+      "key": "TEST_BASELINE_TRANSACTIONS",
+      "default": "50"
+    },
+    "distributed_transaction_test_count": {
+      "type": "env",
+      "key": "TEST_DISTRIBUTED_TXN_COUNT",
+      "default": "30"
+    },
+    "_comment5": "=== OBSERVABILITY ===",
+    "otel_service_name": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "rabbitmq-chaos-experiment"
+    },
+    "_comment6": "=== BACKGROUND TRANSACTION LOAD ===",
+    "load_generator_url": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_URL",
+      "default": "http://transaction-load-generator:5001"
+    },
+    "load_generator_tps": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_TPS",
+      "default": "2.0"
+    },
+    "auto_start_load_generator": {
+      "type": "env",
+      "key": "AUTO_START_LOAD_GENERATOR",
+      "default": "true"
+    },
+    "reporting_output_dir": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_OUTPUT_DIR",
+      "default": "/var/log/chaostoolkit/reports"
+    },
+    "reporting_formats": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_FORMATS",
+      "default": "html,json"
+    }
+  },
+  "controls": [
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "load_generator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.load_generator_control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "RabbitMQ system is healthy and accessible",
+    "probes": [
+      {
+        "name": "probe-site-a-haproxy",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "${site_a_haproxy_url}/haproxy?stats",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": 200
+      },
+      {
+        "name": "probe-rabbitmq",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
+          "func": "probe_rabbitmq_connectivity",
+          "arguments": {
+            "host": "${rabbitmq_host}",
+            "port": "${rabbitmq_port}",
+            "user": "${rabbitmq_user}",
+            "password": "${rabbitmq_password}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-purchase-requests",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+          "func": "probe_api_transaction_flow",
+          "arguments": {
+            "api_url": "${site_a_haproxy_url}",
+            "num_transactions": 5
+          }
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.success",
+          "expect": true
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "_comment_phase": "=== PHASE 1: BASELINE - Establish baseline with load generator starting ===",
+      "name": "baseline-rabbitmq-transaction-flow",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${baseline_transactions}"
+        }
+      }
+    },
+    {
+      "name": "verify-baseline-rabbitmq-connectivity",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
+        "func": "probe_rabbitmq_connectivity",
+        "arguments": {
+          "host": "${rabbitmq_host}",
+          "port": "${rabbitmq_port}",
+          "user": "${rabbitmq_user}",
+          "password": "${rabbitmq_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "_comment_phase": "=== PHASE 2: RABBITMQ CHAOS SCENARIOS (During transaction load) ===",
+      "name": "SCENARIO-20-RabbitMQ-Message-Flood",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_message_flood",
+        "func": "inject_message_flood",
+        "arguments": {
+          "host": "${rabbitmq_host}",
+          "port": "${rabbitmq_port}",
+          "user": "${rabbitmq_user}",
+          "password": "${rabbitmq_password}",
+          "queue": "chaos_test_queue",
+          "num_producers": 10,
+          "messages_per_producer": 1000,
+          "duration_seconds": "${stress_duration}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-rabbitmq-message-flood",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-rabbitmq-message-flood-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.rabbitmq.rabbitmq_message_flood_status",
+        "func": "probe_message_flood_status",
+        "arguments": {
+          "host": "${rabbitmq_host}",
+          "port": "${rabbitmq_port}",
+          "user": "${rabbitmq_user}",
+          "password": "${rabbitmq_password}",
+          "queue": "chaos_test_queue"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-21-RabbitMQ-Queue-Saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.rabbitmq.rabbitmq_queue_saturation",
+        "func": "inject_queue_saturation",
+        "arguments": {
+          "host": "${rabbitmq_host}",
+          "port": "${rabbitmq_port}",
+          "user": "${rabbitmq_user}",
+          "password": "${rabbitmq_password}",
+          "queue": "chaos_test_queue",
+          "num_producers": 20,
+          "duration_seconds": "${stress_duration}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-rabbitmq-queue-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-rabbitmq-queue-saturation-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.rabbitmq.rabbitmq_queue_saturation_status",
+        "func": "probe_queue_saturation_status",
+        "arguments": {
+          "host": "${rabbitmq_host}",
+          "port": "${rabbitmq_port}",
+          "user": "${rabbitmq_user}",
+          "password": "${rabbitmq_password}",
+          "queue": "chaos_test_queue"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "_comment_phase": "=== PHASE 3: FINAL VALIDATION ===",
+      "name": "verify-rabbitmq-connectivity-after-operations",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.rabbitmq.rabbitmq_connectivity",
+        "func": "probe_rabbitmq_connectivity",
+        "arguments": {
+          "host": "${rabbitmq_host}",
+          "port": "${rabbitmq_port}",
+          "user": "${rabbitmq_user}",
+          "password": "${rabbitmq_password}"
+        }
+      },
+      "tolerance": true
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "generate-experiment-reports",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.actions",
+        "func": "generate_experiment_reports",
+        "arguments": {
+          "output_dir": "${reporting_output_dir}",
+          "formats": "${reporting_formats}",
+          "executive": true,
+          "compliance": true,
+          "audit": true,
+          "product_owner": true
+        }
+      }
+    }
+  ]
+}
+

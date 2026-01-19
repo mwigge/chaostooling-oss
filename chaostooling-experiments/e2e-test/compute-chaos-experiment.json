@@ -1,0 +1,538 @@
+{
+  "version": "1.0.0",
+  "title": "Compute Infrastructure Chaos Engineering Experiment",
+  "description": "Focused chaos engineering experiment for compute infrastructure. Tests system resilience under CPU and memory stress on remote hosts using Vault credentials. Probes current CPU/memory usage first, then applies stress-ng at 40-90% of existing resources. All scenarios run with background transaction load to validate system behavior under stress.",
+  "tags": [
+    "compute",
+    "infrastructure",
+    "cpu",
+    "memory",
+    "stress-ng",
+    "vault",
+    "remote",
+    "chaos",
+    "resilience",
+    "observability",
+    "production"
+  ],
+  "configuration": {
+    "_comment": "=== PRIMARY SITE (Site A) ===",
+    "site_a_haproxy_url": {
+      "type": "env",
+      "key": "SITE_A_HAPROXY_URL",
+      "default": "http://haproxy-site-a:80"
+    },
+    "_comment2": "=== REMOTE HOST CONFIGURATION (Vault) ===",
+    "remote_host": {
+      "type": "env",
+      "key": "REMOTE_HOST",
+      "default": "app-server-1-site-a"
+    },
+    "remote_user": {
+      "type": "env",
+      "key": "REMOTE_USER",
+      "default": "root"
+    },
+    "vault_addr": {
+      "type": "env",
+      "key": "VAULT_ADDR",
+      "default": "http://vault:8200"
+    },
+    "vault_path": {
+      "type": "env",
+      "key": "VAULT_SSH_PATH",
+      "default": "secret/data/ssh/chaos"
+    },
+    "vault_role": {
+      "type": "env",
+      "key": "VAULT_ROLE",
+      "default": "chaos-engineering"
+    },
+    "ssh_port": {
+      "type": "env",
+      "key": "SSH_PORT",
+      "default": "22"
+    },
+    "_comment3": "=== CHAOS PARAMETERS ===",
+    "stress_duration": {
+      "type": "env",
+      "key": "STRESS_DURATION",
+      "default": "300"
+    },
+    "cpu_stress_min_percent": {
+      "type": "env",
+      "key": "CPU_STRESS_MIN_PERCENT",
+      "default": "40"
+    },
+    "cpu_stress_max_percent": {
+      "type": "env",
+      "key": "CPU_STRESS_MAX_PERCENT",
+      "default": "90"
+    },
+    "memory_stress_min_percent": {
+      "type": "env",
+      "key": "MEMORY_STRESS_MIN_PERCENT",
+      "default": "40"
+    },
+    "memory_stress_max_percent": {
+      "type": "env",
+      "key": "MEMORY_STRESS_MAX_PERCENT",
+      "default": "90"
+    },
+    "_comment4": "=== TEST PARAMETERS ===",
+    "baseline_transactions": {
+      "type": "env",
+      "key": "TEST_BASELINE_TRANSACTIONS",
+      "default": "50"
+    },
+    "distributed_transaction_test_count": {
+      "type": "env",
+      "key": "TEST_DISTRIBUTED_TXN_COUNT",
+      "default": "30"
+    },
+    "_comment5": "=== OBSERVABILITY ===",
+    "otel_service_name": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "compute-chaos-experiment"
+    },
+    "_comment6": "=== BACKGROUND TRANSACTION LOAD ===",
+    "load_generator_url": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_URL",
+      "default": "http://transaction-load-generator:5001"
+    },
+    "load_generator_tps": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_TPS",
+      "default": "2.0"
+    },
+    "auto_start_load_generator": {
+      "type": "env",
+      "key": "AUTO_START_LOAD_GENERATOR",
+      "default": "true"
+    },
+    "reporting_output_dir": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_OUTPUT_DIR",
+      "default": "/var/log/chaostoolkit/reports"
+    },
+    "reporting_formats": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_FORMATS",
+      "default": "html,json"
+    }
+  },
+  "controls": [
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "load_generator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.load_generator_control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "Compute infrastructure is healthy and accessible",
+    "probes": [
+      {
+        "name": "probe-site-a-haproxy",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "${site_a_haproxy_url}/haproxy?stats",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": 200
+      },
+      {
+        "name": "probe-remote-host-connectivity",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaoscompute.probes.compute_remote",
+          "func": "probe_remote_host_connectivity",
+          "arguments": {
+            "host": "${remote_host}",
+            "user": "${remote_user}",
+            "port": "${ssh_port}",
+            "vault_addr": "${vault_addr}",
+            "vault_path": "${vault_path}",
+            "vault_role": "${vault_role}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-baseline-cpu-memory",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaoscompute.probes.compute_remote",
+          "func": "probe_remote_cpu_memory",
+          "arguments": {
+            "host": "${remote_host}",
+            "user": "${remote_user}",
+            "port": "${ssh_port}",
+            "vault_addr": "${vault_addr}",
+            "vault_path": "${vault_path}",
+            "vault_role": "${vault_role}"
+          }
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.success",
+          "expect": true
+        }
+      },
+      {
+        "name": "probe-purchase-requests",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+          "func": "probe_api_transaction_flow",
+          "arguments": {
+            "api_url": "${site_a_haproxy_url}",
+            "num_transactions": 5
+          }
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.success",
+          "expect": true
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "_comment_phase": "=== PHASE 1: BASELINE - Establish baseline with load generator starting ===",
+      "name": "baseline-compute-transaction-flow",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${baseline_transactions}"
+        }
+      }
+    },
+    {
+      "name": "probe-baseline-remote-cpu-usage",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.probes.compute_remote",
+        "func": "probe_remote_cpu_usage",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}",
+          "interval": 2
+        }
+      },
+      "tolerance": {
+        "type": "jsonpath",
+        "path": "$.cpu_percent",
+        "range": [0, 100]
+      }
+    },
+    {
+      "name": "probe-baseline-remote-memory-usage",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.probes.compute_remote",
+        "func": "probe_remote_memory_usage",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}"
+        }
+      },
+      "tolerance": {
+        "type": "jsonpath",
+        "path": "$.memory_percent",
+        "range": [0, 100]
+      }
+    },
+    {
+      "_comment_phase": "=== PHASE 2: COMPUTE CHAOS SCENARIOS (During transaction load) ===",
+      "name": "SCENARIO-1-Compute-CPU-Stress-40-90-Percent",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.actions.compute_remote_stress",
+        "func": "stress_remote_cpu_dynamic",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}",
+          "duration": "${stress_duration}",
+          "min_percent": "${cpu_stress_min_percent}",
+          "max_percent": "${cpu_stress_max_percent}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-cpu-stress",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-cpu-stress-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.probes.compute_remote",
+        "func": "probe_remote_cpu_usage",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}",
+          "interval": 2
+        }
+      },
+      "tolerance": {
+        "type": "jsonpath",
+        "path": "$.cpu_percent",
+        "range": [40, 100]
+      }
+    },
+    {
+      "name": "SCENARIO-2-Compute-Memory-Stress-40-90-Percent",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.actions.compute_remote_stress",
+        "func": "stress_remote_memory_dynamic",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}",
+          "duration": "${stress_duration}",
+          "min_percent": "${memory_stress_min_percent}",
+          "max_percent": "${memory_stress_max_percent}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-memory-stress",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-memory-stress-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.probes.compute_remote",
+        "func": "probe_remote_memory_usage",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}"
+        }
+      },
+      "tolerance": {
+        "type": "jsonpath",
+        "path": "$.memory_percent",
+        "range": [40, 100]
+      }
+    },
+    {
+      "name": "SCENARIO-3-Compute-Combined-CPU-Memory-Stress",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.actions.compute_remote_stress",
+        "func": "stress_remote_cpu_memory_combined",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}",
+          "duration": "${stress_duration}",
+          "cpu_min_percent": "${cpu_stress_min_percent}",
+          "cpu_max_percent": "${cpu_stress_max_percent}",
+          "memory_min_percent": "${memory_stress_min_percent}",
+          "memory_max_percent": "${memory_stress_max_percent}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-combined-stress",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-combined-stress-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.probes.compute_remote",
+        "func": "probe_remote_cpu_memory",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}"
+        }
+      },
+      "tolerance": {
+        "type": "jsonpath",
+        "path": "$.success",
+        "expect": true
+      }
+    },
+    {
+      "_comment_phase": "=== PHASE 3: FINAL VALIDATION ===",
+      "name": "verify-remote-host-recovery",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.probes.compute_remote",
+        "func": "probe_remote_cpu_memory",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}"
+        }
+      },
+      "tolerance": {
+        "type": "jsonpath",
+        "path": "$.success",
+        "expect": true
+      }
+    },
+    {
+      "name": "verify-final-transaction-flow",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": 10
+        }
+      },
+      "tolerance": {
+        "type": "jsonpath",
+        "path": "$.success",
+        "expect": true
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "stop-remote-stress",
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.actions.compute_remote_stress",
+        "func": "stop_remote_stress",
+        "arguments": {
+          "host": "${remote_host}",
+          "user": "${remote_user}",
+          "port": "${ssh_port}",
+          "vault_addr": "${vault_addr}",
+          "vault_path": "${vault_path}",
+          "vault_role": "${vault_role}"
+        }
+      }
+    },
+    {
+      "type": "action",
+      "name": "generate-experiment-reports",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.actions",
+        "func": "generate_experiment_reports",
+        "arguments": {
+          "output_dir": "${reporting_output_dir}",
+          "formats": "${reporting_formats}",
+          "executive": true,
+          "compliance": true,
+          "audit": true,
+          "product_owner": true
+        }
+      }
+    }
+  ]
+}
+

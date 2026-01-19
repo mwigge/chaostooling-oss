@@ -1,0 +1,321 @@
+{
+  "version": "1.0.0",
+  "title": "MongoDB Chaos Engineering Experiment",
+  "description": "Focused chaos engineering experiment for MongoDB database system. Tests MongoDB resilience under various failure scenarios with continuous transaction load. Includes scenarios: Document Contention and Query Saturation. All scenarios run with background transaction load targeting MongoDB.",
+  "tags": [
+    "mongodb",
+    "database",
+    "chaos",
+    "resilience",
+    "observability",
+    "production"
+  ],
+  "configuration": {
+    "_comment": "=== PRIMARY SITE (Site A) ===",
+    "site_a_haproxy_url": {
+      "type": "env",
+      "key": "SITE_A_HAPROXY_URL",
+      "default": "http://haproxy-site-a:80"
+    },
+    "_comment2": "=== MONGODB CONFIGURATION ===",
+    "mongodb_uri": {
+      "type": "env",
+      "key": "MONGODB_URI",
+      "default": "mongodb://mongodb:27017"
+    },
+    "mongodb_db": {
+      "type": "env",
+      "key": "MONGODB_DB",
+      "default": "test"
+    },
+    "_comment3": "=== CHAOS PARAMETERS ===",
+    "stress_duration": {
+      "type": "env",
+      "key": "STRESS_DURATION",
+      "default": "300"
+    },
+    "num_threads": {
+      "type": "env",
+      "key": "NUM_THREADS",
+      "default": "10"
+    },
+    "_comment4": "=== TEST PARAMETERS ===",
+    "baseline_transactions": {
+      "type": "env",
+      "key": "TEST_BASELINE_TRANSACTIONS",
+      "default": "50"
+    },
+    "distributed_transaction_test_count": {
+      "type": "env",
+      "key": "TEST_DISTRIBUTED_TXN_COUNT",
+      "default": "30"
+    },
+    "_comment5": "=== OBSERVABILITY ===",
+    "otel_service_name": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "mongodb-chaos-experiment"
+    },
+    "_comment6": "=== BACKGROUND TRANSACTION LOAD ===",
+    "load_generator_url": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_URL",
+      "default": "http://transaction-load-generator:5001"
+    },
+    "load_generator_tps": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_TPS",
+      "default": "2.0"
+    },
+    "auto_start_load_generator": {
+      "type": "env",
+      "key": "AUTO_START_LOAD_GENERATOR",
+      "default": "true"
+    },
+    "reporting_output_dir": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_OUTPUT_DIR",
+      "default": "/var/log/chaostoolkit/reports"
+    },
+    "reporting_formats": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_FORMATS",
+      "default": "html,json"
+    }
+  },
+  "controls": [
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "load_generator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.load_generator_control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "MongoDB system is healthy and accessible",
+    "probes": [
+      {
+        "name": "probe-site-a-haproxy",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "${site_a_haproxy_url}/haproxy?stats",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": 200
+      },
+      {
+        "name": "probe-mongodb",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mongodb.mongodb_connectivity",
+          "func": "probe_mongodb_connectivity",
+          "arguments": {
+            "host": "mongodb",
+            "port": 27017,
+            "database": "${mongodb_db}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-purchase-requests",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+          "func": "probe_api_transaction_flow",
+          "arguments": {
+            "api_url": "${site_a_haproxy_url}",
+            "num_transactions": 5
+          }
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.success",
+          "expect": true
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "_comment_phase": "=== PHASE 1: BASELINE - Establish baseline with load generator starting ===",
+      "name": "baseline-mongodb-transaction-flow",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${baseline_transactions}"
+        }
+      }
+    },
+    {
+      "name": "verify-baseline-mongodb-connectivity",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.mongodb.mongodb_connectivity",
+        "func": "probe_mongodb_connectivity",
+        "arguments": {
+          "host": "mongodb",
+          "port": 27017,
+          "database": "${mongodb_db}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "_comment_phase": "=== PHASE 2: MONGODB CHAOS SCENARIOS (During transaction load) ===",
+      "name": "SCENARIO-12-MongoDB-Document-Contention",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mongodb.mongodb_document_contention",
+        "func": "inject_document_contention",
+        "arguments": {
+          "host": "mongodb",
+          "port": 27017,
+          "database": "${mongodb_db}",
+          "num_threads": 10,
+          "duration_seconds": "${stress_duration}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-mongodb-contention",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-mongodb-document-contention-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.mongodb.mongodb_document_contention_status",
+        "func": "probe_document_contention_status",
+        "arguments": {
+          "host": "mongodb",
+          "port": 27017,
+          "database": "${mongodb_db}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "name": "SCENARIO-13-MongoDB-Query-Saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mongodb.mongodb_query_saturation",
+        "func": "inject_query_saturation",
+        "arguments": {
+          "host": "mongodb",
+          "port": 27017,
+          "database": "${mongodb_db}",
+          "num_threads": 20,
+          "duration_seconds": "${stress_duration}"
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-mongodb-query-saturation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-mongodb-query-saturation-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.mongodb.mongodb_query_saturation_status",
+        "func": "probe_query_saturation_status",
+        "arguments": {
+          "host": "mongodb",
+          "port": 27017,
+          "database": "${mongodb_db}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "_comment_phase": "=== PHASE 3: FINAL VALIDATION ===",
+      "name": "verify-mongodb-connectivity-after-operations",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.mongodb.mongodb_connectivity",
+        "func": "probe_mongodb_connectivity",
+        "arguments": {
+          "host": "mongodb",
+          "port": 27017,
+          "database": "${mongodb_db}"
+        }
+      },
+      "tolerance": true
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "generate-experiment-reports",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.actions",
+        "func": "generate_experiment_reports",
+        "arguments": {
+          "output_dir": "${reporting_output_dir}",
+          "formats": "${reporting_formats}",
+          "executive": true,
+          "compliance": true,
+          "audit": true,
+          "product_owner": true
+        }
+      }
+    }
+  ]
+}
+

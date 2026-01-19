@@ -567,6 +567,7 @@ services:
     container_name: transaction-load-generator
     environment:
       - API_URL=http://haproxy-site-a:80
+      - API_URL_SECONDARY=http://haproxy-site-b:80
       - TRANSACTIONS_PER_SECOND=2.0
       - AUTO_START=false  # Control via Chaos Toolkit actions
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
@@ -578,10 +579,14 @@ services:
       - ACTIVEMQ_PORT=61616
       - ACTIVEMQ_USER=admin
       - ACTIVEMQ_PASSWORD=admin
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=transaction-load-generator
     ports:
       - "6002:5001"
     depends_on:
       - haproxy-site-a
+      - haproxy-site-b
       - app-server-1-site-a
     networks:
       - default

@@ -670,35 +670,36 @@ def probe_api_transaction_flow(
                 db_operation="probe_api_transaction_flow",
             )
 
-            # Record custom transaction metrics
+            # Record custom transaction metrics (using underscores and _total suffix for Prometheus compatibility)
             metrics.record_custom_metric(
-                "chaos.transaction.total",
+                "chaos_transaction_total",
                 float(num_transactions),
                 metric_type="counter",
                 tags=tags,
                 description="Total transactions attempted",
             )
             metrics.record_custom_metric(
-                "chaos.transaction.successful",
+                "chaos_transaction_successful_total",
                 float(successful),
                 metric_type="counter",
                 tags=tags,
                 description="Successful transactions",
             )
             metrics.record_custom_metric(
-                "chaos.transaction.failed",
+                "chaos_transaction_failed_total",
                 float(failed),
                 metric_type="counter",
                 tags=tags,
                 description="Failed transactions",
             )
-            metrics.record_custom_metric(
-                "chaos.transaction.reconnection_attempts",
-                float(reconnection_attempts),
-                metric_type="counter",
-                tags=tags,
-                description="Reconnection attempts",
-            )
+            # Also record reconnection attempts using the dedicated method for proper metric naming
+            if reconnection_attempts > 0:
+                for _ in range(reconnection_attempts):
+                    metrics.record_transaction_reconnection_attempt(
+                        db_operation="probe_api_transaction_flow",
+                        db_system=db_system,
+                        tags=tags,
+                    )
 
             metrics.record_db_query_latency(
                 probe_time_ms,

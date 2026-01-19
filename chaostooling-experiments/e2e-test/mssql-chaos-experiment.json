@@ -1,0 +1,308 @@
+{
+  "version": "1.0.0",
+  "title": "MSSQL Chaos Engineering Experiment",
+  "description": "Focused chaos engineering experiment for MSSQL database system. Tests MSSQL resilience under slow transaction scenarios with continuous transaction load. All scenarios run with background transaction load targeting MSSQL.",
+  "tags": [
+    "mssql",
+    "database",
+    "chaos",
+    "resilience",
+    "observability",
+    "production"
+  ],
+  "configuration": {
+    "_comment": "=== PRIMARY SITE (Site A) ===",
+    "site_a_haproxy_url": {
+      "type": "env",
+      "key": "SITE_A_HAPROXY_URL",
+      "default": "http://haproxy-site-a:80"
+    },
+    "_comment2": "=== MSSQL CONFIGURATION ===",
+    "mssql_host": {
+      "type": "env",
+      "key": "MSSQL_HOST",
+      "default": "mssql"
+    },
+    "mssql_port": {
+      "type": "env",
+      "key": "MSSQL_PORT",
+      "default": "1433"
+    },
+    "mssql_db": {
+      "type": "env",
+      "key": "MSSQL_DB",
+      "default": "master"
+    },
+    "mssql_user": {
+      "type": "env",
+      "key": "MSSQL_USER",
+      "default": "sa"
+    },
+    "mssql_password": {
+      "type": "env",
+      "key": "MSSQL_SA_PASSWORD",
+      "default": "Password123!"
+    },
+    "_comment3": "=== CHAOS PARAMETERS ===",
+    "stress_duration": {
+      "type": "env",
+      "key": "STRESS_DURATION",
+      "default": "300"
+    },
+    "num_threads": {
+      "type": "env",
+      "key": "NUM_THREADS",
+      "default": "10"
+    },
+    "db_slow_txn_delay_ms": {
+      "type": "env",
+      "key": "CHAOS_DB_SLOW_TXN_DELAY_MS",
+      "default": "3000"
+    },
+    "_comment4": "=== TEST PARAMETERS ===",
+    "baseline_transactions": {
+      "type": "env",
+      "key": "TEST_BASELINE_TRANSACTIONS",
+      "default": "50"
+    },
+    "distributed_transaction_test_count": {
+      "type": "env",
+      "key": "TEST_DISTRIBUTED_TXN_COUNT",
+      "default": "30"
+    },
+    "_comment5": "=== OBSERVABILITY ===",
+    "otel_service_name": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "mssql-chaos-experiment"
+    },
+    "_comment6": "=== BACKGROUND TRANSACTION LOAD ===",
+    "load_generator_url": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_URL",
+      "default": "http://transaction-load-generator:5001"
+    },
+    "load_generator_tps": {
+      "type": "env",
+      "key": "TRANSACTION_LOAD_GENERATOR_TPS",
+      "default": "2.0"
+    },
+    "auto_start_load_generator": {
+      "type": "env",
+      "key": "AUTO_START_LOAD_GENERATOR",
+      "default": "true"
+    },
+    "reporting_output_dir": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_OUTPUT_DIR",
+      "default": "/var/log/chaostoolkit/reports"
+    },
+    "reporting_formats": {
+      "type": "env",
+      "key": "CHAOS_REPORTING_FORMATS",
+      "default": "html,json"
+    }
+  },
+  "controls": [
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "load_generator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.load_generator_control"
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "MSSQL system is healthy and accessible",
+    "probes": [
+      {
+        "name": "probe-site-a-haproxy",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "${site_a_haproxy_url}/haproxy?stats",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": 200
+      },
+      {
+        "name": "probe-mssql",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.mssql.mssql_connectivity",
+          "func": "probe_mssql_connectivity",
+          "arguments": {
+            "host": "${mssql_host}",
+            "port": "${mssql_port}",
+            "database": "${mssql_db}",
+            "user": "${mssql_user}",
+            "password": "${mssql_password}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-purchase-requests",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+          "func": "probe_api_transaction_flow",
+          "arguments": {
+            "api_url": "${site_a_haproxy_url}",
+            "num_transactions": 5
+          }
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.success",
+          "expect": true
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "_comment_phase": "=== PHASE 1: BASELINE - Establish baseline with load generator starting ===",
+      "name": "baseline-mssql-transaction-flow",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${baseline_transactions}"
+        }
+      }
+    },
+    {
+      "name": "verify-baseline-mssql-connectivity",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.mssql.mssql_connectivity",
+        "func": "probe_mssql_connectivity",
+        "arguments": {
+          "host": "${mssql_host}",
+          "port": "${mssql_port}",
+          "database": "${mssql_db}",
+          "user": "${mssql_user}",
+          "password": "${mssql_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "_comment_phase": "=== PHASE 2: MSSQL CHAOS SCENARIOS (During transaction load) ===",
+      "name": "SCENARIO-11-MSSQL-Slow-Transactions",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.mssql.mssql_slow_transactions",
+        "func": "inject_slow_transactions",
+        "arguments": {
+          "host": "${mssql_host}",
+          "port": "${mssql_port}",
+          "database": "${mssql_db}",
+          "user": "${mssql_user}",
+          "password": "${mssql_password}",
+          "num_threads": 5,
+          "duration_seconds": "${stress_duration}",
+          "transaction_delay_ms": 3000
+        }
+      }
+    },
+    {
+      "name": "test-transactions-during-slow-mssql",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_validation",
+        "func": "probe_api_transaction_flow",
+        "arguments": {
+          "api_url": "${site_a_haproxy_url}",
+          "num_transactions": "${distributed_transaction_test_count}"
+        }
+      }
+    },
+    {
+      "name": "probe-mssql-slow-transactions-status",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.mssql.mssql_slow_transactions_status",
+        "func": "probe_slow_transactions_status",
+        "arguments": {
+          "host": "${mssql_host}",
+          "port": "${mssql_port}",
+          "database": "${mssql_db}",
+          "user": "${mssql_user}",
+          "password": "${mssql_password}"
+        }
+      },
+      "tolerance": true
+    },
+    {
+      "_comment_phase": "=== PHASE 3: FINAL VALIDATION ===",
+      "name": "verify-mssql-connectivity-after-operations",
+      "type": "probe",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.mssql.mssql_connectivity",
+        "func": "probe_mssql_connectivity",
+        "arguments": {
+          "host": "${mssql_host}",
+          "port": "${mssql_port}",
+          "database": "${mssql_db}",
+          "user": "${mssql_user}",
+          "password": "${mssql_password}"
+        }
+      },
+      "tolerance": true
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "generate-experiment-reports",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.actions",
+        "func": "generate_experiment_reports",
+        "arguments": {
+          "output_dir": "${reporting_output_dir}",
+          "formats": "${reporting_formats}",
+          "executive": true,
+          "compliance": true,
+          "audit": true,
+          "product_owner": true
+        }
+      }
+    }
+  ]
+}
+

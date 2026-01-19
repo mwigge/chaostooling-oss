@@ -1925,11 +1925,21 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_kafka_1|chaostooling-demo_zookeeper_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_kafka.*\"}",
+              "legendFormat": "Kafka",
               "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_zookeeper.*\"}",
+              "legendFormat": "Zookeeper",
+              "refId": "B"
             }
           ],
-          "title": "Kafka CPU",
+          "title": "Kafka & Zookeeper CPU",
           "type": "gauge"
         },
         {
@@ -1984,11 +1994,21 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_kafka_1|chaostooling-demo_zookeeper_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_kafka.*\"}",
+              "legendFormat": "Kafka",
               "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_zookeeper.*\"}",
+              "legendFormat": "Zookeeper",
+              "refId": "B"
             }
           ],
-          "title": "Kafka Memory",
+          "title": "Kafka & Zookeeper Memory",
           "type": "gauge"
         },
         {
@@ -2009,8 +2029,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_kafka_1|chaostooling-demo_zookeeper_1\"}[$__rate_interval])",
-              "legendFormat": "RX - {{container_name}}",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_kafka.*\"}",
+              "legendFormat": "Kafka RX",
               "refId": "A"
             },
             {
@@ -2018,12 +2038,30 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_kafka_1|chaostooling-demo_zookeeper_1\"}[$__rate_interval])",
-              "legendFormat": "TX - {{container_name}}",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_kafka.*\"}",
+              "legendFormat": "Kafka TX",
               "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_zookeeper.*\"}",
+              "legendFormat": "Zookeeper RX",
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_zookeeper.*\"}",
+              "legendFormat": "Zookeeper TX",
+              "refId": "D"
             }
           ],
-          "title": "Kafka Network IO",
+          "title": "Kafka & Zookeeper Network IO",
           "type": "timeseries"
         },
         {
@@ -2648,7 +2686,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(tempo_spanmetrics_calls_total{service_name=~\".*(app-server.*site-a|payment-service.*site-a|order-service.*site-a|inventory-service.*site-a|notification-service.*site-a|transaction-load-generator).*\"}[5m])) by (service_name) or sum(rate(chaos_operation_success_total{operation_name=~\".*(app-server.*site-a|payment-service.*site-a|order-service.*site-a|inventory-service.*site-a|notification-service.*site-a|transaction-load-generator).*\"}[5m])) by (operation_name)",
+          "expr": "sum(rate(tempo_spanmetrics_calls_total{service_name=~\".*(app-server.*site-a|payment-service.*site-a|order-service.*site-a|inventory-service.*site-a|notification-service.*site-a|transaction-load-generator).*\"}[5m])) by (service_name) or sum(rate(chaos_operation_success_total[5m])) by (operation_name)",
           "legendFormat": "{{service_name}}",
           "refId": "A"
         }
@@ -3044,7 +3082,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_db_connection_pool_utilization",
+          "expr": "chaos_db_connection_pool_utilization{db_system=~\"postgresql|mysql|mssql\"}",
           "refId": "A"
         }
       ],
@@ -3509,7 +3547,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(chaos_db_deadlock_count_total[5m])) by (db_system)",
+          "expr": "sum(rate(chaos_db_deadlock_count_total[5m])) by (db_system) or sum(increase(chaos_db_deadlock_count_total[5m])) by (db_system)",
           "legendFormat": "{{db_system}}",
           "refId": "A"
         }
@@ -3599,7 +3637,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_db_connection_pool_utilization",
+          "expr": "chaos_db_connection_pool_utilization{db_system=~\"postgresql|mysql|mssql\"}",
           "legendFormat": "{{db_system}}",
           "refId": "A"
         }
@@ -3906,7 +3944,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_mttr_current_seconds",
+          "expr": "chaos_mttr_current_seconds{service_name!=\"\"}",
           "legendFormat": "{{service_name}} ({{recovery_type}})",
           "refId": "A"
         }
@@ -3978,7 +4016,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_mttr_current_seconds",
+          "expr": "chaos_mttr_current_seconds{service_name!=\"\"}",
           "refId": "A"
         }
       ],
@@ -4047,7 +4085,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_postgres-primary-site-a_1|chaostooling-demo_postgres-replica-site-a_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_postgres-primary-site-a.*|chaostooling-demo_postgres-replica-site-a.*\"}",
+              "legendFormat": "{{container_name}}",
               "refId": "A"
             }
           ],
@@ -4106,7 +4145,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_postgres-primary-site-a_1|chaostooling-demo_postgres-replica-site-a_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_postgres-primary-site-a.*|chaostooling-demo_postgres-replica-site-a.*\"}",
+              "legendFormat": "{{container_name}}",
               "refId": "A"
             }
           ],
@@ -4131,8 +4171,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_postgres-primary-site-a_1|chaostooling-demo_postgres-replica-site-a_1\"}[$__rate_interval])",
-              "legendFormat": "RX - {{container_name}}",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_postgres-primary-site-a.*|chaostooling-demo_postgres-replica-site-a.*\"}",
+              "legendFormat": "{{container_name}} RX",
               "refId": "A"
             },
             {
@@ -4140,8 +4180,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_postgres-primary-site-a_1|chaostooling-demo_postgres-replica-site-a_1\"}[$__rate_interval])",
-              "legendFormat": "TX - {{container_name}}",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_postgres-primary-site-a.*|chaostooling-demo_postgres-replica-site-a.*\"}",
+              "legendFormat": "{{container_name}} TX",
               "refId": "B"
             }
           ],
@@ -4249,7 +4289,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_mysql_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_mysql.*\"}",
+              "legendFormat": "MySQL",
               "refId": "A"
             }
           ],
@@ -4308,7 +4349,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_mysql_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_mysql.*\"}",
+              "legendFormat": "MySQL",
               "refId": "A"
             }
           ],
@@ -4333,7 +4375,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_mysql_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_mysql.*\"}",
+              "legendFormat": "MySQL RX",
               "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
@@ -4342,7 +4385,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_mysql_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_mysql.*\"}",
+              "legendFormat": "MySQL TX",
               "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
@@ -4451,7 +4495,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_mssql_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_mssql.*\"}",
+              "legendFormat": "MSSQL",
               "refId": "A"
             }
           ],
@@ -4510,7 +4555,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_mssql_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_mssql.*\"}",
+              "legendFormat": "MSSQL",
               "refId": "A"
             }
           ],
@@ -4535,7 +4581,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_mssql_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_mssql.*\"}",
+              "legendFormat": "MSSQL RX",
               "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
@@ -4544,7 +4591,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_mssql_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_mssql.*\"}",
+              "legendFormat": "MSSQL TX",
               "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
@@ -4653,7 +4701,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_mongodb_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_mongodb.*\"}",
+              "legendFormat": "MongoDB",
               "refId": "A"
             }
           ],
@@ -4712,7 +4761,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_mongodb_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_mongodb.*\"}",
+              "legendFormat": "MongoDB",
               "refId": "A"
             }
           ],
@@ -4737,7 +4787,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_mongodb_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_mongodb.*\"}",
+              "legendFormat": "MongoDB RX",
               "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
@@ -4746,8 +4797,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_mongodb_1\"}[$__rate_interval])",
-              "legendFormat": "TX - {{container_name}}",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_mongodb.*\"}",
+              "legendFormat": "MongoDB TX",
               "refId": "B"
             }
           ],
@@ -4855,7 +4906,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_redis_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_redis.*\"}",
+              "legendFormat": "Redis",
               "refId": "A"
             }
           ],
@@ -4914,7 +4966,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_redis_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_redis.*\"}",
+              "legendFormat": "Redis",
               "refId": "A"
             }
           ],
@@ -4939,7 +4992,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_redis_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_redis.*\"}",
+              "legendFormat": "Redis RX",
               "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
@@ -4948,7 +5002,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_redis_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_redis.*\"}",
+              "legendFormat": "Redis TX",
               "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
@@ -5057,7 +5112,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_cassandra_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_cassandra.*\"}",
+              "legendFormat": "Cassandra",
               "refId": "A"
             }
           ],
@@ -5116,7 +5172,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_cassandra_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_cassandra.*\"}",
+              "legendFormat": "Cassandra",
               "refId": "A"
             }
           ],
@@ -5141,7 +5198,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_cassandra_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_cassandra.*\"}",
+              "legendFormat": "Cassandra RX",
               "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
@@ -5150,7 +5208,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_cassandra_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_cassandra.*\"}",
+              "legendFormat": "Cassandra TX",
               "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
@@ -5259,11 +5318,21 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_kafka_1|chaostooling-demo_zookeeper_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_kafka.*\"}",
+              "legendFormat": "Kafka",
               "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_zookeeper.*\"}",
+              "legendFormat": "Zookeeper",
+              "refId": "B"
             }
           ],
-          "title": "Kafka CPU",
+          "title": "Kafka & Zookeeper CPU",
           "type": "gauge"
         },
         {
@@ -5318,11 +5387,21 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_kafka_1|chaostooling-demo_zookeeper_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_kafka.*\"}",
+              "legendFormat": "Kafka",
               "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_zookeeper.*\"}",
+              "legendFormat": "Zookeeper",
+              "refId": "B"
             }
           ],
-          "title": "Kafka Memory",
+          "title": "Kafka & Zookeeper Memory",
           "type": "gauge"
         },
         {
@@ -5343,8 +5422,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_kafka_1|chaostooling-demo_zookeeper_1\"}[$__rate_interval])",
-              "legendFormat": "RX - {{container_name}}",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_kafka.*\"}",
+              "legendFormat": "Kafka RX",
               "refId": "A"
             },
             {
@@ -5352,12 +5431,30 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_kafka_1|chaostooling-demo_zookeeper_1\"}[$__rate_interval])",
-              "legendFormat": "TX - {{container_name}}",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_kafka.*\"}",
+              "legendFormat": "Kafka TX",
               "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_zookeeper.*\"}",
+              "legendFormat": "Zookeeper RX",
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_zookeeper.*\"}",
+              "legendFormat": "Zookeeper TX",
+              "refId": "D"
             }
           ],
-          "title": "Kafka Network IO",
+          "title": "Kafka & Zookeeper Network IO",
           "type": "timeseries"
         },
         {
@@ -5461,7 +5558,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_rabbitmq_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_rabbitmq.*\"}",
+              "legendFormat": "RabbitMQ",
               "refId": "A"
             }
           ],
@@ -5520,7 +5618,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_rabbitmq_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_rabbitmq.*\"}",
+              "legendFormat": "RabbitMQ",
               "refId": "A"
             }
           ],
@@ -5545,7 +5644,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_rabbitmq_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_rabbitmq.*\"}",
+              "legendFormat": "RabbitMQ RX",
               "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
@@ -5554,7 +5654,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_rabbitmq_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_rabbitmq.*\"}",
+              "legendFormat": "RabbitMQ TX",
               "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }
@@ -5663,7 +5764,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_activemq_1\"}",
+              "expr": "container_cpu_utilization_ratio{container_name=~\"chaostooling-demo_activemq.*\"}",
+              "legendFormat": "ActiveMQ",
               "refId": "A"
             }
           ],
@@ -5722,7 +5824,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "chaos_container_memory_percent_ratio{container_name=~\"chaostooling-demo_activemq_1\"}",
+              "expr": "container_memory_percent_ratio{container_name=~\"chaostooling-demo_activemq.*\"}",
+              "legendFormat": "ActiveMQ",
               "refId": "A"
             }
           ],
@@ -5747,7 +5850,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_rx_bytes_total{container_name=~\"chaostooling-demo_activemq_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_rx_bytes_ratio{container_name=~\"chaostooling-demo_activemq.*\"}",
+              "legendFormat": "ActiveMQ RX",
               "legendFormat": "RX - {{container_name}}",
               "refId": "A"
             },
@@ -5756,7 +5860,8 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(chaos_container_network_io_usage_tx_bytes_total{container_name=~\"chaostooling-demo_activemq_1\"}[$__rate_interval])",
+              "expr": "container_network_io_usage_tx_bytes_ratio{container_name=~\"chaostooling-demo_activemq.*\"}",
+              "legendFormat": "ActiveMQ TX",
               "legendFormat": "TX - {{container_name}}",
               "refId": "B"
             }

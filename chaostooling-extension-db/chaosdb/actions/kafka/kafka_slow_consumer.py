@@ -95,12 +95,27 @@ def inject_slow_consumer(
                     chaos_consumer_id=consumer_id,
                 )
 
+                # Configure consumer with extended timeouts for slow processing
+                # max.poll.interval.ms: Maximum time between poll() calls (default 5min)
+                # session.timeout.ms: Timeout for consumer group session (default 10s)
+                # Increase these to handle slow consumers that take time to process messages
+                max_poll_interval_ms = max(
+                    consume_delay_ms * 10,  # At least 10x the consume delay
+                    300000,  # Minimum 5 minutes
+                )
+                session_timeout_ms = max(
+                    consume_delay_ms * 2,  # At least 2x the consume delay
+                    30000,  # Minimum 30 seconds
+                )
+                
                 consumer = KafkaConsumer(
                     topic,
                     bootstrap_servers=bootstrap_servers,
                     group_id=f"{consumer_group}_{consumer_id}",
                     auto_offset_reset="earliest",
                     enable_auto_commit=False,
+                    max_poll_interval_ms=max_poll_interval_ms,
+                    session_timeout_ms=session_timeout_ms,
                 )
 
                 end_time = time.time() + duration_seconds
@@ -157,28 +172,43 @@ def inject_slow_consumer(
 
                         span.set_status(StatusCode.OK)
                     except Exception as e:
-                        errors += 1
-                        metrics.record_messaging_error(
-                            mq_system=mq_system,
-                            error_type=type(e).__name__,
-                            mq_destination=topic,
-                            mq_operation="slow_consume",
-                        )
-                        # CommitFailedError is expected during memory stress - log as warning
                         from kafka.errors import CommitFailedError
 
+                        # CommitFailedError is expected when consumers are slow and get kicked out of group
+                        # This is the intended behavior for slow consumer chaos testing
                         if isinstance(e, CommitFailedError):
-                            logger.warning(
-                                f"Slow consumer {consumer_id} commit failed (expected during stress): {e}",
+                            # Don't count as error - this is expected behavior
+                            # Log at DEBUG level to reduce noise
+                            logger.debug(
+                                f"Slow consumer {consumer_id} commit failed (expected - consumer kicked from group due to slow processing): {type(e).__name__}",
                                 exc_info=False,
                             )
+                            # Record metric for tracking rebalancing events (expected behavior)
+                            metrics.record_messaging_operation_count(
+                                mq_system=mq_system,
+                                mq_destination=topic,
+                                mq_operation="consumer_rebalance",
+                                tags=tags,
+                            )
+                            # Don't set error status for expected errors
+                            # Just continue processing
+                            time.sleep(0.1)
+                            continue
                         else:
+                            # Real errors should be logged and counted
+                            errors += 1
+                            metrics.record_messaging_error(
+                                mq_system=mq_system,
+                                error_type=type(e).__name__,
+                                mq_destination=topic,
+                                mq_operation="slow_consume",
+                            )
                             logger.warning(
                                 f"Slow consumer {consumer_id} error: {e}",
                                 exc_info=True,
                             )
-                        span.set_status(StatusCode.ERROR, str(e))
-                        time.sleep(0.1)
+                            span.set_status(StatusCode.ERROR, str(e))
+                            time.sleep(0.1)
         except Exception as e:
             errors += 1
             logger.error(

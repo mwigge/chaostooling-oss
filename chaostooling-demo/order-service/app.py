@@ -4,17 +4,19 @@ import sys
 
 import pymysql
 from flask import Flask, jsonify, request
+from opentelemetry import trace
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
 # Use common OTEL setup for consistent service graph visibility
 sys.path.insert(0, "/app/common")
 from otel_setup import setup_otel
 
-from chaosotel.core.trace_core import trace_kafka_produce
+from chaosotel.core.trace_core import trace_kafka_produce, set_db_span_attributes
 
 # Setup OpenTelemetry for service graph visibility
 service_name = os.getenv("OTEL_SERVICE_NAME", "order-service")
 setup_otel(service_name)
+tracer = trace.get_tracer(__name__)
 
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
@@ -61,21 +63,40 @@ def create_order():
         f"Creating order: user_id={user_id}, item_id={item_id}, quantity={quantity}"
     )
 
-    # Write order to MySQL
+    # Write order to MySQL with manual instrumentation for service graph visibility
+    mysql_host = os.getenv("MYSQL_HOST", "mysql")
+    mysql_port = int(os.getenv("MYSQL_PORT", "3306"))
+    mysql_db = os.getenv("MYSQL_DB", "testdb")
+    
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO orders (user_id, item_id, quantity, status) VALUES (%s, %s, %s, %s)",
-            (user_id, item_id, quantity, "PENDING"),
-        )
-        order_id = cur.lastrowid  # MySQL uses lastrowid instead of RETURNING
-        conn.commit()
-        cur.close()
-        conn.close()
-        logger.info(f"Order {order_id} written to MySQL")
+        with tracer.start_as_current_span("mysql.insert") as span:
+            # Set database span attributes for service graph visibility
+            set_db_span_attributes(
+                span,
+                db_system="mysql",
+                db_name=mysql_db,
+                db_operation="insert",
+                host=mysql_host,
+                port=mysql_port,
+            )
+            
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO orders (user_id, item_id, quantity, status) VALUES (%s, %s, %s, %s)",
+                (user_id, item_id, quantity, "PENDING"),
+            )
+            order_id = cur.lastrowid  # MySQL uses lastrowid instead of RETURNING
+            conn.commit()
+            cur.close()
+            conn.close()
+            span.set_status(trace.Status(trace.StatusCode.OK))
+            logger.info(f"Order {order_id} written to MySQL")
     except Exception as e:
         logger.error(f"Database failed: {e}")
+        if span:
+            span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+            span.record_exception(e)
         return jsonify({"error": "Database error"}), 500
 
     # Publish order event to Kafka after MySQL write

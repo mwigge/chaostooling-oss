@@ -1,32 +1,21 @@
 import logging
 import os
+import sys
 
 import redis
 from flask import Flask, jsonify, request
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from pymongo import MongoClient
 
-# Setup OpenTelemetry with proper service name
+# Use common OTEL setup for consistent service graph visibility
+sys.path.insert(0, "/app/common")
+from otel_setup import setup_otel
+
+# Setup OpenTelemetry for service graph visibility
 service_name = os.getenv("OTEL_SERVICE_NAME", "inventory-service")
-resource = Resource.create(
-    {
-        "service.name": service_name,
-        "service.version": "1.0.0",
-    }
-)
-trace.set_tracer_provider(TracerProvider(resource=resource))
-otlp_exporter = OTLPSpanExporter(
-    endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"),
-    insecure=True,
-)
-trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
+setup_otel(service_name)
 
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
