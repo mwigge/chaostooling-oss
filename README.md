@@ -15,8 +15,8 @@ ChaosTooling provides a comprehensive set of extensions, observability tools, an
 3. **chaostooling-extension-db** - Database and messaging system extensions (module: `chaosdb`)
 4. **chaostooling-extension-compute** - Compute resource extensions (module: `chaoscompute`)
 5. **chaostooling-extension-network** - Network extensions (module: `chaosnetwork`)
-6. **chaostooling-reporting** - Reporting and analytics extension (module: `chaostooling_reporting`)
-7. **chaostoolkit-extension-app** - Application-level chaos extensions (module: `chaosapp`)
+6. **chaostooling-extension-app** - Application-level chaos extensions (module: `chaosapp`)
+7. **chaostooling-reporting** - Reporting, dashboards, and analytics extension (module: `chaostooling_reporting`)
 8. **chaostooling-demo** - Demo environment with full observability stack
 9. **chaostooling-experiments** - Example experiments
 
@@ -680,12 +680,11 @@ pip install chaostooling-extension-network
 ```
 
 ### chaostooling-reporting
-Automated reporting extension with:
-- Executive summaries
-- Compliance reports
-- Product owner reports
-- Audit trails
-- CSV/JSON exports
+Automated reporting and dashboarding extension with:
+- **Reports**: Executive summaries, compliance reports, product owner reports, audit trails
+- **Dashboards**: Auto-generated Grafana dashboards for each experiment
+- **Experiment Index**: Centralized tracking of all experiment runs
+- **Formats**: HTML, JSON, CSV, PDF exports
 
 **Installation:**
 ```bash
@@ -719,7 +718,7 @@ Add to the `rollbacks` section of your experiment to ensure reports are generate
 }
 ```
 
-**Usage as Control (automatic, but may run before rollbacks complete):**
+**Usage as Control (automatic, includes dashboard generation):**
 ```json
 {
   "controls": [
@@ -733,7 +732,11 @@ Add to the `rollbacks` section of your experiment to ensure reports are generate
         "reporting": {
           "enabled": true,
           "output_dir": "./reporting-output",
-          "formats": ["html", "json"]
+          "formats": ["html", "json"],
+          "dashboard": {
+            "enabled": true,
+            "grafana_url": "http://grafana:3000"
+          }
         }
       }
     }
@@ -748,6 +751,51 @@ Add to the `rollbacks` section of your experiment to ensure reports are generate
 - `CHAOS_REPORTING_COMPLIANCE` - Generate compliance report (default: `true`)
 - `CHAOS_REPORTING_AUDIT` - Generate audit trail (default: `true`)
 - `CHAOS_REPORTING_PRODUCT_OWNER` - Generate product owner report (default: `true`)
+- `CHAOS_DASHBOARD_ENABLED` - Enable dashboard generation (default: `true`)
+- `GRAFANA_URL` - Grafana server URL (default: `http://grafana:3000`)
+- `GRAFANA_API_KEY` - Grafana API key for provisioning dashboards
+- `CHAOS_DASHBOARD_OUTPUT_DIR` - Directory for generated dashboard JSON files
+
+### chaostooling-extension-app
+Application-level chaos extensions for simulating client behavior and network conditions.
+
+**Installation:**
+```bash
+pip install chaostooling-extension-app
+```
+
+**Actions:**
+- `chaosapp.actions.network.simulate_network_conditions()` - Inject network latency, jitter, packet loss using `tc`
+- `chaosapp.actions.network.simulate_dns_timeout()` - Block DNS resolution using iptables
+- `chaosapp.actions.client.simulate_purchase()` - Simulate mobile app purchases in PostgreSQL
+- `chaosapp.actions.client.simulate_purchase_via_api()` - Simulate purchases via HTTP API
+
+**Probes:**
+- `chaosapp.probes.validation.validate_data_consistency()` - Validate data consistency in PostgreSQL
+- `chaosapp.probes.observability.log_metric()` / `get_metrics()` - Direct metric logging
+
+**Usage:**
+```json
+{
+  "method": [
+    {
+      "type": "action",
+      "name": "inject-network-latency",
+      "provider": {
+        "type": "python",
+        "module": "chaosapp.actions.network",
+        "func": "simulate_network_conditions",
+        "arguments": {
+          "interface": "eth0",
+          "latency_ms": 200,
+          "jitter_ms": 50,
+          "packet_loss_percent": 5
+        }
+      }
+    }
+  ]
+}
+```
 
 ## Demo Environment (chaostooling-demo)
 

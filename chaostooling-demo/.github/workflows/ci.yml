@@ -30,7 +30,7 @@ jobs:
           pip install -e ./chaostooling-extension-compute[dev] || echo "Failed to install chaostooling-extension-compute"
           pip install -e ./chaostooling-extension-network[dev] || echo "Failed to install chaostooling-extension-network"
           pip install -e ./chaostooling-reporting[dev] || echo "Failed to install chaostooling-reporting"
-          pip install -e ./chaostoolkit-extension-app[dev] || echo "Failed to install chaostoolkit-extension-app"
+          pip install -e ./chaostooling-extension-app[dev] || echo "Failed to install chaostooling-extension-app"
 
       - name: Run Ruff linter (includes import sorting)
         run: |

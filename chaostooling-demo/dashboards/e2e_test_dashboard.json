@@ -325,7 +325,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "chaos_chaos_experiment_risk_level",
+                    "expr": "chaos_experiment_risk_level",
                     "refId": "A"
                 }
             ],
@@ -395,7 +395,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "chaos_chaos_experiment_complexity_score",
+                    "expr": "chaos_experiment_complexity_score",
                     "refId": "A"
                 }
             ],
@@ -486,7 +486,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "sum(increase(chaos_chaos_experiment_start_total[5m]))",
+                    "expr": "sum(increase(chaos_experiment_start_total[5m]))",
                     "legendFormat": "Runs",
                     "refId": "A"
                 }
@@ -757,7 +757,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "expr": "chaos_chaos_experiment_success_ratio * 100",
+                    "expr": "chaos_experiment_success_ratio * 100",
                     "refId": "A"
                 }
             ],

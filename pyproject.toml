@@ -76,7 +76,7 @@ where = [
     "chaostooling-otel",
     "chaostooling-extension-compute",
     "chaostooling-extension-network",
-    "chaostoolkit-extension-app",
+    "chaostooling-extension-app",
     "chaostooling-reporting"
 ]
 

@@ -1,5 +1,5 @@
 [project]
-name = "chaostoolkit-extension-app"
+name = "chaostooling-extension-app"
 version = "0.1.0"
 description = "Application-level chaos engineering extensions for Chaos Toolkit"
 requires-python = ">=3.9"

@@ -87,7 +87,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_chaos_experiment_risk_level_ratio",
+                    "expr": "chaos_experiment_risk_level_ratio",
                     "legendFormat": "Risk Level",
                     "refId": "A"
                 }
@@ -147,7 +147,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_chaos_experiment_complexity_score_ratio",
+                    "expr": "chaos_experiment_complexity_score_ratio",
                     "legendFormat": "Complexity",
                     "refId": "A"
                 }
@@ -200,7 +200,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_chaos_experiment_start_total",
+                    "expr": "chaos_experiment_start_total",
                     "legendFormat": "Total Runs",
                     "refId": "A"
                 }
@@ -260,7 +260,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_chaos_experiment_success_ratio * 100",
+                    "expr": "chaos_experiment_success_ratio * 100",
                     "legendFormat": "Success Rate",
                     "refId": "A"
                 }

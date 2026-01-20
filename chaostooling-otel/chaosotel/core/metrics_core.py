@@ -149,12 +149,12 @@ class MetricsCore:
         """Record compliance score."""
         try:
             gauge = self._get_or_create_gauge(
-                "compliance.score", description="Compliance score"
+                "chaos_compliance_score", description="Compliance score"
             )
-            attributes = {"compliance.regulation": str(regulation)}
+            attributes = {"regulation": str(regulation)}
             if details:
                 attributes.update(
-                    {f"compliance.{k}": str(v) for k, v in details.items()}
+                    {f"compliance_{k}": str(v) for k, v in details.items()}
                 )
             # Newer OTEL SDK gauges may not support .record; fall back to .set when available
             if hasattr(gauge, "record"):
@@ -163,7 +163,7 @@ class MetricsCore:
                 gauge.set(float(score), attributes=attributes)
             else:
                 logger.error(
-                    "Gauge instrument for compliance.score has no record/set method"
+                    "Gauge instrument for chaos_compliance_score has no record/set method"
                 )
                 return
             self._metric_count += 1
@@ -176,12 +176,12 @@ class MetricsCore:
         """Record compliance violation."""
         try:
             counter = self._get_or_create_counter(
-                "compliance.violations", description="Compliance violations"
+                "chaos_compliance_violations_total", description="Compliance violations"
             )
             attributes = {
-                "compliance.regulation": str(regulation),
-                "compliance.violation": str(violation),
-                "compliance.severity": str(severity),
+                "regulation": str(regulation),
+                "violation": str(violation),
+                "severity": str(severity),
             }
             counter.add(1, attributes=attributes)
             self._metric_count += 1
@@ -198,15 +198,15 @@ class MetricsCore:
         """Record impact scope."""
         try:
             counter = self._get_or_create_counter(
-                "chaos.impact.total",
+                "chaos_impact_total",
                 description="Impact scope of chaos actions",
             )
             attributes = {
-                "chaos.action": str(action_name),
-                "chaos.impact_type": str(impact_type),
+                "action": str(action_name),
+                "impact_type": str(impact_type),
             }
             if percentage is not None:
-                attributes["chaos.impact_percentage"] = str(percentage)
+                attributes["impact_percentage"] = str(percentage)
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -513,22 +513,22 @@ class MetricsCore:
         """Record database gauge metric."""
         try:
             gauge = self._get_or_create_gauge(
-                f"db.{metric_name}",
+                f"chaos_db_{metric_name}",
                 unit=unit,
                 description=description or f"Database {metric_name}",
             )
-            attributes = {"db.system": str(db_system)}
+            attributes = {"db_system": str(db_system)}
             if db_name:
-                attributes["db.name"] = str(db_name)
+                attributes["db_name"] = str(db_name)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             if hasattr(gauge, "record"):
                 gauge.record(float(value), attributes=attributes)
             elif hasattr(gauge, "set"):
                 gauge.set(float(value), attributes=attributes)
             else:
                 logger.error(
-                    f"Gauge instrument for db.{metric_name} has no record/set method"
+                    f"Gauge instrument for chaos_db_{metric_name} has no record/set method"
                 )
                 return
             self._metric_count += 1
@@ -547,14 +547,14 @@ class MetricsCore:
         """Record database counter metric."""
         try:
             counter = self._get_or_create_counter(
-                f"db.{metric_name}",
+                f"chaos_db_{metric_name}",
                 description=description or f"Database {metric_name}",
             )
-            attributes = {"db.system": str(db_system)}
+            attributes = {"db_system": str(db_system)}
             if db_name:
-                attributes["db.name"] = str(db_name)
+                attributes["db_name"] = str(db_name)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -573,15 +573,15 @@ class MetricsCore:
         """Record database histogram metric."""
         try:
             histogram = self._get_or_create_histogram(
-                f"db.{metric_name}",
+                f"chaos_db_{metric_name}",
                 unit=unit,
                 description=description or f"Database {metric_name}",
             )
-            attributes = {"db.system": str(db_system)}
+            attributes = {"db_system": str(db_system)}
             if db_name:
-                attributes["db.name"] = str(db_name)
+                attributes["db_name"] = str(db_name)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             histogram.record(float(value), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -707,22 +707,22 @@ class MetricsCore:
         """Record messaging gauge metric."""
         try:
             gauge = self._get_or_create_gauge(
-                f"messaging.{metric_name}",
+                f"chaos_messaging_{metric_name}",
                 unit=unit,
                 description=description or f"Messaging {metric_name}",
             )
-            attributes = {"messaging.system": str(mq_system)}
+            attributes = {"mq_system": str(mq_system)}
             if mq_destination:
-                attributes["messaging.destination"] = str(mq_destination)
+                attributes["mq_destination"] = str(mq_destination)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             if hasattr(gauge, "record"):
                 gauge.record(float(value), attributes=attributes)
             elif hasattr(gauge, "set"):
                 gauge.set(float(value), attributes=attributes)
             else:
                 logger.error(
-                    f"Gauge instrument for messaging.{metric_name} has no record/set method"
+                    f"Gauge instrument for chaos_messaging_{metric_name} has no record/set method"
                 )
                 return
             self._metric_count += 1
@@ -741,14 +741,14 @@ class MetricsCore:
         """Record messaging counter metric."""
         try:
             counter = self._get_or_create_counter(
-                f"messaging.{metric_name}",
+                f"chaos_messaging_{metric_name}",
                 description=description or f"Messaging {metric_name}",
             )
-            attributes = {"messaging.system": str(mq_system)}
+            attributes = {"mq_system": str(mq_system)}
             if mq_destination:
-                attributes["messaging.destination"] = str(mq_destination)
+                attributes["mq_destination"] = str(mq_destination)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -767,15 +767,15 @@ class MetricsCore:
         """Record messaging histogram metric."""
         try:
             histogram = self._get_or_create_histogram(
-                f"messaging.{metric_name}",
+                f"chaos_messaging_{metric_name}",
                 unit=unit,
                 description=description or f"Messaging {metric_name}",
             )
-            attributes = {"messaging.system": str(mq_system)}
+            attributes = {"mq_system": str(mq_system)}
             if mq_destination:
-                attributes["messaging.destination"] = str(mq_destination)
+                attributes["mq_destination"] = str(mq_destination)
             if tags:
-                attributes.update({f"tag.{k}": str(v) for k, v in tags.items()})
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
             histogram.record(float(value), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
@@ -906,6 +906,282 @@ class MetricsCore:
             self._metric_count += 1
         except Exception as e:
             logger.error(f"Error recording MTTR: {e}")
+
+    # ========================================================================
+    # Experiment Metrics - Track experiment lifecycle and status
+    # ========================================================================
+
+    def record_experiment_start(
+        self,
+        experiment_id: str,
+        experiment_title: str,
+        risk_level: Optional[str] = None,
+        complexity_score: Optional[int] = None,
+        systems: Optional[list] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record experiment start with metadata."""
+        try:
+            counter = self._get_or_create_counter(
+                "chaos_experiment_start_total",
+                description="Total experiments started",
+            )
+            attributes = {
+                "experiment_id": str(experiment_id),
+                "experiment_title": str(experiment_title),
+            }
+            if risk_level:
+                attributes["risk_level"] = str(risk_level)
+            if complexity_score is not None:
+                attributes["complexity_score"] = str(complexity_score)
+            if systems:
+                attributes["systems"] = ",".join(str(s) for s in systems)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+            counter.add(1, attributes=attributes)
+
+            # Record in-progress gauge
+            gauge = self._get_or_create_gauge(
+                "chaos_experiment_in_progress",
+                description="Experiment currently in progress (1=running, 0=not running)",
+            )
+            if hasattr(gauge, "record"):
+                gauge.record(1.0, attributes=attributes)
+            elif hasattr(gauge, "set"):
+                gauge.set(1.0, attributes=attributes)
+
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording experiment start: {e}")
+
+    def record_experiment_end(
+        self,
+        experiment_id: str,
+        experiment_title: str,
+        status: str,
+        duration_seconds: float,
+        risk_level: Optional[str] = None,
+        complexity_score: Optional[int] = None,
+        systems: Optional[list] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record experiment completion."""
+        try:
+            attributes = {
+                "experiment_id": str(experiment_id),
+                "experiment_title": str(experiment_title),
+                "status": str(status),
+            }
+            if risk_level:
+                attributes["risk_level"] = str(risk_level)
+            if complexity_score is not None:
+                attributes["complexity_score"] = str(complexity_score)
+            if systems:
+                attributes["systems"] = ",".join(str(s) for s in systems)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+
+            # Record completion counter
+            counter = self._get_or_create_counter(
+                "chaos_experiment_end_total",
+                description="Total experiments completed",
+            )
+            counter.add(1, attributes=attributes)
+
+            # Record duration histogram
+            histogram = self._get_or_create_histogram(
+                "chaos_experiment_duration_seconds",
+                unit="s",
+                description="Experiment duration in seconds",
+            )
+            histogram.record(float(duration_seconds), attributes=attributes)
+
+            # Record success ratio gauge (1.0 for success, 0.0 for failure)
+            success_value = 1.0 if status in ("completed", "success") else 0.0
+            gauge = self._get_or_create_gauge(
+                "chaos_experiment_success_ratio",
+                description="Experiment success ratio (1=success, 0=failure)",
+            )
+            if hasattr(gauge, "record"):
+                gauge.record(success_value, attributes=attributes)
+            elif hasattr(gauge, "set"):
+                gauge.set(success_value, attributes=attributes)
+
+            # Clear in-progress gauge
+            in_progress_gauge = self._get_or_create_gauge(
+                "chaos_experiment_in_progress",
+                description="Experiment currently in progress (1=running, 0=not running)",
+            )
+            if hasattr(in_progress_gauge, "record"):
+                in_progress_gauge.record(0.0, attributes=attributes)
+            elif hasattr(in_progress_gauge, "set"):
+                in_progress_gauge.set(0.0, attributes=attributes)
+
+            # Record failed counter if applicable
+            if status not in ("completed", "success"):
+                failed_counter = self._get_or_create_counter(
+                    "chaos_experiment_failed_total",
+                    description="Total experiments failed",
+                )
+                failed_counter.add(1, attributes=attributes)
+
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording experiment end: {e}")
+
+    def record_experiment_risk_level(
+        self,
+        experiment_id: str,
+        experiment_title: str,
+        risk_level: str,
+        risk_score: Optional[float] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record experiment risk level."""
+        try:
+            # Map risk levels to numeric values
+            risk_level_map = {
+                "low": 1.0,
+                "medium": 2.0,
+                "high": 3.0,
+                "critical": 4.0,
+            }
+            risk_value = risk_level_map.get(risk_level.lower(), 0.0)
+
+            attributes = {
+                "experiment_id": str(experiment_id),
+                "experiment_title": str(experiment_title),
+                "risk_level": str(risk_level),
+            }
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+
+            gauge = self._get_or_create_gauge(
+                "chaos_experiment_risk_level_ratio",
+                description="Experiment risk level (1=low, 2=medium, 3=high, 4=critical)",
+            )
+            if hasattr(gauge, "record"):
+                gauge.record(risk_value, attributes=attributes)
+            elif hasattr(gauge, "set"):
+                gauge.set(risk_value, attributes=attributes)
+
+            # Also record risk score if provided
+            if risk_score is not None:
+                score_gauge = self._get_or_create_gauge(
+                    "chaos_experiment_risk_score_ratio",
+                    description="Experiment risk score (0.0-1.0)",
+                )
+                if hasattr(score_gauge, "record"):
+                    score_gauge.record(float(risk_score), attributes=attributes)
+                elif hasattr(score_gauge, "set"):
+                    score_gauge.set(float(risk_score), attributes=attributes)
+
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording experiment risk level: {e}")
+
+    def record_experiment_complexity(
+        self,
+        experiment_id: str,
+        experiment_title: str,
+        complexity_score: int,
+        complexity_level: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record experiment complexity score."""
+        try:
+            attributes = {
+                "experiment_id": str(experiment_id),
+                "experiment_title": str(experiment_title),
+            }
+            if complexity_level:
+                attributes["complexity_level"] = str(complexity_level)
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+
+            gauge = self._get_or_create_gauge(
+                "chaos_experiment_complexity_score_ratio",
+                description="Experiment complexity score",
+            )
+            if hasattr(gauge, "record"):
+                gauge.record(float(complexity_score), attributes=attributes)
+            elif hasattr(gauge, "set"):
+                gauge.set(float(complexity_score), attributes=attributes)
+
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording experiment complexity: {e}")
+
+    def record_experiment_activity(
+        self,
+        experiment_id: str,
+        activity_type: str,
+        activity_name: str,
+        status: str,
+        duration_ms: Optional[float] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record individual experiment activity (action/probe/rollback)."""
+        try:
+            attributes = {
+                "experiment_id": str(experiment_id),
+                "activity_type": str(activity_type),
+                "activity_name": str(activity_name),
+                "status": str(status),
+            }
+            if tags:
+                attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+
+            # Record activity count
+            counter = self._get_or_create_counter(
+                "chaos_experiment_activity_total",
+                description="Total experiment activities executed",
+            )
+            counter.add(1, attributes=attributes)
+
+            # Record duration if provided
+            if duration_ms is not None:
+                histogram = self._get_or_create_histogram(
+                    "chaos_experiment_activity_duration_milliseconds",
+                    unit="ms",
+                    description="Experiment activity duration",
+                )
+                histogram.record(float(duration_ms), attributes=attributes)
+
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording experiment activity: {e}")
+
+    def record_experiment_systems(
+        self,
+        experiment_id: str,
+        experiment_title: str,
+        systems: list,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Record which systems an experiment affects."""
+        try:
+            for system in systems:
+                attributes = {
+                    "experiment_id": str(experiment_id),
+                    "experiment_title": str(experiment_title),
+                    "system": str(system),
+                }
+                if tags:
+                    attributes.update({f"tag_{k}": str(v) for k, v in tags.items()})
+
+                gauge = self._get_or_create_gauge(
+                    "chaos_experiment_system_affected",
+                    description="Systems affected by experiment (1=affected)",
+                )
+                if hasattr(gauge, "record"):
+                    gauge.record(1.0, attributes=attributes)
+                elif hasattr(gauge, "set"):
+                    gauge.set(1.0, attributes=attributes)
+
+            self._metric_count += 1
+        except Exception as e:
+            logger.error(f"Error recording experiment systems: {e}")
 
     def shutdown(self) -> None:
         """Shutdown metrics core."""

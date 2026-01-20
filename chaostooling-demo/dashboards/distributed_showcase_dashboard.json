@@ -105,7 +105,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_success_ratio",
+          "expr": "chaos_experiment_success_ratio",
           "refId": "A"
         }
       ],
@@ -202,7 +202,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_risk_level_ratio",
+          "expr": "chaos_experiment_risk_level_ratio",
           "refId": "A"
         }
       ],
@@ -283,7 +283,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_risk_score_ratio",
+          "expr": "chaos_experiment_risk_score_ratio",
           "refId": "A"
         }
       ],
@@ -364,7 +364,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_complexity_score_ratio",
+          "expr": "chaos_experiment_complexity_score_ratio",
           "refId": "A"
         }
       ],
@@ -452,7 +452,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "chaos_chaos_experiment_duration_seconds_sum",
+          "expr": "chaos_experiment_duration_seconds_sum",
           "refId": "A"
         }
       ],
@@ -537,7 +537,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_chaos_experiment_start_total)",
+          "expr": "sum(chaos_experiment_start_total)",
           "refId": "A"
         },
         {
@@ -545,7 +545,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(chaos_chaos_experiment_failed_ratio)",
+          "expr": "sum(chaos_experiment_failed_ratio)",
           "refId": "B"
         }
       ],

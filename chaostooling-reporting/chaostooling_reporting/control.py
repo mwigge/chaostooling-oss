@@ -1,14 +1,20 @@
 """
-Chaos Toolkit control hooks for automated report generation.
+Chaos Toolkit control hooks for automated report generation and dashboard generation.
 """
 
 import json
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from chaostooling_reporting.report_generator import ReportGenerator
+from chaostooling_reporting.dashboard_generator import (
+    DashboardGenerator,
+    extract_systems_from_experiment,
+    extract_timestamps_from_journal,
+)
 
 logger = logging.getLogger("chaostooling_reporting")
 
@@ -113,11 +119,42 @@ def load_control(
 
     logger.info(f"Report generator initialized, output directory: {output_dir}")
 
+    # Initialize dashboard generator if enabled
+    dashboard_config = reporting_config.get("dashboard", {})
+    dashboard_enabled = dashboard_config.get(
+        "enabled",
+        os.getenv("CHAOS_DASHBOARD_ENABLED", "true").lower() == "true"
+    )
+
+    dashboard_generator = None
+    if dashboard_enabled:
+        grafana_url = dashboard_config.get(
+            "grafana_url",
+            os.getenv("GRAFANA_URL", "http://grafana:3000")
+        )
+        grafana_api_key = dashboard_config.get(
+            "api_key",
+            os.getenv("GRAFANA_API_KEY", "")
+        )
+        dashboard_output_dir = dashboard_config.get(
+            "output_dir",
+            os.getenv("CHAOS_DASHBOARD_OUTPUT_DIR", f"{output_dir}/dashboards")
+        )
+
+        dashboard_generator = DashboardGenerator(
+            grafana_url=grafana_url,
+            api_key=grafana_api_key,
+            output_dir=dashboard_output_dir,
+        )
+        logger.info(f"Dashboard generator initialized, grafana_url={grafana_url}")
+
     # Return control state (will be stored by Chaos Toolkit)
     return {
         "reporting_config": reporting_config,
         "output_dir": output_dir,
         "report_generator": report_generator,
+        "dashboard_generator": dashboard_generator,
+        "dashboard_enabled": dashboard_enabled,
         "experiment": experiment,
     }
 
@@ -307,6 +344,51 @@ def after_experiment_control(
         logger.info(f"Successfully generated {len(reports)} reports")
         for report_type, report_path in reports.items():
             logger.info(f"  - {report_type}: {report_path}")
+
+        # Generate dashboard if enabled
+        dashboard_generator = reporting_control.get("dashboard_generator")
+        dashboard_enabled = reporting_control.get("dashboard_enabled", False)
+
+        if dashboard_enabled and dashboard_generator:
+            logger.info("Generating experiment dashboard")
+            try:
+                # Extract experiment info
+                experiment_id = journal.get("experiment", {}).get("id")
+                if not experiment_id:
+                    # Generate an ID if not present
+                    import uuid
+                    experiment_id = str(uuid.uuid4())[:12]
+
+                experiment_title = experiment.get("title", "Chaos Experiment")
+                systems = extract_systems_from_experiment(experiment)
+                start_time, end_time = extract_timestamps_from_journal(journal)
+
+                # Get report URL (if available)
+                report_url = None
+                if reports.get("html"):
+                    # Convert local path to URL if possible
+                    report_path = reports.get("html")
+                    report_url = f"/reports/{Path(report_path).name}"
+
+                # Generate dashboard
+                dashboard_result = dashboard_generator.generate_dashboard(
+                    experiment_id=experiment_id,
+                    experiment_title=experiment_title,
+                    start_time=start_time,
+                    end_time=end_time,
+                    systems=systems,
+                    journal=journal,
+                    report_url=report_url,
+                    provision=True,  # Try to provision to Grafana
+                )
+
+                if dashboard_result.get("dashboard_url"):
+                    logger.info(f"Dashboard provisioned: {dashboard_result['dashboard_url']}")
+                if dashboard_result.get("local_path"):
+                    logger.info(f"Dashboard saved locally: {dashboard_result['local_path']}")
+
+            except Exception as e:
+                logger.warning(f"Failed to generate dashboard: {e}", exc_info=True)
 
     except Exception as e:
         logger.error(f"Error generating reports: {e}", exc_info=True)

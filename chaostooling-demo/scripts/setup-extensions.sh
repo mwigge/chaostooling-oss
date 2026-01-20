@@ -120,18 +120,18 @@ else
     echo "6. chaostooling-reporting - not found"
 fi
 
-# chaostoolkit-extension-app (Application extensions)
-if [ -d "$BASE_DIR/chaostoolkit-extension-app" ]; then
+# chaostooling-extension-app (Application extensions)
+if [ -d "$BASE_DIR/chaostooling-extension-app" ]; then
     echo ""
-    echo "7. chaostoolkit-extension-app (chaosapp)"
-    install_extension "$BASE_DIR/chaostoolkit-extension-app" "chaostoolkit-extension-app"
+    echo "7. chaostooling-extension-app (chaosapp)"
+    install_extension "$BASE_DIR/chaostooling-extension-app" "chaostooling-extension-app"
     echo "   ✓ chaosapp module available"
 else
-    echo "7. chaostoolkit-extension-app - not found"
+    echo "7. chaostooling-extension-app - not found"
 fi
 
 # Add all extension directories to PYTHONPATH as fallback
-export PYTHONPATH="$BASE_DIR/chaostooling-generic:$BASE_DIR/chaostooling-otel:$BASE_DIR/chaostooling-extension-db:$BASE_DIR/chaostooling-extension-compute:$BASE_DIR/chaostooling-extension-network:$BASE_DIR/chaostooling-reporting:$BASE_DIR/chaostoolkit-extension-app:$PYTHONPATH"
+export PYTHONPATH="$BASE_DIR/chaostooling-generic:$BASE_DIR/chaostooling-otel:$BASE_DIR/chaostooling-extension-db:$BASE_DIR/chaostooling-extension-compute:$BASE_DIR/chaostooling-extension-network:$BASE_DIR/chaostooling-reporting:$BASE_DIR/chaostooling-extension-app:$PYTHONPATH"
 
 # Write PYTHONPATH to a file so it can be sourced by the shell
 PYTHONPATH_FILE="/etc/profile.d/chaostooling-pythonpath.sh"

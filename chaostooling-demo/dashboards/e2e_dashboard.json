@@ -2044,7 +2044,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"kafka\"}[1m]))",
+              "expr": "sum(rate(chaos_messaging_operation_count_total{mq_system=\"kafka\"}[1m]))",
               "legendFormat": "Messages",
               "refId": "A"
             },
@@ -2053,7 +2053,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"kafka\"}[1m]))",
+              "expr": "sum(rate(chaos_messaging_error_count_total{mq_system=\"kafka\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -4166,7 +4166,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"postgresql\"}[1m]))",
+              "expr": "sum(rate(chaos_db_query_count_total{db_system=\"postgresql\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -4175,7 +4175,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"postgresql\"}[1m]))",
+              "expr": "sum(rate(chaos_db_error_count_total{db_system=\"postgresql\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -4368,7 +4368,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"mysql\"}[1m]))",
+              "expr": "sum(rate(chaos_db_query_count_total{db_system=\"mysql\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -4377,7 +4377,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"mysql\"}[1m]))",
+              "expr": "sum(rate(chaos_db_error_count_total{db_system=\"mysql\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -4570,7 +4570,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"mssql\"}[1m]))",
+              "expr": "sum(rate(chaos_db_query_count_total{db_system=\"mssql\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -4579,7 +4579,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"mssql\"}[1m]))",
+              "expr": "sum(rate(chaos_db_error_count_total{db_system=\"mssql\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -4772,7 +4772,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"mongodb\"}[1m]))",
+              "expr": "sum(rate(chaos_db_query_count_total{db_system=\"mongodb\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -4781,7 +4781,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"mongodb\"}[1m]))",
+              "expr": "sum(rate(chaos_db_error_count_total{db_system=\"mongodb\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -4974,7 +4974,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"redis\"}[1m]))",
+              "expr": "sum(rate(chaos_db_query_count_total{db_system=\"redis\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -4983,7 +4983,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"redis\"}[1m]))",
+              "expr": "sum(rate(chaos_db_error_count_total{db_system=\"redis\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -5176,7 +5176,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_query_count_total{db_system=\"cassandra\"}[1m]))",
+              "expr": "sum(rate(chaos_db_query_count_total{db_system=\"cassandra\"}[1m]))",
               "legendFormat": "Queries",
               "refId": "A"
             },
@@ -5185,7 +5185,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_db_error_count_total{db_system=\"cassandra\"}[1m]))",
+              "expr": "sum(rate(chaos_db_error_count_total{db_system=\"cassandra\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -5378,7 +5378,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"kafka\"}[1m]))",
+              "expr": "sum(rate(chaos_messaging_operation_count_total{mq_system=\"kafka\"}[1m]))",
               "legendFormat": "Messages",
               "refId": "A"
             },
@@ -5387,7 +5387,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"kafka\"}[1m]))",
+              "expr": "sum(rate(chaos_messaging_error_count_total{mq_system=\"kafka\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -5580,7 +5580,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"rabbitmq\"}[1m]))",
+              "expr": "sum(rate(chaos_messaging_operation_count_total{mq_system=\"rabbitmq\"}[1m]))",
               "legendFormat": "Messages",
               "refId": "A"
             },
@@ -5589,7 +5589,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"rabbitmq\"}[1m]))",
+              "expr": "sum(rate(chaos_messaging_error_count_total{mq_system=\"rabbitmq\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
@@ -5782,7 +5782,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_operation_count_total{mq_system=\"activemq\"}[1m]))",
+              "expr": "sum(rate(chaos_messaging_operation_count_total{mq_system=\"activemq\"}[1m]))",
               "legendFormat": "Messages",
               "refId": "A"
             },
@@ -5791,7 +5791,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(chaos_chaos_messaging_error_count_total{mq_system=\"activemq\"}[1m]))",
+              "expr": "sum(rate(chaos_messaging_error_count_total{mq_system=\"activemq\"}[1m]))",
               "legendFormat": "Errors",
               "refId": "B"
             }
