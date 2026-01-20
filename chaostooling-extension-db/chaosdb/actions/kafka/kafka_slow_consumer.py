@@ -159,20 +159,45 @@ def inject_slow_consumer(
                                         tags=tags,
                                     )
 
-                                    # Check lag
-                                    partition = consumer.assignment()
-                                    if partition:
-                                        for p in partition:
-                                            committed = consumer.committed(p)
-                                            if committed:
-                                                end_offsets = consumer.end_offsets([p])
-                                                end_offsets[p] - committed
+                                    # Check lag (optional - may timeout if Kafka is slow)
+                                    try:
+                                        partition = consumer.assignment()
+                                        if partition:
+                                            for p in partition:
+                                                try:
+                                                    committed = consumer.committed(p)
+                                                    if committed is not None:
+                                                        # Use shorter timeout for offset queries (5 seconds)
+                                                        end_offsets = consumer.end_offsets([p], timeout_ms=5000)
+                                                        if p in end_offsets:
+                                                            lag = end_offsets[p] - committed
+                                                            # Log lag for monitoring (optional)
+                                                            if lag > 0:
+                                                                logger.debug(
+                                                                    f"Consumer {consumer_id} partition {p} lag: {lag}"
+                                                                )
+                                                except Exception as lag_error:
+                                                    # Don't fail the whole operation if lag check fails
+                                                    logger.debug(
+                                                        f"Could not check lag for partition {p}: {lag_error}"
+                                                    )
+                                    except Exception as lag_check_error:
+                                        # Don't fail the whole operation if lag check fails
+                                        logger.debug(
+                                            f"Could not check consumer lag: {lag_check_error}"
+                                        )
 
-                                    consumer.commit()
+                                    try:
+                                        consumer.commit()
+                                    except Exception as commit_error:
+                                        # Commit errors are expected for slow consumers
+                                        logger.debug(
+                                            f"Commit failed (expected for slow consumer): {commit_error}"
+                                        )
 
                         span.set_status(StatusCode.OK)
                     except Exception as e:
-                        from kafka.errors import CommitFailedError
+                        from kafka.errors import CommitFailedError, KafkaTimeoutError
 
                         # CommitFailedError is expected when consumers are slow and get kicked out of group
                         # This is the intended behavior for slow consumer chaos testing
@@ -193,6 +218,24 @@ def inject_slow_consumer(
                             # Don't set error status for expected errors
                             # Just continue processing
                             time.sleep(0.1)
+                            continue
+                        elif isinstance(e, KafkaTimeoutError):
+                            # KafkaTimeoutError can occur when Kafka is slow or overloaded
+                            # This is somewhat expected in chaos testing scenarios
+                            # Log at INFO level (not WARNING) to indicate but not alarm
+                            logger.info(
+                                f"Slow consumer {consumer_id} timeout (Kafka may be slow/overloaded): {type(e).__name__}",
+                                exc_info=False,
+                            )
+                            # Record metric for tracking timeout events
+                            metrics.record_messaging_operation_count(
+                                mq_system=mq_system,
+                                mq_destination=topic,
+                                mq_operation="consumer_timeout",
+                                tags=tags,
+                            )
+                            # Don't count as error - continue processing
+                            time.sleep(0.5)  # Slightly longer sleep after timeout
                             continue
                         else:
                             # Real errors should be logged and counted

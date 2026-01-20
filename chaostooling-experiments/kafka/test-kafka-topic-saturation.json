@@ -29,6 +29,13 @@
         "type": "python",
         "module": "chaosotel.control"
       }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
     }
   ],
   "steady-state-hypothesis": {
@@ -80,4 +87,3 @@
     }
   ]
 }
-

@@ -399,9 +399,9 @@
     ]
   },
   "Comprehensive E2E Distributed Transaction Chaos Experiment": {
-    "total_runs": 19,
-    "successful_runs": 9,
-    "failed_runs": 10,
+    "total_runs": 23,
+    "successful_runs": 10,
+    "failed_runs": 13,
     "runs": [
       {
         "experiment_id": "0467-20260115194528-5eb4763c",
@@ -535,6 +535,34 @@
         "status": "interrupted",
         "success": false,
         "duration": 1404.8198449611664
+      },
+      {
+        "experiment_id": "3507-20260119132833-d87e6f78",
+        "run_timestamp": "2026-01-19T10:36:24.342810+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 1404.8198449611664
+      },
+      {
+        "experiment_id": "3507-20260119132833-1286d85a",
+        "run_timestamp": "2026-01-19T10:36:24.342810+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 1404.8198449611664
+      },
+      {
+        "experiment_id": "7492-20260120081829-cab5be01",
+        "run_timestamp": "2026-01-19T11:09:57.957533+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 8315.346161365509
+      },
+      {
+        "experiment_id": "6291-20260120082807-b610fcb3",
+        "run_timestamp": "2026-01-19T14:18:27.602737+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 64801.93234419823
       }
     ]
   },
@@ -549,6 +577,34 @@
         "status": "completed",
         "success": true,
         "duration": 324.2815215587616
+      }
+    ]
+  },
+  "Kafka Chaos Engineering Experiment": {
+    "total_runs": 1,
+    "successful_runs": 0,
+    "failed_runs": 1,
+    "runs": [
+      {
+        "experiment_id": "9643-20260120082807-6072ee7b",
+        "run_timestamp": "2026-01-19T14:18:27.602737+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 64801.93234419823
+      }
+    ]
+  },
+  "Postgres Cache Miss Experiment": {
+    "total_runs": 1,
+    "successful_runs": 1,
+    "failed_runs": 0,
+    "runs": [
+      {
+        "experiment_id": "6138-20260120104222-1460c32d",
+        "run_timestamp": "2026-01-20T10:36:16.397758+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 37.14003396034241
       }
     ]
   }

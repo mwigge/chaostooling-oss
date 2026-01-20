@@ -62,6 +62,46 @@ class ReportGenerator:
         """
         reports = {}
 
+        # CRITICAL: Use experiment definition from journal (what was actually executed)
+        # The journal contains the exact experiment definition that was run, which is
+        # important for accurate counts of scenarios and activities.
+        # This ensures reports work correctly for all experiments (kafka-chaos-experiment.json,
+        # e2e-experiment.json, etc.) by always using the actual executed experiment definition.
+        journal_experiment = journal.get("experiment", {})
+        
+        # Prioritize journal experiment definition (what was actually executed)
+        # The journal's experiment dict contains the full experiment definition including "method"
+        if journal_experiment and isinstance(journal_experiment, dict):
+            # Check if journal has the method field (full experiment definition)
+            if "method" in journal_experiment:
+                # Journal has complete experiment definition - use it
+                experiment = journal_experiment
+                logger.debug(
+                    f"Using experiment definition from journal: "
+                    f"{experiment.get('title', 'unknown')} "
+                    f"({len(experiment.get('method', []))} method steps)"
+                )
+            elif journal_experiment.get("title") and not experiment.get("method"):
+                # Journal has partial definition but parameter is missing method - merge them
+                experiment = {**experiment, **journal_experiment}
+                logger.debug("Merged experiment definition from journal with parameter")
+        elif not experiment.get("method") and journal_experiment:
+            # Parameter doesn't have method, try journal as fallback
+            experiment = journal_experiment
+            logger.debug("Using experiment definition from journal (fallback - parameter missing method)")
+        
+        # Log which experiment is being used for transparency
+        if experiment.get("method"):
+            method_count = len(experiment.get("method", []))
+            scenario_count = len([
+                s for s in experiment.get("method", [])
+                if s.get("name", "").startswith("SCENARIO-")
+            ])
+            logger.info(
+                f"Report will use experiment: {experiment.get('title', 'unknown')} "
+                f"({scenario_count} scenarios, {method_count} total activities)"
+            )
+
         # Generate unique experiment ID
         # 1. Try journal experiment ID (if Chaos Toolkit generated one)
         experiment_id = journal.get("experiment", {}).get("id")
@@ -1284,7 +1324,21 @@ class ReportGenerator:
 
         scenarios = self._group_activities_by_scenario(run)
 
-        # Calculate overall metrics
+        # Calculate planned counts from experiment definition (always from actual experiment.json)
+        # This ensures counts match the experiment file being executed, not hardcoded values
+        method_steps = experiment.get("method", []) or []
+        if not method_steps:
+            # Fallback: try to get from journal if experiment definition is incomplete
+            method_steps = journal.get("experiment", {}).get("method", []) or []
+        
+        planned_scenarios = [
+            step for step in method_steps if step.get("name", "").startswith("SCENARIO-")
+        ]
+        planned_scenario_count = len(planned_scenarios)
+        # Count all method steps as planned activities (includes scenarios, actions, and probes)
+        planned_activity_count = len(method_steps)
+
+        # Calculate overall metrics (executed counts)
         # Filter out SCENARIO actions themselves when counting activities (they're just markers)
         actual_activities = [
             activity_entry
@@ -1308,7 +1362,7 @@ class ReportGenerator:
             else 0.0
         )
 
-        # Count scenarios - count all scenarios, not just those starting with "SCENARIO-"
+        # Count executed scenarios - count all scenarios, not just those starting with "SCENARIO-"
         # But exclude the "Baseline/Other" default scenario if it's empty
         scenario_count = len(
             [
@@ -1345,6 +1399,18 @@ class ReportGenerator:
             test_state = "Needs Attention"
             state_class = "status-failed"
 
+        # Calculate coverage percentages
+        scenario_coverage = (
+            (scenario_count / planned_scenario_count * 100)
+            if planned_scenario_count > 0
+            else 0.0
+        )
+        activity_coverage = (
+            (total_activities / planned_activity_count * 100)
+            if planned_activity_count > 0
+            else 0.0
+        )
+
         html = f"""
     <div style="background: #ecf0f1; padding: 20px; border-radius: 5px; margin: 20px 0;">
         <h3 style="margin-top: 0;">Test State / Coverage</h3>
@@ -1354,12 +1420,14 @@ class ReportGenerator:
                 <div style="color: #7f8c8d; font-size: 0.9em;">Overall Success Rate</div>
             </div>
             <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
-                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{scenario_count}</div>
-                <div style="color: #7f8c8d; font-size: 0.9em;">Scenarios Tested</div>
+                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{scenario_count}{f'/{planned_scenario_count}' if planned_scenario_count > scenario_count else ''}</div>
+                <div style="color: #7f8c8d; font-size: 0.9em;">Scenarios Tested{' (Executed/Planned)' if planned_scenario_count > scenario_count else ''}</div>
+                {f'<div style="color: #95a5a6; font-size: 0.8em; margin-top: 5px;">Coverage: {scenario_coverage:.1f}%</div>' if planned_scenario_count > scenario_count else ''}
             </div>
             <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
-                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{total_activities}</div>
-                <div style="color: #7f8c8d; font-size: 0.9em;">Total Activities</div>
+                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{total_activities}{f'/{planned_activity_count}' if planned_activity_count > total_activities else ''}</div>
+                <div style="color: #7f8c8d; font-size: 0.9em;">Total Activities{' (Executed/Planned)' if planned_activity_count > total_activities else ''}</div>
+                {f'<div style="color: #95a5a6; font-size: 0.8em; margin-top: 5px;">Coverage: {activity_coverage:.1f}%</div>' if planned_activity_count > total_activities else ''}
             </div>
             <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
                 <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{probe_count}</div>
@@ -1374,6 +1442,15 @@ class ReportGenerator:
                 <strong>Probes:</strong> {passed_probes}/{probe_count} passed
             </span>
         </div>
+        {(
+            f'<div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">'
+            f'<strong>Note:</strong> Experiment was interrupted. Showing executed counts '
+            f'({scenario_count}/{planned_scenario_count} scenarios, {total_activities}/{planned_activity_count} activities). '
+            f'Grafana shows planned counts ({planned_scenario_count} scenarios, {planned_activity_count} activities).'
+            f'</div>'
+            if planned_scenario_count > scenario_count or planned_activity_count > total_activities
+            else ''
+        )}
     </div>
 """
         return html

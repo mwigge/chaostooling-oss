@@ -94,6 +94,13 @@
         "type": "python",
         "module": "chaosgeneric.control.env_loader_control"
       }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
     }
   ]
 }
