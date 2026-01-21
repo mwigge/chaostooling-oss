@@ -324,6 +324,14 @@ services:
       - "max_replication_slots=3"
       - "-c"
       - "hot_standby=on"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "pg_stat_statements.track=all"
+      - "-c"
+      - "pg_stat_statements.max=10000"
+      - "-c"
+      - "track_activity_query_size=2048"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -460,6 +468,28 @@ services:
       - ./scripts/activemq-entrypoint-wrapper.sh:/usr/local/bin/activemq-entrypoint-wrapper.sh:ro
     entrypoint: ["/bin/bash", "/usr/local/bin/activemq-entrypoint-wrapper.sh"]
 
+  # --- PostgreSQL Span Generator (for service graph visibility) ---
+  postgres-span-generator:
+    build: ./postgres-span-generator
+    container_name: postgres-span-generator
+    environment:
+      - POSTGRES_HOST=postgres-primary-site-a
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=testdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_SERVICE_NAME=postgres-primary-site-a
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - SPAN_GENERATOR_POLL_INTERVAL=5
+    depends_on:
+      postgres-primary-site-a:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - default
+
   # --- Chaos Runner ---
   chaos-runner:
     build:
@@ -487,6 +517,7 @@ services:
       - inventory-service-site-a
       - notification-service-site-a
       - otel-collector
+      - prometheus
       - tempo
       - loki
     volumes:

@@ -21,6 +21,8 @@ def probe_postgres_connectivity(
     database: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
+    retries: int = 5,
+    delay: int = 2,
 ) -> bool:
     """
 
@@ -82,80 +84,92 @@ def probe_postgres_connectivity(
     )
 
     with span_context as span:
-        try:
-            if span:
-                # Use span helper for consistent attribute setting and resource updates
-                # This matches Redis pattern - clean, simple, no duplicate attributes
-                from chaosotel.core.trace_core import set_db_span_attributes
+        for i in range(retries):
+            try:
+                if span:
+                    # Use span helper for consistent attribute setting and resource updates
+                    # This matches Redis pattern - clean, simple, no duplicate attributes
+                    from chaosotel.core.trace_core import set_db_span_attributes
 
-                set_db_span_attributes(
-                    span,
-                    db_system=DB_SYSTEM,
-                    db_name=database,
-                    db_user=user,
+                    set_db_span_attributes(
+                        span,
+                        db_system=DB_SYSTEM,
+                        db_name=database,
+                        db_user=user,
+                        host=host,
+                        port=port,
+                        db_operation="probe",
+                        chaos_activity="postgres_connectivity_probe",
+                        chaos_action="connectivity_probe",
+                        chaos_operation="probe",
+                    )
+
+                conn = psycopg2.connect(
                     host=host,
                     port=port,
-                    db_operation="probe",
-                    chaos_activity="postgres_connectivity_probe",
-                    chaos_action="connectivity_probe",
-                    chaos_operation="probe",
+                    database=database,
+                    user=user,
+                    password=password,
+                    connect_timeout=5,
                 )
 
-            conn = psycopg2.connect(
-                host=host,
-                port=port,
-                database=database,
-                user=user,
-                password=password,
-                connect_timeout=5,
-            )
+                conn.close()
 
-            conn.close()
+                probe_time_ms = (time.time() - start) * 1000
 
-            probe_time_ms = (time.time() - start) * 1000
+                tags = get_metric_tags(
+                    db_name=database,
+                    db_system=DB_SYSTEM,
+                    db_operation="probe",
+                )
 
-            tags = get_metric_tags(
-                db_name=database,
-                db_system=DB_SYSTEM,
-                db_operation="probe",
-            )
+                metrics.record_db_query_latency(
+                    probe_time_ms,
+                    db_system=DB_SYSTEM,
+                    db_name=database,
+                    db_operation="probe",
+                    tags=tags,
+                )
 
-            metrics.record_db_query_latency(
-                probe_time_ms,
-                db_system=DB_SYSTEM,
-                db_name=database,
-                db_operation="probe",
-                tags=tags,
-            )
+                metrics.record_db_query_count(
+                    db_system=DB_SYSTEM,
+                    db_name=database,
+                    db_operation="probe",
+                    count=1,
+                    tags=tags,
+                )
 
-            metrics.record_db_query_count(
-                db_system=DB_SYSTEM,
-                db_name=database,
-                db_operation="probe",
-                count=1,
-                tags=tags,
-            )
+                if span:
+                    span.set_status(StatusCode.OK)
 
-            if span:
-                span.set_status(StatusCode.OK)
+                logger.info(
+                    f"Postgres probe OK: {probe_time_ms:.2f}ms",
+                    extra={"probe_time_ms": probe_time_ms},
+                )
 
-            logger.info(
-                f"Postgres probe OK: {probe_time_ms:.2f}ms",
-                extra={"probe_time_ms": probe_time_ms},
-            )
+                flush()
 
-            flush()
-
-            return True
-        except Exception as e:
-            metrics.record_db_error(
-                db_system=DB_SYSTEM,
-                error_type=type(e).__name__,
-                db_name=database,
-            )
-            if span:
-                span.record_exception(e)
-                span.set_status(StatusCode.ERROR, str(e))
-            logger.error(f"Postgres probe failed: {str(e)}", extra={"error": str(e)})
-            flush()
-            return False
+                return True
+            except Exception as e:
+                logger.warning(
+                    f"Postgres probe failed (attempt {i + 1}/{retries}): {str(e)}",
+                    extra={"error": str(e)},
+                )
+                if i < retries - 1:
+                    time.sleep(delay)
+                else:
+                    metrics.record_db_error(
+                        db_system=DB_SYSTEM,
+                        error_type=type(e).__name__,
+                        db_name=database,
+                    )
+                    if span:
+                        span.record_exception(e)
+                        span.set_status(StatusCode.ERROR, str(e))
+                    logger.error(
+                        f"Postgres probe failed after {retries} retries: {str(e)}",
+                        extra={"error": str(e)},
+                    )
+                    flush()
+                    return False
+        return False

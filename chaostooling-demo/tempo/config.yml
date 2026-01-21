@@ -44,11 +44,18 @@ metrics_generator:
         - http.method
         - http.status_code
       enable_client_server_prefix: true
+      # Enable virtual nodes for databases and external services
+      wait: 10s
+      max_items: 10000
+      workers: 10
       peer_attributes:
         - peer.service
         - service.name
         - db.name
         - db.system
+        - network.peer.address
+      # Enable virtual node creation for databases
+      enable_virtual_node_label: true
     span_metrics:
       dimensions:
         - service.name

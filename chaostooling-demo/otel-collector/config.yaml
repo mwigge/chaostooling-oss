@@ -53,6 +53,32 @@ receivers:
       container.blockio.io_service_bytes_recursive:
         enabled: true
 
+  # PostgreSQL receiver - collects metrics from primary database
+  postgresql:
+    endpoint: postgres-primary-site-a:5432
+    transport: tcp
+    username: postgres
+    password: postgres
+    databases:
+      - testdb
+    collection_interval: 10s
+    initial_delay: 10s
+    tls:
+      insecure: true
+
+  # PostgreSQL receiver for replica - separate instance to distinguish metrics
+  postgresql/replica:
+    endpoint: postgres-replica-site-a:5432
+    transport: tcp
+    username: postgres
+    password: postgres
+    databases:
+      - testdb
+    collection_interval: 10s
+    initial_delay: 10s
+    tls:
+      insecure: true
+
 processors:
   batch:
 
@@ -84,7 +110,7 @@ service:
       exporters: [otlphttp/tempo, servicegraph, debug]
 
     metrics:
-      receivers: [otlp, prometheus, docker_stats, servicegraph]
+      receivers: [otlp, prometheus, docker_stats, postgresql, postgresql/replica, servicegraph]
       processors: [batch]
       exporters: [prometheus]
 

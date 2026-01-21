@@ -9,22 +9,68 @@
                 "iconColor": "rgba(0, 211, 255, 1)",
                 "name": "Annotations & Alerts",
                 "type": "dashboard"
+            },
+            {
+                "datasource": "Prometheus",
+                "enable": true,
+                "expr": "changes(chaos_experiment_scenario_active[1m]) > 0",
+                "iconColor": "rgba(255, 96, 96, 1)",
+                "name": "Chaos Scenarios",
+                "tagKeys": "scenario",
+                "textFormat": "Scenario: {{scenario}}",
+                "titleFormat": "Chaos Event"
             }
         ]
     },
     "editable": true,
     "gnetId": null,
-    "graphTooltip": 0,
+    "graphTooltip": 1,
     "id": null,
     "links": [],
     "panels": [
+        {
+            "datasource": {
+                "type": "tempo",
+                "uid": "tempo"
+            },
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 15,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 999,
+            "options": {
+                "edges": {},
+                "layoutAlgorithm": "layered",
+                "nodes": {},
+                "zoomMode": "cooperative"
+            },
+            "pluginVersion": "12.3.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "tempo",
+                        "uid": "tempo"
+                    },
+                    "queryType": "serviceMap",
+                    "refId": "A"
+                }
+            ],
+            "title": "Service Graph",
+            "type": "nodeGraph"
+        },
         {
             "collapsed": false,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 0
+                "y": 15
             },
             "id": 100,
             "panels": [],
@@ -36,29 +82,33 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "thresholds"
+                        "mode": "palette-classic"
                     },
-                    "mappings": [],
-                    "max": 5,
-                    "min": 1,
+                    "mappings": [
+                        {
+                            "options": {
+                                "0": {
+                                    "color": "red",
+                                    "text": "Failed"
+                                },
+                                "1": {
+                                    "color": "green",
+                                    "text": "Success"
+                                }
+                            },
+                            "type": "value"
+                        }
+                    ],
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green",
+                                "color": "red",
                                 "value": null
                             },
                             {
-                                "color": "yellow",
-                                "value": 2
-                            },
-                            {
-                                "color": "orange",
-                                "value": 3
-                            },
-                            {
-                                "color": "red",
-                                "value": 4
+                                "color": "green",
+                                "value": 1
                             }
                         ]
                     },
@@ -67,13 +117,16 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
-                "w": 4,
+                "h": 5,
+                "w": 3,
                 "x": 0,
                 "y": 1
             },
             "id": 101,
             "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
@@ -82,58 +135,51 @@
                     "fields": "",
                     "values": false
                 },
-                "showThresholdLabels": true,
-                "showThresholdMarkers": true
+                "text": {},
+                "textMode": "auto"
             },
             "targets": [
                 {
-                    "expr": "chaos_experiment_risk_level_ratio",
-                    "legendFormat": "Risk Level",
+                    "expr": "chaos_experiment_success_ratio",
+                    "legendFormat": "Status",
                     "refId": "A"
                 }
             ],
-            "title": "Experiment Risk Level",
-            "type": "gauge"
+            "title": "Experiment Status",
+            "type": "stat"
         },
         {
             "datasource": "Prometheus",
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "thresholds"
+                        "mode": "palette-classic"
                     },
                     "mappings": [],
-                    "max": 5,
-                    "min": 1,
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
                             {
                                 "color": "green",
                                 "value": null
-                            },
-                            {
-                                "color": "yellow",
-                                "value": 3
-                            },
-                            {
-                                "color": "red",
-                                "value": 4
                             }
                         ]
                     },
-                    "unit": "short"
+                    "unit": "s"
                 },
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
-                "w": 4,
-                "x": 4,
+                "h": 5,
+                "w": 3,
+                "x": 3,
                 "y": 1
             },
             "id": 102,
             "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
@@ -142,18 +188,18 @@
                     "fields": "",
                     "values": false
                 },
-                "showThresholdLabels": true,
-                "showThresholdMarkers": true
+                "text": {},
+                "textMode": "auto"
             },
             "targets": [
                 {
-                    "expr": "chaos_experiment_complexity_score_ratio",
-                    "legendFormat": "Complexity",
+                    "expr": "chaos_experiment_duration_seconds",
+                    "legendFormat": "Duration",
                     "refId": "A"
                 }
             ],
-            "title": "Experiment Complexity",
-            "type": "gauge"
+            "title": "Experiment Duration",
+            "type": "stat"
         },
         {
             "datasource": "Prometheus",
@@ -177,9 +223,9 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
-                "w": 4,
-                "x": 8,
+                "h": 5,
+                "w": 3,
+                "x": 6,
                 "y": 1
             },
             "id": 103,
@@ -205,7 +251,60 @@
                     "refId": "A"
                 }
             ],
-            "title": "Experiments Run",
+            "title": "Total Experiments Run",
+            "type": "stat"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 3,
+                "x": 9,
+                "y": 1
+            },
+            "id": 104,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "chaos_experiment_threads_used",
+                    "legendFormat": "Threads",
+                    "refId": "A"
+                }
+            ],
+            "title": "Threads Used",
             "type": "stat"
         },
         {
@@ -215,38 +314,70 @@
                     "color": {
                         "mode": "thresholds"
                     },
-                    "mappings": [],
-                    "max": 100,
-                    "min": 0,
+                    "mappings": [
+                        {
+                            "options": {
+                                "1": {
+                                    "color": "green",
+                                    "index": 0,
+                                    "text": "Low"
+                                },
+                                "2": {
+                                    "color": "yellow",
+                                    "index": 1,
+                                    "text": "Medium"
+                                },
+                                "3": {
+                                    "color": "orange",
+                                    "index": 2,
+                                    "text": "High"
+                                },
+                                "4": {
+                                    "color": "red",
+                                    "index": 3,
+                                    "text": "Critical"
+                                }
+                            },
+                            "type": "value"
+                        }
+                    ],
+                    "max": 4,
+                    "min": 1,
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "red",
-                                "value": null
+                                "color": "green",
+                                "value": 0
                             },
                             {
                                 "color": "yellow",
-                                "value": 70
+                                "value": 2
                             },
                             {
-                                "color": "green",
-                                "value": 90
+                                "color": "orange",
+                                "value": 3
+                            },
+                            {
+                                "color": "red",
+                                "value": 4
                             }
                         ]
                     },
-                    "unit": "percent"
+                    "unit": "short"
                 },
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
-                "w": 4,
-                "x": 12,
-                "y": 1
+                "h": 5,
+                "w": 3,
+                "x": 0,
+                "y": 6
             },
-            "id": 104,
+            "id": 106,
             "options": {
+                "minVizHeight": 75,
+                "minVizWidth": 75,
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
@@ -256,24 +387,102 @@
                     "values": false
                 },
                 "showThresholdLabels": false,
-                "showThresholdMarkers": true
+                "showThresholdMarkers": true,
+                "sizing": "auto"
             },
             "targets": [
                 {
-                    "expr": "chaos_experiment_success_ratio * 100",
-                    "legendFormat": "Success Rate",
+                    "expr": "last_over_time(chaos_experiment_risk_level_ratio[1m])",
+                    "legendFormat": "Risk Level",
                     "refId": "A"
                 }
             ],
-            "title": "Experiment Success Rate",
+            "title": "Risk Level",
+            "type": "gauge"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [
+                        {
+                            "options": {
+                                "match": "null",
+                                "result": {
+                                    "text": "N/A"
+                                }
+                            },
+                            "type": "special"
+                        }
+                    ],
+                    "max": 100,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 20
+                            },
+                            {
+                                "color": "orange",
+                                "value": 40
+                            },
+                            {
+                                "color": "red",
+                                "value": 60
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 3,
+                "x": 3,
+                "y": 6
+            },
+            "id": 107,
+            "options": {
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "last_over_time(chaos_experiment_risk_score_ratio[1m])",
+                    "legendFormat": "Risk Score",
+                    "refId": "A"
+                }
+            ],
+            "title": "Risk Score",
             "type": "gauge"
         },
         {
             "datasource": "Loki",
             "gridPos": {
-                "h": 6,
-                "w": 8,
-                "x": 16,
+                "h": 5,
+                "w": 12,
+                "x": 12,
                 "y": 1
             },
             "id": 105,
@@ -302,7 +511,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 7
+                "y": 6
             },
             "id": 1,
             "panels": [],
@@ -334,7 +543,7 @@
                 "h": 8,
                 "w": 6,
                 "x": 0,
-                "y": 8
+                "y": 7
             },
             "id": 2,
             "options": {
@@ -354,7 +563,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_db_transaction_total_count_ratio",
+                    "expr": "chaos_db_transaction_total",
                     "legendFormat": "Total Transactions",
                     "refId": "A"
                 }
@@ -390,7 +599,7 @@
                 "h": 8,
                 "w": 6,
                 "x": 6,
-                "y": 8
+                "y": 7
             },
             "id": 3,
             "options": {
@@ -472,7 +681,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 8
+                "y": 7
             },
             "id": 4,
             "options": {
@@ -502,7 +711,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 16
+                "y": 15
             },
             "id": 200,
             "panels": [],
@@ -544,7 +753,7 @@
                 "h": 6,
                 "w": 4,
                 "x": 0,
-                "y": 17
+                "y": 16
             },
             "id": 201,
             "options": {
@@ -594,7 +803,7 @@
                 "h": 6,
                 "w": 4,
                 "x": 4,
-                "y": 17
+                "y": 16
             },
             "id": 202,
             "options": {
@@ -614,7 +823,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_db_wal_files_ratio",
+                    "expr": "chaos_db_wal_files",
                     "legendFormat": "WAL Files",
                     "refId": "A"
                 }
@@ -655,7 +864,7 @@
                 "h": 6,
                 "w": 4,
                 "x": 8,
-                "y": 17
+                "y": 16
             },
             "id": 203,
             "options": {
@@ -675,7 +884,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_db_dead_tuples_ratio",
+                    "expr": "chaos_db_dead_tuples",
                     "legendFormat": "Dead Tuples",
                     "refId": "A"
                 }
@@ -708,7 +917,7 @@
                 "h": 6,
                 "w": 4,
                 "x": 12,
-                "y": 17
+                "y": 16
             },
             "id": 204,
             "options": {
@@ -728,7 +937,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_db_active_sessions_ratio",
+                    "expr": "chaos_db_active_sessions",
                     "legendFormat": "Active",
                     "refId": "A"
                 }
@@ -761,7 +970,7 @@
                 "h": 6,
                 "w": 4,
                 "x": 16,
-                "y": 17
+                "y": 16
             },
             "id": 205,
             "options": {
@@ -781,7 +990,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_db_total_sessions_ratio",
+                    "expr": "chaos_db_total_sessions",
                     "legendFormat": "Total",
                     "refId": "A"
                 }
@@ -814,7 +1023,7 @@
                 "h": 6,
                 "w": 4,
                 "x": 20,
-                "y": 17
+                "y": 16
             },
             "id": 206,
             "options": {
@@ -834,7 +1043,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_db_active_transactions_ratio",
+                    "expr": "chaos_db_active_transactions",
                     "legendFormat": "Active TX",
                     "refId": "A"
                 }
@@ -867,7 +1076,7 @@
                 "h": 6,
                 "w": 4,
                 "x": 0,
-                "y": 23
+                "y": 22
             },
             "id": 207,
             "options": {
@@ -887,7 +1096,7 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_db_connection_pool_active_total",
+                    "expr": "chaos_db_total_sessions",
                     "legendFormat": "Active Connections",
                     "refId": "A"
                 }
@@ -930,7 +1139,7 @@
                 "h": 6,
                 "w": 4,
                 "x": 4,
-                "y": 23
+                "y": 22
             },
             "id": 208,
             "options": {
@@ -969,6 +1178,14 @@
                             {
                                 "color": "green",
                                 "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 5
+                            },
+                            {
+                                "color": "red",
+                                "value": 10
                             }
                         ]
                     },
@@ -980,7 +1197,7 @@
                 "h": 6,
                 "w": 4,
                 "x": 8,
-                "y": 23
+                "y": 22
             },
             "id": 209,
             "options": {
@@ -1009,12 +1226,393 @@
             "type": "stat"
         },
         {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 12,
+                "y": 22
+            },
+            "id": 210,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "increase(chaos_db_locks_total[5m])",
+                    "legendFormat": "Locks Created",
+                    "refId": "A"
+                }
+            ],
+            "title": "Locks Created",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 1
+                            },
+                            {
+                                "color": "red",
+                                "value": 5
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 18,
+                "y": 22
+            },
+            "id": 211,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "increase(chaos_db_deadlocks_total[15m])",
+                    "legendFormat": "Deadlocks",
+                    "refId": "A"
+                }
+            ],
+            "title": "Deadlocks Detected",
+            "type": "stat"
+        },
+        {
             "collapsed": false,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
+                "y": 28
+            },
+            "id": 300,
+            "panels": [],
+            "title": "PostgreSQL Errors & Health",
+            "type": "row"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
                 "y": 29
+            },
+            "id": 301,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum",
+                        "last"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "none"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "increase(chaos_db_connection_errors_total[5m])",
+                    "legendFormat": "Connection Errors",
+                    "refId": "A"
+                },
+                {
+                    "expr": "increase(chaos_db_query_errors_total[5m])",
+                    "legendFormat": "Query Errors",
+                    "refId": "B"
+                },
+                {
+                    "expr": "increase(chaos_db_statement_timeout_total[5m])",
+                    "legendFormat": "Statement Timeouts",
+                    "refId": "C"
+                },
+                {
+                    "expr": "increase(chaos_experiment_failures_total[5m])",
+                    "legendFormat": "Experiment Failures",
+                    "refId": "D"
+                },
+                {
+                    "expr": "increase(chaos_api_transaction_failed_count_total[5m])",
+                    "legendFormat": "Transaction Failures",
+                    "refId": "E"
+                }
+            ],
+            "title": "Database Errors & Failures",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 10
+                            },
+                            {
+                                "color": "red",
+                                "value": 50
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 12,
+                "y": 29
+            },
+            "id": 302,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "increase(chaos_db_connection_errors_total[15m])",
+                    "legendFormat": "Total Connection Errors",
+                    "refId": "A"
+                }
+            ],
+            "title": "Connection Errors (15m)",
+            "type": "stat"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 10
+                            },
+                            {
+                                "color": "red",
+                                "value": 50
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 18,
+                "y": 29
+            },
+            "id": 303,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "increase(chaos_db_query_errors_total[15m])",
+                    "legendFormat": "Total Query Errors",
+                    "refId": "A"
+                }
+            ],
+            "title": "Query Errors (15m)",
+            "type": "stat"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 37
             },
             "id": 5,
             "panels": [],
@@ -1076,17 +1674,20 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 30
+                "y": 38
             },
             "id": 6,
             "options": {
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
                     "placement": "bottom"
                 },
                 "tooltip": {
-                    "mode": "single",
+                    "mode": "multi",
                     "sort": "none"
                 }
             },
@@ -1169,7 +1770,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 30
+                "y": 38
             },
             "id": 7,
             "options": {
@@ -1190,7 +1791,7 @@
                     "refId": "A"
                 }
             ],
-            "title": "Query Throughput",
+            "title": "Query Throughput Over Time",
             "type": "timeseries"
         },
         {
@@ -1266,8 +1867,11 @@
             "id": 401,
             "options": {
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
                     "placement": "bottom"
                 },
                 "tooltip": {
@@ -1277,12 +1881,12 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_container_cpu_usage_percent",
+                    "expr": "chaos_container_cpu_usage_percent{tag_container_name=~\".*postgres.*\"}",
                     "legendFormat": "{{tag_container_name}}",
                     "refId": "A"
                 }
             ],
-            "title": "Container CPU Usage",
+            "title": "PostgreSQL Container CPU Usage",
             "type": "timeseries"
         },
         {
@@ -1345,8 +1949,11 @@
             "id": 402,
             "options": {
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
                     "placement": "bottom"
                 },
                 "tooltip": {
@@ -1356,12 +1963,12 @@
             },
             "targets": [
                 {
-                    "expr": "chaos_container_memory_usage_percent",
+                    "expr": "chaos_container_memory_usage_percent{tag_container_name=~\".*postgres.*\"}",
                     "legendFormat": "{{tag_container_name}}",
                     "refId": "A"
                 }
             ],
-            "title": "Container Memory Usage",
+            "title": "PostgreSQL Container Memory Usage",
             "type": "timeseries"
         },
         {
@@ -1411,204 +2018,45 @@
                             }
                         ]
                     },
-                    "unit": "short"
+                    "unit": "Bps"
                 },
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
+                "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 38
+                "y": 55
             },
-            "id": 301,
+            "id": 403,
             "options": {
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
                     "placement": "bottom"
                 },
                 "tooltip": {
-                    "mode": "single",
+                    "mode": "multi",
                     "sort": "none"
                 }
             },
             "targets": [
                 {
-                    "expr": "increase(chaos_db_locks_total[5m])",
-                    "legendFormat": "Locks Created",
+                    "expr": "rate(chaos_container_disk_read_bytes{tag_container_name=~\".*postgres.*\"}[5m])",
+                    "legendFormat": "{{tag_container_name}} Read",
                     "refId": "A"
+                },
+                {
+                    "expr": "rate(chaos_container_disk_write_bytes{tag_container_name=~\".*postgres.*\"}[5m])",
+                    "legendFormat": "{{tag_container_name}} Write",
+                    "refId": "B"
                 }
             ],
-            "title": "Locks Created",
+            "title": "PostgreSQL Container Disk I/O",
             "type": "timeseries"
-        },
-        {
-            "datasource": "Prometheus",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "yellow",
-                                "value": 1
-                            },
-                            {
-                                "color": "red",
-                                "value": 5
-                            }
-                        ]
-                    },
-                    "unit": "short"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 6,
-                "w": 4,
-                "x": 12,
-                "y": 38
-            },
-            "id": 302,
-            "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "sum"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "text": {},
-                "textMode": "auto"
-            },
-            "targets": [
-                {
-                    "expr": "increase(chaos_db_deadlocks_total[15m])",
-                    "legendFormat": "Deadlocks",
-                    "refId": "A"
-                }
-            ],
-            "title": "Deadlocks Detected",
-            "type": "stat"
-        },
-        {
-            "datasource": "Prometheus",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
-                    },
-                    "unit": "ms"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 6,
-                "w": 4,
-                "x": 16,
-                "y": 38
-            },
-            "id": 303,
-            "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "text": {},
-                "textMode": "auto"
-            },
-            "targets": [
-                {
-                    "expr": "chaos_experiment_duration_seconds",
-                    "legendFormat": "Duration (s)",
-                    "refId": "A"
-                }
-            ],
-            "title": "Experiment Duration",
-            "type": "stat"
-        },
-        {
-            "datasource": "Prometheus",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
-                    },
-                    "unit": "short"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 6,
-                "w": 4,
-                "x": 20,
-                "y": 38
-            },
-            "id": 304,
-            "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "text": {},
-                "textMode": "auto"
-            },
-            "targets": [
-                {
-                    "expr": "chaos_experiment_threads_used",
-                    "legendFormat": "Threads",
-                    "refId": "A"
-                }
-            ],
-            "title": "Threads Used",
-            "type": "stat"
         },
         {
             "datasource": "Prometheus",
@@ -1632,7 +2080,7 @@
                             "viz": false
                         },
                         "lineInterpolation": "linear",
-                        "lineWidth": 2,
+                        "lineWidth": 1,
                         "pointSize": 5,
                         "scaleDistribution": {
                             "type": "linear"
@@ -1657,41 +2105,44 @@
                             }
                         ]
                     },
-                    "unit": "short"
+                    "unit": "Bps"
                 },
                 "overrides": []
             },
             "gridPos": {
-                "h": 6,
+                "h": 8,
                 "w": 12,
-                "x": 0,
-                "y": 44
+                "x": 12,
+                "y": 55
             },
-            "id": 305,
+            "id": 404,
             "options": {
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
                     "placement": "bottom"
                 },
                 "tooltip": {
-                    "mode": "single",
+                    "mode": "multi",
                     "sort": "none"
                 }
             },
             "targets": [
                 {
-                    "expr": "increase(chaos_experiment_failures_total[5m])",
-                    "legendFormat": "Failures",
+                    "expr": "rate(chaos_container_network_rx_bytes{tag_container_name=~\".*postgres.*\"}[5m])",
+                    "legendFormat": "{{tag_container_name}} RX",
                     "refId": "A"
                 },
                 {
-                    "expr": "increase(chaos_api_transaction_failed_count_total[5m])",
-                    "legendFormat": "Transaction Failures",
+                    "expr": "rate(chaos_container_network_tx_bytes{tag_container_name=~\".*postgres.*\"}[5m])",
+                    "legendFormat": "{{tag_container_name}} TX",
                     "refId": "B"
                 }
             ],
-            "title": "Errors",
+            "title": "PostgreSQL Container Network I/O",
             "type": "timeseries"
         }
     ],
@@ -1715,5 +2166,5 @@
     "timezone": "",
     "title": "Extensive Postgres Dashboard",
     "uid": "extensive-postgres",
-    "version": 2
+    "version": 3
 }

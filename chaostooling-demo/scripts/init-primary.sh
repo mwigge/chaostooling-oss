@@ -1,6 +1,16 @@
 #!/bin/bash
 set -e
 
+# Enable pg_stat_statements extension for query tracking
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+    -- Grant monitoring permissions
+    GRANT pg_monitor TO $POSTGRES_USER;
+EOSQL
+
+echo "pg_stat_statements extension enabled"
+
 # Create replication user
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'replicator';

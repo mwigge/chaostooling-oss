@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "title": "Extensive PostgreSQL Chaos Experiment",
-  "description": "Comprehensive chaos experiment combining multiple PostgreSQL failure scenarios (Cache Miss, Vacuum Starvation, Temp Spill, Lock Storm, Pool Exhaustion, Query Saturation, Slow Transactions), Disaster Recovery (Primary Failover), and Infrastructure Chaos (CPU Stress, Network Latency). Supports S/M/L/XL sizing via environment variables.",
+  "description": "Comprehensive chaos experiment combining multiple PostgreSQL failure scenarios (Cache Miss, Vacuum Starvation, Temp Spill, Lock Storm, Pool Exhaustion, Query Saturation, Slow Transactions), Disaster Recovery (Primary Failover), and Infrastructure Chaos (CPU Stress, Network Latency). Supports S/M/L/XL sizing via environment variables. Includes intermediate steady-state validation, scenario-specific probes, observability validation, and comprehensive rollback/cleanup actions.",
   "tags": [
     "postgres",
     "extensive",
@@ -64,6 +64,71 @@
       "type": "env",
       "key": "NETWORK_LATENCY_MS",
       "default": "200"
+    },
+    "enable_scenario_1": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_1",
+      "default": "true"
+    },
+    "enable_scenario_2": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_2",
+      "default": "true"
+    },
+    "enable_scenario_3": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_3",
+      "default": "true"
+    },
+    "enable_scenario_4": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_4",
+      "default": "true"
+    },
+    "enable_scenario_5": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_5",
+      "default": "true"
+    },
+    "enable_scenario_6": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_6",
+      "default": "true"
+    },
+    "enable_scenario_7": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_7",
+      "default": "true"
+    },
+    "enable_scenario_8": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_8",
+      "default": "true"
+    },
+    "enable_scenario_9": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_9",
+      "default": "true"
+    },
+    "enable_scenario_10": {
+      "type": "env",
+      "key": "ENABLE_SCENARIO_10",
+      "default": "true"
+    },
+    "prometheus_url": {
+      "type": "env",
+      "key": "PROMETHEUS_URL",
+      "default": "http://prometheus:9090"
+    },
+    "tempo_url": {
+      "type": "env",
+      "key": "TEMPO_URL",
+      "default": "http://tempo:3200"
+    },
+    "loki_url": {
+      "type": "env",
+      "key": "LOKI_URL",
+      "default": "http://loki:3100"
     }
   },
   "controls": [
@@ -105,14 +170,20 @@
             "port": "${postgres_port}",
             "database": "${postgres_db}",
             "user": "${postgres_user}",
-            "password": "${postgres_password}"
+            "password": "${postgres_password}",
+            "retries": 5,
+            "delay": 2
           }
         }
       },
       {
         "type": "probe",
-        "name": "collect-sre-metrics",
-        "tolerance": true,
+        "name": "collect-baseline-sre-metrics",
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.status",
+          "expect": "success"
+        },
         "provider": {
           "type": "python",
           "module": "chaosdb.probes.postgres.postgres_system_metrics",
@@ -122,7 +193,48 @@
             "port": "${postgres_port}",
             "database": "${postgres_db}",
             "user": "${postgres_user}",
-            "password": "${postgres_password}"
+            "password": "${postgres_password}",
+            "retries": 5,
+            "delay": 2
+          }
+        }
+      },
+      {
+        "type": "probe",
+        "name": "validate-observability-prometheus",
+        "tolerance": true,
+        "provider": {
+          "type": "python",
+          "module": "chaosotel.probes.observability_health",
+          "func": "check_prometheus_health",
+          "arguments": {
+            "prometheus_url": "${prometheus_url}"
+          }
+        }
+      },
+      {
+        "type": "probe",
+        "name": "validate-observability-tempo",
+        "tolerance": true,
+        "provider": {
+          "type": "python",
+          "module": "chaosotel.probes.observability_health",
+          "func": "check_tempo_health",
+          "arguments": {
+            "tempo_url": "${tempo_url}"
+          }
+        }
+      },
+      {
+        "type": "probe",
+        "name": "validate-observability-loki",
+        "tolerance": true,
+        "provider": {
+          "type": "python",
+          "module": "chaosotel.probes.observability_health",
+          "func": "check_loki_health",
+          "arguments": {
+            "loki_url": "${loki_url}"
           }
         }
       }
@@ -152,6 +264,53 @@
       }
     },
     {
+      "name": "probe-cache-hit-ratio-after-scenario-1",
+      "type": "probe",
+      "tolerance": {
+        "type": "range",
+        "range": [
+          0.0,
+          1.0
+        ],
+        "target": "cache_hit_ratio"
+      },
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_cache_metrics",
+        "func": "check_cache_hit_ratio",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "verify-system-health-after-scenario-1",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    },
+    {
       "name": "SCENARIO-2-Vacuum-Starvation",
       "type": "action",
       "provider": {
@@ -166,6 +325,54 @@
           "password": "${postgres_password}",
           "table_name": "mobile_purchases",
           "count": "${row_count}"
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    },
+    {
+      "name": "probe-dead-tuples-after-scenario-2",
+      "type": "probe",
+      "tolerance": {
+        "type": "range",
+        "range": [
+          0,
+          100000
+        ],
+        "target": "dead_tuples"
+      },
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_vacuum_metrics",
+        "func": "check_dead_tuples",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "table_name": "mobile_purchases"
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "verify-system-health-after-scenario-2",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
         }
       },
       "pauses": {
@@ -194,6 +401,46 @@
       }
     },
     {
+      "name": "probe-temp-files-after-scenario-3",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_temp_metrics",
+        "func": "check_temp_file_usage",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "verify-system-health-after-scenario-3",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    },
+    {
       "name": "SCENARIO-4-Lock-Storm",
       "type": "action",
       "provider": {
@@ -208,6 +455,46 @@
           "password": "${postgres_password}",
           "num_threads": "${num_threads}",
           "duration_seconds": "${stress_duration}"
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    },
+    {
+      "name": "probe-lock-contention-after-scenario-4",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_lock_metrics",
+        "func": "check_lock_contention",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "verify-system-health-after-scenario-4",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
         }
       },
       "pauses": {
@@ -230,6 +517,46 @@
           "num_connections": 50,
           "duration_seconds": "${stress_duration}",
           "leak_connections": false
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    },
+    {
+      "name": "probe-connection-pool-after-scenario-5",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connection_metrics",
+        "func": "check_connection_pool_status",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "verify-system-health-after-scenario-5",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
         }
       },
       "pauses": {
@@ -276,6 +603,46 @@
       },
       "tolerance": true,
       "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "probe-query-error-rate-after-scenario-6",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_error_metrics",
+        "func": "check_query_error_rate",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "verify-system-health-after-scenario-6",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
         "after": 5
       }
     },
@@ -302,6 +669,46 @@
       }
     },
     {
+      "name": "probe-transaction-metrics-after-scenario-7",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_transaction_metrics",
+        "func": "check_transaction_duration",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "verify-system-health-after-scenario-7",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    },
+    {
       "name": "SCENARIO-8-Infrastructure-CPU-Stress",
       "type": "action",
       "provider": {
@@ -319,6 +726,42 @@
       }
     },
     {
+      "name": "probe-cpu-usage-after-scenario-8",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaoscompute.probes.compute_metrics",
+        "func": "check_cpu_usage",
+        "arguments": {
+          "max_cpu_percent": 95
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "verify-system-health-after-scenario-8",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    },
+    {
       "name": "SCENARIO-9-Infrastructure-Network-Latency",
       "type": "action",
       "provider": {
@@ -328,6 +771,43 @@
         "arguments": {
           "latency": "${network_latency_ms}",
           "duration": "${stress_duration}"
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    },
+    {
+      "name": "probe-network-latency-after-scenario-9",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosnetwork.probes.network_metrics",
+        "func": "check_network_latency",
+        "arguments": {
+          "target_host": "${postgres_host}",
+          "max_latency_ms": 500
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
+      "name": "verify-system-health-after-scenario-9",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
         }
       },
       "pauses": {
@@ -367,6 +847,26 @@
       "tolerance": true
     },
     {
+      "name": "measure-rto-recovery-time",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_recovery_metrics",
+        "func": "measure_recovery_time",
+        "arguments": {
+          "replica_host": "${postgres_replica_host}",
+          "replica_port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 3
+      }
+    },
+    {
       "name": "SCENARIO-11-Replication-Lag-Check",
       "type": "probe",
       "provider": {
@@ -403,7 +903,181 @@
       "pauses": {
         "after": 15
       }
+    },
+    {
+      "name": "verify-primary-recovered",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      },
+      "pauses": {
+        "after": 5
+      }
+    },
+    {
+      "name": "final-observability-validation-prometheus",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.probes.prometheus_metrics",
+        "func": "verify_metrics_exported",
+        "arguments": {
+          "prometheus_url": "${prometheus_url}",
+          "required_metrics": [
+            "chaos_db_query_latency_milliseconds_count",
+            "chaos_db_error_count_total",
+            "chaos_db_lock_count_total",
+            "chaos_experiment_success_ratio"
+          ]
+        }
+      }
+    },
+    {
+      "name": "final-observability-validation-tempo",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.probes.tempo_traces",
+        "func": "verify_traces_exported",
+        "arguments": {
+          "tempo_url": "${tempo_url}",
+          "service_name": "chaostoolkit-demo"
+        }
+      }
+    },
+    {
+      "name": "final-observability-validation-loki",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.probes.loki_logs",
+        "func": "verify_logs_exported",
+        "arguments": {
+          "loki_url": "${loki_url}",
+          "service_namespace": "chaos-engineering"
+        }
+      }
     }
   ],
-  "rollbacks": []
+  "rollbacks": [
+    {
+      "name": "cleanup-slow-transactions",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_cleanup",
+        "func": "terminate_slow_transactions",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "max_duration_seconds": 60
+        }
+      }
+    },
+    {
+      "name": "cleanup-idle-connections",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_cleanup",
+        "func": "terminate_idle_connections",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "max_idle_seconds": 300
+        }
+      }
+    },
+    {
+      "name": "cleanup-locks",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_cleanup",
+        "func": "release_blocking_locks",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      }
+    },
+    {
+      "name": "run-vacuum-analyze",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_maintenance",
+        "func": "run_vacuum_analyze",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "table_name": "mobile_purchases"
+        }
+      }
+    },
+    {
+      "name": "restore-primary-if-stopped",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_replication",
+        "func": "start_replica",
+        "arguments": {
+          "container_name": "${postgres_host}"
+        }
+      }
+    },
+    {
+      "name": "cleanup-network-latency",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosnetwork.actions.network_cleanup",
+        "func": "restore_network_conditions",
+        "arguments": {}
+      }
+    },
+    {
+      "name": "final-health-check",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.probes.postgres.postgres_connectivity",
+        "func": "probe_postgres_connectivity",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}"
+        }
+      }
+    }
+  ]
 }

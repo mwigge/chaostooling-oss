@@ -567,9 +567,9 @@
     ]
   },
   "Extensive PostgreSQL Chaos Experiment": {
-    "total_runs": 1,
-    "successful_runs": 1,
-    "failed_runs": 0,
+    "total_runs": 25,
+    "successful_runs": 23,
+    "failed_runs": 2,
     "runs": [
       {
         "experiment_id": "2905-20260116145745-3bb72ddc",
@@ -577,6 +577,174 @@
         "status": "completed",
         "success": true,
         "duration": 324.2815215587616
+      },
+      {
+        "experiment_id": "8032-20260120175321-69518de2",
+        "run_timestamp": "2026-01-20T13:55:04.866732+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 326.2655198574066
+      },
+      {
+        "experiment_id": "0047-20260120175759-00c30ed6",
+        "run_timestamp": "2026-01-20T17:53:06.325528+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 15.445941925048828
+      },
+      {
+        "experiment_id": "7641-20260120175914-5afa0797",
+        "run_timestamp": "2026-01-20T17:57:54.022953+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.20957088470459
+      },
+      {
+        "experiment_id": "2993-20260120180002-f3c52d3a",
+        "run_timestamp": "2026-01-20T17:58:59.363812+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 15.229086637496948
+      },
+      {
+        "experiment_id": "7316-20260120180836-87235f86",
+        "run_timestamp": "2026-01-20T17:59:46.944128+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 15.233447074890137
+      },
+      {
+        "experiment_id": "2413-20260120180943-79a30fd8",
+        "run_timestamp": "2026-01-20T18:00:46.796087+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 469.5478529930115
+      },
+      {
+        "experiment_id": "6529-20260120181032-a7aa2c6b",
+        "run_timestamp": "2026-01-20T18:08:48.020309+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 55.58896207809448
+      },
+      {
+        "experiment_id": "4887-20260120181421-81afa86e",
+        "run_timestamp": "2026-01-20T18:10:27.512299+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.19550085067749
+      },
+      {
+        "experiment_id": "3171-20260120181648-ce3e3ac0",
+        "run_timestamp": "2026-01-20T18:14:16.218006+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.196279764175415
+      },
+      {
+        "experiment_id": "5055-20260120183214-d7674790",
+        "run_timestamp": "2026-01-20T18:16:42.893831+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.243753671646118
+      },
+      {
+        "experiment_id": "3674-20260120183626-0143c36d",
+        "run_timestamp": "2026-01-20T18:32:09.154618+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.184213638305664
+      },
+      {
+        "experiment_id": "0818-20260120184247-19aa517a",
+        "run_timestamp": "2026-01-20T18:36:21.089420+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.23172926902771
+      },
+      {
+        "experiment_id": "9094-20260120184422-a7a94570",
+        "run_timestamp": "2026-01-20T18:42:42.355975+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.202341556549072
+      },
+      {
+        "experiment_id": "7525-20260120184854-2e1ee420",
+        "run_timestamp": "2026-01-20T18:44:17.340685+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.238991975784302
+      },
+      {
+        "experiment_id": "3951-20260120185124-67bce70e",
+        "run_timestamp": "2026-01-20T18:48:48.956209+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.201665639877319
+      },
+      {
+        "experiment_id": "7628-20260120185212-03168229",
+        "run_timestamp": "2026-01-20T18:51:19.668120+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.271322727203369
+      },
+      {
+        "experiment_id": "0801-20260121062800-e5fcad78",
+        "run_timestamp": "2026-01-20T18:52:06.921576+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.357501029968262
+      },
+      {
+        "experiment_id": "5735-20260121063010-68f16c9c",
+        "run_timestamp": "2026-01-21T06:27:51.839183+00:00",
+        "status": "failed",
+        "success": false,
+        "duration": 8.203131675720215
+      },
+      {
+        "experiment_id": "8409-20260121063218-25c5cbe0",
+        "run_timestamp": "2026-01-21T06:30:04.975945+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.337309122085571
+      },
+      {
+        "experiment_id": "7209-20260121063234-13d55d3f",
+        "run_timestamp": "2026-01-21T06:32:14.327085+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 4.357003450393677
+      },
+      {
+        "experiment_id": "1047-20260121065239-3a68ca56",
+        "run_timestamp": "2026-01-21T06:32:29.115541+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 5.252625465393066
+      },
+      {
+        "experiment_id": "8049-20260121071753-aeb4f133",
+        "run_timestamp": "2026-01-21T06:42:45.955600+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 593.6001904010773
+      },
+      {
+        "experiment_id": "3095-20260121075649-b72a44a6",
+        "run_timestamp": "2026-01-21T07:09:40.060646+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 493.6791920661926
+      },
+      {
+        "experiment_id": "3165-20260121084554-c014a3ad",
+        "run_timestamp": "2026-01-21T07:48:49.487463+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 480.0583038330078
       }
     ]
   },
@@ -595,8 +763,8 @@
     ]
   },
   "Postgres Cache Miss Experiment": {
-    "total_runs": 1,
-    "successful_runs": 1,
+    "total_runs": 2,
+    "successful_runs": 2,
     "failed_runs": 0,
     "runs": [
       {
@@ -605,6 +773,27 @@
         "status": "completed",
         "success": true,
         "duration": 37.14003396034241
+      },
+      {
+        "experiment_id": "7762-20260120135357-4f0c7b5c",
+        "run_timestamp": "2026-01-20T10:41:45.468941+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 37.29944133758545
+      }
+    ]
+  },
+  "E2E Test Scenario": {
+    "total_runs": 1,
+    "successful_runs": 0,
+    "failed_runs": 1,
+    "runs": [
+      {
+        "experiment_id": "8443-20260120140031-ca33d305",
+        "run_timestamp": "2026-01-20T13:53:47.798696+00:00",
+        "status": "failed",
+        "success": false,
+        "duration": 10.134942293167114
       }
     ]
   }
