@@ -1,5 +1,4 @@
-CLAUDE.md for chaostooling-oss
-This document provides Claude-style prompts (or equivalent guidance) to operate on the Python-based Chaos Toolkit tooling monorepo. It emphasizes validating traces (Tempo), metrics (Prometheus), and logs (Loki), with dashboards and JSON dashboard templates as secondary, reusable artifacts.
+Project Overview
 
 Project: chaostooling-oss
 Version: 0.1.0
@@ -153,6 +152,75 @@ Validate Loki ingestion by pushing a test log entry and checking Grafana logs wi
 Use the dashboard template scaffold to iterate quickly on new scenarios or services.
 Change log and maintenance notes
 
-This Claude.md emphasizes a repeatable validation workflow; update the template sections as the observability stack evolves (Tempo/OTEL changes, Prometheus version updates, Loki changes, Grafana dashboards API changes).
-When adding new services, clone and adapt the dashboard scaffold by adding service-specific panels and labels.
-Maintain a central repository of JSON dashboards and a small set of PromQL templates to reduce drift across dashboards.
+Critical Rules
+1. Code Organization
+Many small files over few large files
+High cohesion, low coupling
+200-400 lines typical, 800 max per file
+Organize by feature/domain, not by type
+2. Code Style
+No emojis in code, comments, or documentation
+Immutability always - never mutate objects or arrays
+No console.log in production code
+Proper error handling with try/catch
+Input validation with Zod or similar
+3. Testing
+TDD: Write tests first
+80% minimum coverage
+Unit tests for utilities
+Integration tests for APIs
+E2E tests for critical flows
+4. Security
+No hardcoded secrets
+Environment variables for sensitive data
+Validate all user inputs
+Parameterized queries only
+CSRF protection enabled
+
+File Structure
+chaostooling-oss/                           # home for the chaostooling, based on ChaosToolkit
+├── chaostooling-demo                       # docker-compose demo 
+├── chaostooling-experiments                # json based experiment files for chaos engineering
+├── chaostooling-extension-app              # application focused probes and actions 
+├── chaostooling-extension-compute          # cpu , memory, io focused probes and actions
+├── chaostooling-extension-db               # database and event messaging focused probes and actions
+├── chaostooling-extension-network          # network (ping, latency) focused probes and actions
+├── chaostooling-generic                    # generic or common focused probes, actions and helpers
+├── chaostooling-otel                       # observability , monitoring, logs, metrics, traces helpers based on open telemetry
+├── chaostooling-reporting                  # reporting modules, data extraction modules
+
+
+Error Handling
+try {
+  const result = await operation()
+  return { success: true, data: result }
+} catch (error) {
+  console.error('Operation failed:', error)
+  return { success: false, error: 'User-friendly message' }
+}
+
+Environment Variables
+# Required
+DATABASE_URL=
+API_KEY=
+
+# Optional
+DEBUG=false
+
+Development Context
+Mode: Active development Focus: Implementation, coding, building features
+
+Behavior
+Write code first, explain after
+Prefer working solutions over perfect solutions
+Run tests after changes
+Keep commits atomic
+Priorities
+Get it working
+Get it right
+Get it clean
+Tools to favor
+Edit, Write for code changes
+Bash for running tests/builds
+Grep, Glob for finding code
+
