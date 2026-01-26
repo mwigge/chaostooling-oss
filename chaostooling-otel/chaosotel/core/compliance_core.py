@@ -18,6 +18,22 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger("chaosotel.compliance_core")
 
 
+def _handle_compliance_error(operation: str, error: Exception) -> None:
+    """
+    Standardized error handling for compliance operations.
+
+    Args:
+        operation: Description of the operation that failed
+        error: The exception that occurred
+    """
+    if isinstance(error, (ValueError, AttributeError, TypeError)):
+        logger.error(f"Invalid parameter for {operation}: {error}")
+        raise
+    else:
+        logger.error(f"Unexpected error in {operation}: {error}", exc_info=True)
+        raise RuntimeError(f"Failed to {operation}: {error}") from error
+
+
 class Regulation(str, Enum):
     """Supported regulations."""
 
@@ -132,7 +148,7 @@ class ComplianceCore:
 
             logger.info(f"Updated {regulation} compliance score: {old_score} → {score}")
         except Exception as e:
-            logger.error(f"Error setting compliance score: {e}")
+            _handle_compliance_error("set compliance score", e)
 
     # ========================================================================
     # VIOLATION TRACKING
@@ -202,7 +218,7 @@ class ComplianceCore:
                 f"Recorded {severity} violation in {regulation}: {violation}"
             )
         except Exception as e:
-            logger.error(f"Error recording violation: {e}")
+            _handle_compliance_error("record violation", e)
 
     def get_violations(self, regulation: Optional[str] = None) -> Dict[str, List]:
         """
@@ -273,7 +289,7 @@ class ComplianceCore:
 
             logger.debug(f"Tracked action execution: {action_name} ({status})")
         except Exception as e:
-            logger.error(f"Error tracking action execution: {e}")
+            _handle_compliance_error("track action execution", e)
 
     # ========================================================================
     # COMPLIANCE REPORT GENERATION
@@ -307,7 +323,7 @@ class ComplianceCore:
 
             return report
         except Exception as e:
-            logger.error(f"Error generating compliance report: {e}")
+            _handle_compliance_error("generate compliance report", e)
             return {"error": str(e), "regulations": {}}
 
     # ========================================================================
@@ -375,7 +391,7 @@ class ComplianceCore:
                 "violation_count": violation_count,
             }
         except Exception as e:
-            logger.error(f"Error calculating risk level: {e}")
+            _handle_compliance_error("calculate risk level", e)
             return {
                 "risk_level": 2,
                 "risk_name": "Unknown",
@@ -416,4 +432,4 @@ class ComplianceCore:
         try:
             logger.info("ComplianceCore shutdown")
         except Exception as e:
-            logger.error(f"Error during ComplianceCore shutdown: {e}")
+            _handle_compliance_error("ComplianceCore shutdown", e)

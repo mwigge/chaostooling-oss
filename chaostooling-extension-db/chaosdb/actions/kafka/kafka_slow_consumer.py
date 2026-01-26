@@ -168,9 +168,16 @@ def inject_slow_consumer(
                                                     committed = consumer.committed(p)
                                                     if committed is not None:
                                                         # Use shorter timeout for offset queries (5 seconds)
-                                                        end_offsets = consumer.end_offsets([p], timeout_ms=5000)
+                                                        end_offsets = (
+                                                            consumer.end_offsets(
+                                                                [p], timeout_ms=5000
+                                                            )
+                                                        )
                                                         if p in end_offsets:
-                                                            lag = end_offsets[p] - committed
+                                                            lag = (
+                                                                end_offsets[p]
+                                                                - committed
+                                                            )
                                                             # Log lag for monitoring (optional)
                                                             if lag > 0:
                                                                 logger.debug(

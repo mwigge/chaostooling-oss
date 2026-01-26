@@ -68,7 +68,7 @@ class ReportGenerator:
         # This ensures reports work correctly for all experiments (kafka-chaos-experiment.json,
         # e2e-experiment.json, etc.) by always using the actual executed experiment definition.
         journal_experiment = journal.get("experiment", {})
-        
+
         # Prioritize journal experiment definition (what was actually executed)
         # The journal's experiment dict contains the full experiment definition including "method"
         if journal_experiment and isinstance(journal_experiment, dict):
@@ -88,15 +88,20 @@ class ReportGenerator:
         elif not experiment.get("method") and journal_experiment:
             # Parameter doesn't have method, try journal as fallback
             experiment = journal_experiment
-            logger.debug("Using experiment definition from journal (fallback - parameter missing method)")
-        
+            logger.debug(
+                "Using experiment definition from journal (fallback - parameter missing method)"
+            )
+
         # Log which experiment is being used for transparency
         if experiment.get("method"):
             method_count = len(experiment.get("method", []))
-            scenario_count = len([
-                s for s in experiment.get("method", [])
-                if s.get("name", "").startswith("SCENARIO-")
-            ])
+            scenario_count = len(
+                [
+                    s
+                    for s in experiment.get("method", [])
+                    if s.get("name", "").startswith("SCENARIO-")
+                ]
+            )
             logger.info(
                 f"Report will use experiment: {experiment.get('title', 'unknown')} "
                 f"({scenario_count} scenarios, {method_count} total activities)"
@@ -1330,9 +1335,11 @@ class ReportGenerator:
         if not method_steps:
             # Fallback: try to get from journal if experiment definition is incomplete
             method_steps = journal.get("experiment", {}).get("method", []) or []
-        
+
         planned_scenarios = [
-            step for step in method_steps if step.get("name", "").startswith("SCENARIO-")
+            step
+            for step in method_steps
+            if step.get("name", "").startswith("SCENARIO-")
         ]
         planned_scenario_count = len(planned_scenarios)
         # Count all method steps as planned activities (includes scenarios, actions, and probes)
@@ -1416,41 +1423,73 @@ class ReportGenerator:
         <h3 style="margin-top: 0;">Test State / Coverage</h3>
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 15px 0;">
             <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
-                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{overall_success_rate:.1f}%</div>
+                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{
+            overall_success_rate:.1f}%</div>
                 <div style="color: #7f8c8d; font-size: 0.9em;">Overall Success Rate</div>
             </div>
             <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
-                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{scenario_count}{f'/{planned_scenario_count}' if planned_scenario_count > scenario_count else ''}</div>
-                <div style="color: #7f8c8d; font-size: 0.9em;">Scenarios Tested{' (Executed/Planned)' if planned_scenario_count > scenario_count else ''}</div>
-                {f'<div style="color: #95a5a6; font-size: 0.8em; margin-top: 5px;">Coverage: {scenario_coverage:.1f}%</div>' if planned_scenario_count > scenario_count else ''}
+                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{
+            scenario_count
+        }{
+            f"/{planned_scenario_count}"
+            if planned_scenario_count > scenario_count
+            else ""
+        }</div>
+                <div style="color: #7f8c8d; font-size: 0.9em;">Scenarios Tested{
+            " (Executed/Planned)" if planned_scenario_count > scenario_count else ""
+        }</div>
+                {
+            f'<div style="color: #95a5a6; font-size: 0.8em; margin-top: 5px;">Coverage: {scenario_coverage:.1f}%</div>'
+            if planned_scenario_count > scenario_count
+            else ""
+        }
             </div>
             <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
-                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{total_activities}{f'/{planned_activity_count}' if planned_activity_count > total_activities else ''}</div>
-                <div style="color: #7f8c8d; font-size: 0.9em;">Total Activities{' (Executed/Planned)' if planned_activity_count > total_activities else ''}</div>
-                {f'<div style="color: #95a5a6; font-size: 0.8em; margin-top: 5px;">Coverage: {activity_coverage:.1f}%</div>' if planned_activity_count > total_activities else ''}
+                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{
+            total_activities
+        }{
+            f"/{planned_activity_count}"
+            if planned_activity_count > total_activities
+            else ""
+        }</div>
+                <div style="color: #7f8c8d; font-size: 0.9em;">Total Activities{
+            " (Executed/Planned)" if planned_activity_count > total_activities else ""
+        }</div>
+                {
+            f'<div style="color: #95a5a6; font-size: 0.8em; margin-top: 5px;">Coverage: {activity_coverage:.1f}%</div>'
+            if planned_activity_count > total_activities
+            else ""
+        }
             </div>
             <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
-                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{probe_count}</div>
+                <div style="font-size: 2em; font-weight: bold; color: #2c3e50;">{
+            probe_count
+        }</div>
                 <div style="color: #7f8c8d; font-size: 0.9em;">Validation Probes</div>
             </div>
         </div>
         <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 5px;">
             <strong>Test State:</strong> <span class="{state_class}">{test_state}</span>
             <span style="margin-left: 20px;">
-                <strong>Activities:</strong> {successful_activities}/{total_activities} succeeded
+                <strong>Activities:</strong> {successful_activities}/{
+            total_activities
+        } succeeded
                 <span style="margin-left: 20px;">
                 <strong>Probes:</strong> {passed_probes}/{probe_count} passed
             </span>
         </div>
-        {(
-            f'<div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">'
-            f'<strong>Note:</strong> Experiment was interrupted. Showing executed counts '
-            f'({scenario_count}/{planned_scenario_count} scenarios, {total_activities}/{planned_activity_count} activities). '
-            f'Grafana shows planned counts ({planned_scenario_count} scenarios, {planned_activity_count} activities).'
-            f'</div>'
-            if planned_scenario_count > scenario_count or planned_activity_count > total_activities
-            else ''
-        )}
+        {
+            (
+                f'<div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">'
+                f"<strong>Note:</strong> Experiment was interrupted. Showing executed counts "
+                f"({scenario_count}/{planned_scenario_count} scenarios, {total_activities}/{planned_activity_count} activities). "
+                f"Grafana shows planned counts ({planned_scenario_count} scenarios, {planned_activity_count} activities)."
+                f"</div>"
+                if planned_scenario_count > scenario_count
+                or planned_activity_count > total_activities
+                else ""
+            )
+        }
     </div>
 """
         return html

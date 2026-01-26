@@ -16,6 +16,13 @@ from chaosotel import (
 )
 from opentelemetry.trace import StatusCode
 
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
+
 _active_threads = []
 _stop_event = threading.Event()
 
@@ -30,7 +37,7 @@ def inject_query_saturation(
     queries_per_thread: int = 1000,
     duration_seconds: int = 60,
     slow_query_threshold_ms: int = 1000,
-) -> dict:
+) -> Dict[str, Any]:
     """
     Saturate the database with a high volume of queries to test query handling capacity.
 
@@ -49,8 +56,6 @@ def inject_query_saturation(
         Dict with results including total queries, slow queries, timeouts, etc.
     """
     # Handle string input from Chaos Toolkit configuration
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
     num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
     queries_per_thread = (
         int(queries_per_thread)
@@ -67,16 +72,24 @@ def inject_query_saturation(
     )
 
     # Support both POSTGRES_HOST and POSTGRES_PRIMARY_HOST for e2e tests
-    host = (
-        host
-        or os.getenv("POSTGRES_PRIMARY_HOST")
-        or os.getenv("POSTGRES_HOST", "localhost")
+    host_env = host or os.getenv("POSTGRES_PRIMARY_HOST") or os.getenv("POSTGRES_HOST")
+    host = validate_host(
+        host_env,
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
     )
-    port = port or int(
-        os.getenv("POSTGRES_PRIMARY_PORT") or os.getenv("POSTGRES_PORT", "5432")
+    port_env = port or os.getenv("POSTGRES_PRIMARY_PORT") or os.getenv("POSTGRES_PORT")
+    port = validate_port(
+        port_env,
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
     )
-    database = database or os.getenv("POSTGRES_DB", "postgres")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
     password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     ensure_initialized()
@@ -95,7 +108,7 @@ def inject_query_saturation(
     timeouts = 0
     errors = 0
 
-    def query_worker(thread_id: int):
+    def query_worker(thread_id: int) -> None:
         """Worker thread that executes queries."""
         nonlocal total_queries, slow_queries, timeouts, errors
         conn = None
@@ -123,7 +136,7 @@ def inject_query_saturation(
                     database=database,
                     user=user,
                     password=password,
-                    connect_timeout=5,
+                    connect_timeout=ConnectionDefaults.CONNECT_TIMEOUT,
                 )
                 cursor = conn.cursor()
 
@@ -305,7 +318,7 @@ def inject_query_saturation(
         raise
 
 
-def stop_query_saturation():
+def stop_query_saturation() -> None:
     """Stop any running query saturation."""
     global _stop_event, _active_threads
     _stop_event.set()

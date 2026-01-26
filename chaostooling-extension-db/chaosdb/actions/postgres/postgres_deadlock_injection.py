@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import psycopg2
 from chaosotel import (
@@ -18,6 +18,13 @@ from chaosotel import (
 # Import metrics module to access metrics dynamically after initialization
 from opentelemetry.trace import StatusCode
 
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
+
 _active_threads = []
 _stop_event = threading.Event()
 
@@ -31,7 +38,7 @@ def inject_deadlock(
     num_threads: int = 10,
     duration_seconds: int = 60,
     table_name: str = "chaos_deadlock_table",
-) -> dict:
+) -> Dict[str, Any]:
     """
     Inject transaction deadlocks by creating circular dependency deadlocks.
     Creates transactions that lock resources in opposite order, causing circular waits.
@@ -50,18 +57,28 @@ def inject_deadlock(
         Dict with results including deadlocks created, transactions rolled back, etc.
     """
     # Handle string input from Chaos Toolkit configuration
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
     num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
     duration_seconds = (
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
     )
 
-    host = host or os.getenv("POSTGRES_HOST", "localhost")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "testdb")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
+    password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "postgresql")
@@ -78,7 +95,7 @@ def inject_deadlock(
     transactions_rolled_back = 0
     errors = 0
 
-    def deadlock_worker(thread_id: int):
+    def deadlock_worker(thread_id: int) -> None:
         """Worker thread that creates deadlocks."""
         nonlocal deadlocks_created, transactions_rolled_back, errors
         conn = None
@@ -106,7 +123,7 @@ def inject_deadlock(
                     database=database,
                     user=user,
                     password=password,
-                    connect_timeout=5,
+                    connect_timeout=ConnectionDefaults.CONNECT_TIMEOUT,
                 )
                 conn.autocommit = False
                 cursor = conn.cursor()
@@ -273,7 +290,7 @@ def inject_deadlock(
             time.sleep(duration_seconds)
             _stop_event.set()
             for thread in _active_threads:
-                thread.join(timeout=10)
+                thread.join(timeout=ConnectionDefaults.THREAD_JOIN_TIMEOUT_LONG)
 
             duration_ms = (time.time() - start_time) * 1000
 
@@ -303,10 +320,10 @@ def inject_deadlock(
         raise
 
 
-def stop_deadlock():
+def stop_deadlock() -> None:
     """Stop deadlock injection."""
     global _stop_event, _active_threads
     _stop_event.set()
     for thread in _active_threads:
-        thread.join(timeout=5)
+        thread.join(timeout=ConnectionDefaults.THREAD_JOIN_TIMEOUT_SHORT)
     _active_threads = []

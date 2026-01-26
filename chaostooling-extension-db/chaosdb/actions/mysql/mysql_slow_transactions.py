@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import mysql.connector
 from chaosotel import (
@@ -15,6 +15,14 @@ from chaosotel import (
     get_tracer,
 )
 from opentelemetry.trace import StatusCode
+
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.connection import create_mysql_connection
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
 
 _active_threads = []
 _stop_event = threading.Event()
@@ -27,17 +35,16 @@ def _prepare_table(
     user: str,
     password: str,
     table_name: str,
-    logger,
-):
+    logger: logging.Logger,
+) -> None:
     """Prepare test table if it doesn't exist."""
     try:
-        conn = mysql.connector.connect(
+        conn = create_mysql_connection(
             host=host,
             port=port,
             database=database,
             user=user,
             password=password,
-            connect_timeout=5,
         )
         cursor = conn.cursor()
 
@@ -77,7 +84,7 @@ def inject_slow_transactions(
     duration_seconds: int = 60,
     transaction_delay_ms: int = 5000,
     table_name: str = "chaos_test_table",
-) -> dict:
+) -> Dict[str, Any]:
     """
     Inject slow transactions by creating long-running transactions that hold locks.
 
@@ -334,7 +341,7 @@ def inject_slow_transactions(
         raise
 
 
-def stop_slow_transactions():
+def stop_slow_transactions() -> None:
     """Stop any running slow transactions."""
     global _stop_event, _active_threads
     _stop_event.set()

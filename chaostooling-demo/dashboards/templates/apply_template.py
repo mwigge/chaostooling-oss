@@ -30,7 +30,7 @@ from typing import Dict, List
 def load_json(file_path: str) -> Dict:
     """Load JSON file."""
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             return json.load(f)
     except FileNotFoundError:
         print(f"❌ Error: File not found: {file_path}")
@@ -42,7 +42,7 @@ def load_json(file_path: str) -> Dict:
 
 def save_json(data: Dict, file_path: str) -> None:
     """Save JSON file with proper formatting."""
-    with open(file_path, 'w') as f:
+    with open(file_path, "w") as f:
         json.dump(data, f, indent=2)
     print(f"✅ Saved: {file_path}")
 
@@ -50,7 +50,7 @@ def save_json(data: Dict, file_path: str) -> None:
 def has_template_panels(panels: List[Dict]) -> bool:
     """Check if dashboard already has template panels."""
     template_ids = {999, 100, 101, 102, 103, 104, 105, 106}
-    panel_ids = {p.get('id') for p in panels if 'id' in p}
+    panel_ids = {p.get("id") for p in panels if "id" in p}
     return bool(template_ids & panel_ids)
 
 
@@ -61,9 +61,9 @@ def calculate_template_height(template_panels: List[Dict]) -> int:
 
     max_y = 0
     for panel in template_panels:
-        if 'gridPos' in panel:
-            grid_pos = panel['gridPos']
-            panel_bottom = grid_pos.get('y', 0) + grid_pos.get('h', 0)
+        if "gridPos" in panel:
+            grid_pos = panel["gridPos"]
+            panel_bottom = grid_pos.get("y", 0) + grid_pos.get("h", 0)
             max_y = max(max_y, panel_bottom)
 
     return max_y
@@ -74,37 +74,37 @@ def adjust_panel_positions(panels: List[Dict], y_offset: int) -> List[Dict]:
     adjusted = []
     for panel in panels:
         panel_copy = panel.copy()
-        if 'gridPos' in panel_copy:
-            panel_copy['gridPos'] = panel_copy['gridPos'].copy()
-            panel_copy['gridPos']['y'] += y_offset
+        if "gridPos" in panel_copy:
+            panel_copy["gridPos"] = panel_copy["gridPos"].copy()
+            panel_copy["gridPos"]["y"] += y_offset
         adjusted.append(panel_copy)
     return adjusted
 
 
 def get_dashboard_title(dashboard: Dict) -> str:
     """Extract dashboard title."""
-    return dashboard.get('title', 'Unknown Dashboard')
+    return dashboard.get("title", "Unknown Dashboard")
 
 
-def update_service_graph_title(template_panels: List[Dict], dashboard_title: str) -> None:
+def update_service_graph_title(
+    template_panels: List[Dict], dashboard_title: str
+) -> None:
     """Update service graph title to include dashboard name."""
     for panel in template_panels:
-        if panel.get('id') == 999 and panel.get('type') == 'nodeGraph':
+        if panel.get("id") == 999 and panel.get("type") == "nodeGraph":
             # Update title to be dashboard-specific
             base_title = f"{dashboard_title} - Service Graph"
-            panel['title'] = base_title
+            panel["title"] = base_title
 
 
 def apply_template(
-    dashboard_file: str,
-    output_file: str = None,
-    dry_run: bool = False
+    dashboard_file: str, output_file: str = None, dry_run: bool = False
 ) -> None:
     """Apply experiment overview template to dashboard."""
 
     # Resolve paths
     script_dir = Path(__file__).parent
-    template_file = script_dir / 'experiment-overview-template.json'
+    template_file = script_dir / "experiment-overview-template.json"
     dashboard_path = Path(dashboard_file).resolve()
 
     print(f"📂 Loading template: {template_file}")
@@ -114,8 +114,8 @@ def apply_template(
     dashboard = load_json(str(dashboard_path))
 
     # Extract panels
-    template_panels = template.get('panels', [])
-    existing_panels = dashboard.get('panels', [])
+    template_panels = template.get("panels", [])
+    existing_panels = dashboard.get("panels", [])
 
     if not template_panels:
         print("❌ Error: Template has no panels")
@@ -126,7 +126,11 @@ def apply_template(
         print("⚠️  Warning: Dashboard already has template panels (IDs 999-106)")
         print("   Template will be replaced with latest version")
         # Remove existing template panels
-        existing_panels = [p for p in existing_panels if p.get('id', 0) not in {999, 100, 101, 102, 103, 104, 105, 106}]
+        existing_panels = [
+            p
+            for p in existing_panels
+            if p.get("id", 0) not in {999, 100, 101, 102, 103, 104, 105, 106}
+        ]
 
     # Calculate offset needed
     template_height = calculate_template_height(template_panels)
@@ -141,18 +145,20 @@ def apply_template(
     adjusted_panels = adjust_panel_positions(existing_panels, template_height)
 
     # Combine panels
-    dashboard['panels'] = template_panels + adjusted_panels
+    dashboard["panels"] = template_panels + adjusted_panels
 
-    print(f"✨ Combined dashboard: {len(template_panels)} template + {len(adjusted_panels)} custom panels")
+    print(
+        f"✨ Combined dashboard: {len(template_panels)} template + {len(adjusted_panels)} custom panels"
+    )
 
     # Preview mode
     if dry_run:
         print("\n🔍 DRY RUN - No files modified")
         print("\nTemplate panels added:")
         for panel in template_panels:
-            panel_id = panel.get('id', 'N/A')
-            panel_title = panel.get('title', 'Untitled')
-            panel_type = panel.get('type', 'unknown')
+            panel_id = panel.get("id", "N/A")
+            panel_title = panel.get("title", "Untitled")
+            panel_type = panel.get("type", "unknown")
             print(f"  - [{panel_id:3}] {panel_title} ({panel_type})")
 
         print(f"\nExisting panels shifted down by {template_height} units")
@@ -174,7 +180,7 @@ def apply_template(
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Apply Experiment Overview Template to Chaos Dashboards',
+        description="Apply Experiment Overview Template to Chaos Dashboards",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -189,23 +195,20 @@ Examples:
 
   # Batch apply to multiple dashboards
   for f in ../*.json; do python apply_template.py "$f"; done
-        """
+        """,
+    )
+
+    parser.add_argument("dashboard", help="Path to dashboard JSON file")
+
+    parser.add_argument(
+        "-o", "--output", help="Output file path (default: overwrite input file)"
     )
 
     parser.add_argument(
-        'dashboard',
-        help='Path to dashboard JSON file'
-    )
-
-    parser.add_argument(
-        '-o', '--output',
-        help='Output file path (default: overwrite input file)'
-    )
-
-    parser.add_argument(
-        '-d', '--dry-run',
-        action='store_true',
-        help='Preview changes without modifying files'
+        "-d",
+        "--dry-run",
+        action="store_true",
+        help="Preview changes without modifying files",
     )
 
     args = parser.parse_args()
@@ -215,9 +218,10 @@ Examples:
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

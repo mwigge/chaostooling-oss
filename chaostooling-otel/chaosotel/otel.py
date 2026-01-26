@@ -17,7 +17,7 @@ Architecture:
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from opentelemetry import metrics as otel_metrics
 from opentelemetry import trace as otel_trace
@@ -42,8 +42,8 @@ _compliance_core: Optional[ComplianceCore] = None
 
 
 def auto_instrument_databases_and_messaging(
-    databases: Optional[list] = None,
-    messaging: Optional[list] = None,
+    databases: Optional[List[str]] = None,
+    messaging: Optional[List[str]] = None,
 ) -> None:
     """
     Auto-instrument database and messaging libraries with proper callbacks.
@@ -184,7 +184,7 @@ def initialize(
     target_type: str = "unknown",
     service_name: str = "chaostoolkit",
     service_version: str = "1.0.0",
-    regulations: Optional[list] = None,
+    regulations: Optional[List[str]] = None,
     auto_instrument: bool = True,
     auto_instrument_databases: bool = False,
     auto_instrument_messaging: bool = False,
@@ -397,7 +397,7 @@ def get_logger(name: str = "chaosotel") -> Any:
     return _logger_provider.get_logger(name)
 
 
-def get_metric_tags(**kwargs: Any) -> dict:
+def get_metric_tags(**kwargs: Any) -> Dict[str, str]:
     """
     Build metric tags dictionary from keyword arguments.
 

@@ -4,11 +4,18 @@ import logging
 import os
 import threading
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import psycopg2
 from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
 from opentelemetry.trace import StatusCode
+
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
 
 _active_threads = []
 _stop_event = threading.Event()
@@ -23,7 +30,7 @@ def inject_lock_storm(
     num_threads: int = 10,
     duration_seconds: int = 60,
     table_name: str = "chaos_test_table",
-) -> dict:
+) -> Dict[str, Any]:
     """
     Inject a database lock storm by creating multiple concurrent transactions
     that lock the same rows, causing contention.
@@ -42,17 +49,27 @@ def inject_lock_storm(
         Dict with results including locks created, deadlocks detected, etc.
     """
     # Handle string input from Chaos Toolkit configuration
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
     num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
     duration_seconds = (
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
     )
 
-    host = host or os.getenv("POSTGRES_HOST", "localhost")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "postgres")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
     password = password or os.getenv("POSTGRES_PASSWORD", "")
     db_system = os.getenv("DB_SYSTEM", "postgresql")
 
@@ -74,7 +91,7 @@ def inject_lock_storm(
     deadlocks_detected = 0
     errors = 0
 
-    def lock_worker(thread_id: int):
+    def lock_worker(thread_id: int) -> None:
         """Worker thread that creates and holds locks."""
         nonlocal locks_created, deadlocks_detected, errors
         conn = None
@@ -100,7 +117,7 @@ def inject_lock_storm(
                     database=database,
                     user=user,
                     password=password,
-                    connect_timeout=5,
+                    connect_timeout=ConnectionDefaults.CONNECT_TIMEOUT,
                 )
                 conn.autocommit = False
                 cursor = conn.cursor()
@@ -271,7 +288,7 @@ def inject_lock_storm(
         raise
 
 
-def stop_lock_storm():
+def stop_lock_storm() -> None:
     """Stop any running lock storm."""
     global _stop_event, _active_threads
     _stop_event.set()
@@ -280,7 +297,15 @@ def stop_lock_storm():
     _active_threads = []
 
 
-def _prepare_table(host, port, database, user, password, table_name, logger):
+def _prepare_table(
+    host: str,
+    port: int,
+    database: str,
+    user: str,
+    password: str,
+    table_name: str,
+    logger: logging.Logger,
+) -> None:
     """
     Ensure table structure matches expectations (including locked_by column) before workers start.
     """

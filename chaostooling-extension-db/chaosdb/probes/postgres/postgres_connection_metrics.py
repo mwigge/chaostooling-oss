@@ -3,7 +3,9 @@ from typing import Optional
 from chaosdb.probes.postgres.postgres_pool_exhaustion_status import (
     probe_pool_exhaustion_status,
 )
-from logzero import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def check_connection_pool_status(

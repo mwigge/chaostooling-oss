@@ -38,20 +38,22 @@ def example_parse_only():
         print(f"\nTest Plan: {jmeter_data['test_plan']['name']}")
         print(f"Description: {jmeter_data['test_plan']['description']}")
         print(f"\nThread Groups: {len(jmeter_data['thread_groups'])}")
-        for tg in jmeter_data['thread_groups']:
-            print(f"  - {tg['name']}: {tg['num_threads']} users, "
-                  f"{tg['ramp_time']}s ramp-up")
+        for tg in jmeter_data["thread_groups"]:
+            print(
+                f"  - {tg['name']}: {tg['num_threads']} users, "
+                f"{tg['ramp_time']}s ramp-up"
+            )
 
         print(f"\nHTTP Requests: {len(jmeter_data['http_requests'])}")
-        for req in jmeter_data['http_requests'][:5]:  # Show first 5
+        for req in jmeter_data["http_requests"][:5]:  # Show first 5
             print(f"  - {req['method']} {req['url']}")
 
         print(f"\nUnique Endpoints: {len(jmeter_data['endpoints'])}")
-        for ep in jmeter_data['endpoints']:
+        for ep in jmeter_data["endpoints"]:
             print(f"  - {ep['url']} ({ep['service_type']})")
 
         print(f"\nLoad Configuration:")
-        load_config = jmeter_data['load_config']
+        load_config = jmeter_data["load_config"]
         print(f"  - Total Users: {load_config['total_users']}")
         print(f"  - Ramp-up Time: {load_config['ramp_up_time']}s")
         print(f"  - Duration: {load_config['duration']}s")
@@ -87,14 +89,14 @@ def example_generate_experiment():
         print(f"Method steps: {len(result['experiment']['method'])}")
 
         # Show discovered services
-        endpoints = result['jmeter_data']['endpoints']
-        service_types = {ep.get('service_type', 'unknown') for ep in endpoints}
+        endpoints = result["jmeter_data"]["endpoints"]
+        service_types = {ep.get("service_type", "unknown") for ep in endpoints}
         print(f"\nDiscovered service types: {', '.join(sorted(service_types))}")
 
         # Show generated chaos scenarios
         print("\nGenerated chaos scenarios:")
-        for step in result['experiment']['method']:
-            if step.get('name', '').startswith('SCENARIO-'):
+        for step in result["experiment"]["method"]:
+            if step.get("name", "").startswith("SCENARIO-"):
                 print(f"  - {step['name']}")
 
     except FileNotFoundError:
@@ -123,14 +125,16 @@ def example_cli_wrapper():
         print(f"\nGenerated experiment: {output_file}")
 
         # Load and display experiment summary
-        with open(output_file, 'r') as f:
+        with open(output_file, "r") as f:
             experiment = json.load(f)
 
         print(f"\nExperiment Summary:")
         print(f"  Title: {experiment['title']}")
         print(f"  Description: {experiment['description'][:100]}...")
         print(f"  Controls: {len(experiment['controls'])}")
-        print(f"  Steady-state probes: {len(experiment['steady-state-hypothesis']['probes'])}")
+        print(
+            f"  Steady-state probes: {len(experiment['steady-state-hypothesis']['probes'])}"
+        )
         print(f"  Method steps: {len(experiment['method'])}")
 
     except FileNotFoundError:
@@ -164,4 +168,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

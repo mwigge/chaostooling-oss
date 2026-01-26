@@ -419,7 +419,7 @@ def extract_systems_from_experiment(experiment: Dict[str, Any]) -> List[str]:
 
 
 def extract_timestamps_from_journal(
-    journal: Dict[str, Any]
+    journal: Dict[str, Any],
 ) -> tuple[datetime, datetime]:
     """
     Extract start and end timestamps from journal.

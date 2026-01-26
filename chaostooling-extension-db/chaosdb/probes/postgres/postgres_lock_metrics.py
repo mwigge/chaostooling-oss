@@ -1,7 +1,9 @@
 from typing import Optional
 
 from chaosdb.probes.postgres.postgres_lock_storm_status import probe_lock_storm_status
-from logzero import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def check_lock_contention(

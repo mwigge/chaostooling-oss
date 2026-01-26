@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import mysql.connector
 from chaosotel import (
@@ -15,6 +15,14 @@ from chaosotel import (
     get_tracer,
 )
 from opentelemetry.trace import StatusCode
+
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.connection import create_mysql_connection
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
 
 _active_threads = []
 _stop_event = threading.Event()
@@ -30,7 +38,7 @@ def inject_query_saturation(
     queries_per_thread: int = 1000,
     duration_seconds: int = 60,
     slow_query_threshold_ms: int = 1000,
-) -> dict:
+) -> Dict[str, Any]:
     """
     Saturate the database with a high volume of queries to test query handling capacity.
 
@@ -66,10 +74,22 @@ def inject_query_saturation(
         else slow_query_threshold_ms
     )
 
-    host = host or os.getenv("MYSQL_HOST", "localhost")
-    port = port or int(os.getenv("MYSQL_PORT", "3306"))
-    database = database or os.getenv("MYSQL_DB", "testdb")
-    user = user or os.getenv("MYSQL_USER", "root")
+    host = validate_host(
+        host or os.getenv("MYSQL_HOST"),
+        DatabaseDefaults.MYSQL_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("MYSQL_PORT"),
+        DatabaseDefaults.MYSQL_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("MYSQL_DB"),
+        DatabaseDefaults.MYSQL_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("MYSQL_USER", DatabaseDefaults.MYSQL_DEFAULT_USER)
     password = password or os.getenv("MYSQL_PASSWORD", "")
 
     ensure_initialized()
@@ -301,7 +321,7 @@ def inject_query_saturation(
         raise
 
 
-def stop_query_saturation():
+def stop_query_saturation() -> None:
     """Stop any running query saturation."""
     global _stop_event, _active_threads
     _stop_event.set()

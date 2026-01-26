@@ -2,7 +2,9 @@ import time
 from typing import Optional
 
 from chaosdb.probes.postgres.postgres_connectivity import probe_postgres_connectivity
-from logzero import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def measure_recovery_time(

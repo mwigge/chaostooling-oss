@@ -12,6 +12,13 @@ from opentelemetry._logs import get_logger_provider
 from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
+
 logger = logging.getLogger("chaosdb.postgres.load")
 
 
@@ -29,18 +36,28 @@ def force_sequential_scans(
     Force sequential scans by running unindexed queries.
     """
     # Handle string input
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
     if isinstance(duration_seconds, str):
         duration_seconds = int(duration_seconds)
     if isinstance(num_threads, str):
         num_threads = int(num_threads)
 
-    host = host or os.getenv("POSTGRES_HOST", "postgres")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "testdb")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
+    password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     ensure_initialized()
     tracer = get_tracer()
@@ -56,7 +73,7 @@ def force_sequential_scans(
                 database=database,
                 user=user,
                 password=password,
-                connect_timeout=5,
+                connect_timeout=ConnectionDefaults.CONNECT_TIMEOUT,
             )
             # Disable index scans for this session to force seq scans
             cursor = conn.cursor()
@@ -128,7 +145,7 @@ def force_sequential_scans(
             stop_event.set()
 
             for t in threads:
-                t.join(timeout=5)
+                t.join(timeout=ConnectionDefaults.THREAD_JOIN_TIMEOUT_SHORT)
 
             span.set_status(StatusCode.OK)
             return True
@@ -152,16 +169,26 @@ def generate_dead_tuples(
     """
     Generate dead tuples by updating rows repeatedly.
     """
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
     if isinstance(count, str):
         count = int(count)
 
-    host = host or os.getenv("POSTGRES_HOST", "postgres")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "testdb")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
+    password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     ensure_initialized()
     tracer = get_tracer()
@@ -190,7 +217,7 @@ def generate_dead_tuples(
                 database=database,
                 user=user,
                 password=password,
-                connect_timeout=5,
+                connect_timeout=ConnectionDefaults.CONNECT_TIMEOUT,
             )
             conn.autocommit = True
             cursor = conn.cursor()
@@ -247,16 +274,26 @@ def complex_sort_query(
     """
     Run complex sort queries to trigger temp file usage.
     """
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
     if isinstance(duration_seconds, str):
         duration_seconds = int(duration_seconds)
 
-    host = host or os.getenv("POSTGRES_HOST", "postgres")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "testdb")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
+    password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     ensure_initialized()
     tracer = get_tracer()
@@ -272,7 +309,7 @@ def complex_sort_query(
                 database=database,
                 user=user,
                 password=password,
-                connect_timeout=5,
+                connect_timeout=ConnectionDefaults.CONNECT_TIMEOUT,
             )
             cursor = conn.cursor()
 
@@ -337,7 +374,7 @@ def complex_sort_query(
             stop_event.set()
 
             for t in threads:
-                t.join(timeout=5)
+                t.join(timeout=ConnectionDefaults.THREAD_JOIN_TIMEOUT_SHORT)
 
             span.set_status(StatusCode.OK)
             return True

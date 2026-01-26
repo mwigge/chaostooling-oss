@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import mysql.connector
 from chaosotel import (
@@ -13,6 +13,9 @@ from chaosotel import (
 )
 from opentelemetry.trace import StatusCode
 
+from chaosdb.common.connection import create_mysql_connection
+from chaosdb.common.constants import DatabaseDefaults
+
 
 def test_mysql_connection(
     host: Optional[str] = None,
@@ -20,19 +23,16 @@ def test_mysql_connection(
     database: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
-) -> dict:
+) -> Dict[str, Any]:
     """
     Simple connectivity check against MySQL with chaosotel tracing/metrics.
     """
-    # Handle string input from Chaos Toolkit configuration
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
-
-    host = host or os.getenv("MYSQL_HOST", "localhost")
-    port = port or int(os.getenv("MYSQL_PORT", "3306"))
-    database = database or os.getenv("MYSQL_DB", "testdb")
-    user = user or os.getenv("MYSQL_USER", "root")
-    password = password or os.getenv("MYSQL_PASSWORD", "mysql")
+    # Use constants for defaults
+    host = host or os.getenv("MYSQL_HOST", DatabaseDefaults.MYSQL_DEFAULT_HOST)
+    port = port or int(os.getenv("MYSQL_PORT", str(DatabaseDefaults.MYSQL_PORT)))
+    database = database or os.getenv("MYSQL_DB", DatabaseDefaults.MYSQL_DEFAULT_DB)
+    user = user or os.getenv("MYSQL_USER", DatabaseDefaults.MYSQL_DEFAULT_USER)
+    password = password or os.getenv("MYSQL_PASSWORD", "")
 
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "mysql")
@@ -55,13 +55,12 @@ def test_mysql_connection(
             span.set_attribute("chaos.system", "mysql")
             span.set_attribute("chaos.operation", "connectivity")
 
-            conn = mysql.connector.connect(
+            conn = create_mysql_connection(
                 host=host,
                 port=port,
                 database=database,
                 user=user,
                 password=password,
-                connection_timeout=5,
             )
             cursor = conn.cursor()
             query_start = time.time()

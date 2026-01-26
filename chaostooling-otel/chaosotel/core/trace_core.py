@@ -23,6 +23,23 @@ from opentelemetry.trace import Status, StatusCode
 
 logger = logging.getLogger("chaosotel.trace_core")
 
+
+def _handle_trace_error(operation: str, error: Exception) -> None:
+    """
+    Standardized error handling for trace operations.
+
+    Args:
+        operation: Description of the operation that failed
+        error: The exception that occurred
+    """
+    if isinstance(error, (ValueError, AttributeError, TypeError)):
+        logger.error(f"Invalid parameter for {operation}: {error}")
+        raise
+    else:
+        logger.error(f"Unexpected error in {operation}: {error}", exc_info=True)
+        raise RuntimeError(f"Failed to {operation}: {error}") from error
+
+
 # ============================================================================
 # SPAN INSTRUMENTATION HELPERS
 # ============================================================================
@@ -60,7 +77,7 @@ CUSTOM_DB_MAP = os.getenv("CHAOS_DB_SYSTEM_MAP", "")
 CUSTOM_MESSAGING_MAP = os.getenv("CHAOS_MESSAGING_SYSTEM_MAP", "")
 
 
-def _load_custom_mappings():
+def _load_custom_mappings() -> None:
     """Load custom mappings from environment variables (JSON format)."""
     global DB_SYSTEM_MAP, MESSAGING_SYSTEM_MAP
 
@@ -736,7 +753,7 @@ def instrument_messaging_span(
 # Uses the existing messaging span instrumentation helpers above.
 
 
-def get_kafka_producer(bootstrap_servers: Optional[str] = None):
+def get_kafka_producer(bootstrap_servers: Optional[str] = None) -> Any:
     """
     Create a Kafka producer with standard configuration.
 
@@ -1354,7 +1371,7 @@ class TraceCore:
             logger.debug(f"Created span: {name}")
             return span
         except Exception as e:
-            logger.error(f"Error creating span: {e}")
+            _handle_trace_error("create span", e)
             return None
 
     def start_span(self, name: str, attributes: Optional[Dict[str, Any]] = None) -> Any:
@@ -1366,7 +1383,7 @@ class TraceCore:
                     span.set_attribute(key, value)
             return span
         except Exception as e:
-            logger.error(f"Error starting span: {e}")
+            _handle_trace_error("start span", e)
             return None
 
     # ========================================================================
@@ -1380,7 +1397,7 @@ class TraceCore:
                 span.set_attribute(key, value)
             logger.debug(f"Set attribute {key}={value}")
         except Exception as e:
-            logger.error(f"Error setting attribute: {e}")
+            _handle_trace_error("set attribute", e)
 
     def set_attributes(self, span: Any, attributes: Dict[str, Any]) -> None:
         """Set multiple attributes on span."""
@@ -1390,7 +1407,7 @@ class TraceCore:
                     span.set_attribute(key, value)
             logger.debug(f"Set {len(attributes or {})} attributes")
         except Exception as e:
-            logger.error(f"Error setting attributes: {e}")
+            _handle_trace_error("set attributes", e)
 
     # ========================================================================
     # EVENT RECORDING
@@ -1405,7 +1422,7 @@ class TraceCore:
                 span.add_event(name, attributes=attributes)
             logger.debug(f"Added event: {name}")
         except Exception as e:
-            logger.error(f"Error adding event: {e}")
+            _handle_trace_error("add event", e)
 
     # ========================================================================
     # EXCEPTION TRACKING
@@ -1420,7 +1437,7 @@ class TraceCore:
                 span.record_exception(exception, escaped=escaped)
             logger.error(f"Recorded exception: {str(exception)}")
         except Exception as e:
-            logger.error(f"Error recording exception: {e}")
+            _handle_trace_error("record exception", e)
 
     # ========================================================================
     # STATUS MANAGEMENT
@@ -1433,7 +1450,7 @@ class TraceCore:
                 span.set_status(Status(StatusCode.OK))
             logger.debug("Set span status to OK")
         except Exception as e:
-            logger.error(f"Error setting status OK: {e}")
+            _handle_trace_error("set status OK", e)
 
     def set_status_error(self, span: Any, description: Optional[str] = None) -> None:
         """Set span status to ERROR."""
@@ -1442,7 +1459,7 @@ class TraceCore:
                 span.set_status(Status(StatusCode.ERROR, description=description))
             logger.debug(f"Set span status to ERROR: {description}")
         except Exception as e:
-            logger.error(f"Error setting status ERROR: {e}")
+            _handle_trace_error("set status ERROR", e)
 
     def set_status_unset(self, span: Any) -> None:
         """Set span status to UNSET."""
@@ -1451,7 +1468,7 @@ class TraceCore:
                 span.set_status(Status(StatusCode.UNSET))
             logger.debug("Set span status to UNSET")
         except Exception as e:
-            logger.error(f"Error setting status UNSET: {e}")
+            _handle_trace_error("set status UNSET", e)
 
     # ========================================================================
     # SPAN ACCESSORS
@@ -1464,7 +1481,7 @@ class TraceCore:
 
             return trace.get_current_span()
         except Exception as e:
-            logger.error(f"Error getting current span: {e}")
+            _handle_trace_error("get current span", e)
             return None
 
     def get_span_context(self, span: Optional[Any] = None) -> Dict[str, Any]:
@@ -1488,7 +1505,7 @@ class TraceCore:
                 "is_recording": False,
             }
         except Exception as e:
-            logger.error(f"Error getting span context: {e}")
+            _handle_trace_error("get span context", e)
             return {
                 "trace_id": "00000000000000000000000000000000",
                 "span_id": "0000000000000000",
@@ -1506,7 +1523,7 @@ class TraceCore:
             span = self.create_span(name, attributes)
             return _SpanContextManager(span, self)
         except Exception as e:
-            logger.error(f"Error creating span context: {e}")
+            _handle_trace_error("create span context", e)
             return _NullContextManager()
 
     # ========================================================================
@@ -1520,7 +1537,7 @@ class TraceCore:
                 self.tracer_provider.shutdown()
             logger.info("TraceCore shutdown complete")
         except Exception as e:
-            logger.error(f"Error during TraceCore shutdown: {e}")
+            _handle_trace_error("TraceCore shutdown", e)
 
 
 class _SpanContextManager:

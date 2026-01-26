@@ -4,11 +4,19 @@ import logging
 import os
 import threading
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import mysql.connector
 from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
 from opentelemetry.trace import StatusCode
+
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.connection import create_mysql_connection
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
 
 _active_connections = []
 _stop_event = threading.Event()
@@ -23,7 +31,7 @@ def inject_connection_pool_exhaustion(
     num_connections: int = 100,
     duration_seconds: int = 60,
     leak_connections: bool = False,
-) -> dict:
+) -> Dict[str, Any]:
     """
     Exhaust the connection pool by creating many connections and holding them.
 
@@ -41,8 +49,6 @@ def inject_connection_pool_exhaustion(
         Dict with results including connections created, errors, etc.
     """
     # Handle string input from Chaos Toolkit configuration
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
     num_connections = (
         int(num_connections) if isinstance(num_connections, str) else num_connections
     )
@@ -50,10 +56,22 @@ def inject_connection_pool_exhaustion(
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
     )
 
-    host = host or os.getenv("MYSQL_HOST", "localhost")
-    port = port or int(os.getenv("MYSQL_PORT", "3306"))
-    database = database or os.getenv("MYSQL_DB", "testdb")
-    user = user or os.getenv("MYSQL_USER", "root")
+    host = validate_host(
+        host or os.getenv("MYSQL_HOST"),
+        DatabaseDefaults.MYSQL_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("MYSQL_PORT"),
+        DatabaseDefaults.MYSQL_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("MYSQL_DB"),
+        DatabaseDefaults.MYSQL_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("MYSQL_USER", DatabaseDefaults.MYSQL_DEFAULT_USER)
     password = password or os.getenv("MYSQL_PASSWORD", "")
 
     ensure_initialized()
@@ -95,13 +113,12 @@ def inject_connection_pool_exhaustion(
                 acquisition_start = time.time()
 
                 try:
-                    conn = mysql.connector.connect(
+                    conn = create_mysql_connection(
                         host=host,
                         port=port,
                         database=database,
                         user=user,
                         password=password,
-                        connect_timeout=10,
                     )
 
                     acquisition_time_ms = (time.time() - acquisition_start) * 1000
@@ -282,7 +299,7 @@ def inject_connection_pool_exhaustion(
         raise
 
 
-def stop_pool_exhaustion():
+def stop_pool_exhaustion() -> None:
     """Stop any running pool exhaustion and close connections."""
     global _stop_event, _active_connections
     _stop_event.set()

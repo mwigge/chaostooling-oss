@@ -16,7 +16,7 @@ All decorators automatically use MetricsCore, LogCore, TraceCore, ComplianceCore
 import functools
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from chaosotel.otel import (
     ensure_initialized,
@@ -619,7 +619,7 @@ class instrumented_section:
         self.log_core = None
         self.span = None
 
-    def __enter__(self):
+    def __enter__(self) -> "InstrumentedSection":
         """Enter instrumented section."""
         try:
             ensure_initialized()
@@ -644,7 +644,12 @@ class instrumented_section:
 
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> Optional[bool]:
         """Exit instrumented section."""
         try:
             if self.log_core:

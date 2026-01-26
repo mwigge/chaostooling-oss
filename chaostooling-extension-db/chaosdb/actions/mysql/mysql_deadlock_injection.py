@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import mysql.connector
 from chaosotel import (
@@ -15,6 +15,14 @@ from chaosotel import (
     get_tracer,
 )
 from opentelemetry.trace import StatusCode
+
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.connection import create_mysql_connection
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
 
 _active_threads = []
 _stop_event = threading.Event()
@@ -29,7 +37,7 @@ def inject_deadlock(
     num_threads: int = 10,
     duration_seconds: int = 60,
     table_name: str = "chaos_deadlock_table",
-) -> dict:
+) -> Dict[str, Any]:
     """
     Inject transaction deadlocks by creating circular dependency deadlocks.
     Creates transactions that lock resources in opposite order, causing circular waits.
@@ -55,11 +63,23 @@ def inject_deadlock(
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
     )
 
-    host = host or os.getenv("MYSQL_HOST", "localhost")
-    port = port or int(os.getenv("MYSQL_PORT", "3306"))
-    database = database or os.getenv("MYSQL_DB", "testdb")
-    user = user or os.getenv("MYSQL_USER", "root")
-    password = password or os.getenv("MYSQL_PASSWORD", "mysql")
+    host = validate_host(
+        host or os.getenv("MYSQL_HOST"),
+        DatabaseDefaults.MYSQL_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("MYSQL_PORT"),
+        DatabaseDefaults.MYSQL_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("MYSQL_DB"),
+        DatabaseDefaults.MYSQL_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("MYSQL_USER", DatabaseDefaults.MYSQL_DEFAULT_USER)
+    password = password or os.getenv("MYSQL_PASSWORD", "")
     db_system = os.getenv("DB_SYSTEM", "mysql")
 
     ensure_initialized()
@@ -99,13 +119,12 @@ def inject_deadlock(
                     chaos_thread_id=thread_id,
                 )
 
-                conn = mysql.connector.connect(
+                conn = create_mysql_connection(
                     host=host,
                     port=port,
                     database=database,
                     user=user,
                     password=password,
-                    connect_timeout=5,
                 )
                 conn.autocommit = False
                 cursor = conn.cursor()
@@ -327,7 +346,7 @@ def inject_deadlock(
         raise
 
 
-def stop_deadlock():
+def stop_deadlock() -> None:
     """Stop deadlock injection."""
     global _stop_event, _active_threads
     _stop_event.set()

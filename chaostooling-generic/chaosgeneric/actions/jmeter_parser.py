@@ -10,7 +10,6 @@ Parses .jmx (XML) files to extract:
 """
 
 import logging
-import re
 from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import urlparse
@@ -84,7 +83,9 @@ class JMeterTestPlanParser:
             return {"name": "Unknown", "description": ""}
 
         name = test_plan_elem.get("testname", "Unknown")
-        description_elem = test_plan_elem.find(".//stringProp[@name='TestPlan.comments']")
+        description_elem = test_plan_elem.find(
+            ".//stringProp[@name='TestPlan.comments']"
+        )
         description = description_elem.text if description_elem is not None else ""
 
         return {
@@ -103,13 +104,15 @@ class JMeterTestPlanParser:
             duration = self._get_int_prop(tg, "ThreadGroup.duration", 0)
             loops = self._get_int_prop(tg, "LoopController.loops", 1)
 
-            thread_groups.append({
-                "name": name,
-                "num_threads": num_threads,
-                "ramp_time": ramp_time,
-                "duration": duration,
-                "loops": loops,
-            })
+            thread_groups.append(
+                {
+                    "name": name,
+                    "num_threads": num_threads,
+                    "ramp_time": ramp_time,
+                    "duration": duration,
+                    "loops": loops,
+                }
+            )
 
         return thread_groups
 
@@ -127,15 +130,17 @@ class JMeterTestPlanParser:
             # Build full URL
             url = self._build_url(protocol, domain, port, path)
 
-            http_requests.append({
-                "name": name,
-                "method": method,
-                "url": url,
-                "domain": domain,
-                "path": path,
-                "port": port,
-                "protocol": protocol,
-            })
+            http_requests.append(
+                {
+                    "name": name,
+                    "method": method,
+                    "url": url,
+                    "domain": domain,
+                    "path": path,
+                    "port": port,
+                    "protocol": protocol,
+                }
+            )
 
         return http_requests
 
@@ -153,14 +158,16 @@ class JMeterTestPlanParser:
             parsed = urlparse(url)
             service_name = self._identify_service(parsed.hostname or parsed.netloc)
 
-            endpoints.append({
-                "url": url,
-                "host": parsed.hostname or parsed.netloc,
-                "path": parsed.path,
-                "method": request["method"],
-                "service_type": service_name,
-                "port": parsed.port or (443 if parsed.scheme == "https" else 80),
-            })
+            endpoints.append(
+                {
+                    "url": url,
+                    "host": parsed.hostname or parsed.netloc,
+                    "path": parsed.path,
+                    "method": request["method"],
+                    "service_type": service_name,
+                    "port": parsed.port or (443 if parsed.scheme == "https" else 80),
+                }
+            )
 
         return endpoints
 
@@ -226,7 +233,9 @@ class JMeterTestPlanParser:
             return "application"
 
         # Load balancer
-        if any(lb in hostname_lower for lb in ["haproxy", "nginx", "lb", "loadbalancer"]):
+        if any(
+            lb in hostname_lower for lb in ["haproxy", "nginx", "lb", "loadbalancer"]
+        ):
             return "load_balancer"
 
         return "application"
@@ -246,12 +255,16 @@ class JMeterTestPlanParser:
         path = path if path.startswith("/") else f"/{path}"
         return f"{protocol}://{domain}{port_str}{path}"
 
-    def _get_string_prop(self, element: ET.Element, prop_name: str, default: str = "") -> str:
+    def _get_string_prop(
+        self, element: ET.Element, prop_name: str, default: str = ""
+    ) -> str:
         """Get string property value from element."""
         prop = element.find(f".//stringProp[@name='{prop_name}']")
         return prop.text if prop is not None and prop.text else default
 
-    def _get_int_prop(self, element: ET.Element, prop_name: str, default: int = 0) -> int:
+    def _get_int_prop(
+        self, element: ET.Element, prop_name: str, default: int = 0
+    ) -> int:
         """Get integer property value from element."""
         prop = element.find(f".//stringProp[@name='{prop_name}']")
         if prop is not None and prop.text:
@@ -261,10 +274,11 @@ class JMeterTestPlanParser:
                 pass
         return default
 
-    def _get_bool_prop(self, element: ET.Element, prop_name: str, default: bool = False) -> bool:
+    def _get_bool_prop(
+        self, element: ET.Element, prop_name: str, default: bool = False
+    ) -> bool:
         """Get boolean property value from element."""
         prop = element.find(f".//boolProp[@name='{prop_name}']")
         if prop is not None and prop.text:
             return prop.text.lower() == "true"
         return default
-

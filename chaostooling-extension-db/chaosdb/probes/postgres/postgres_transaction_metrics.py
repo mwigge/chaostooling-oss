@@ -3,7 +3,9 @@ from typing import Optional
 from chaosdb.probes.postgres.postgres_slow_transactions_status import (
     probe_slow_transactions_status,
 )
-from logzero import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def check_transaction_duration(

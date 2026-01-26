@@ -100,7 +100,10 @@ def _start_jmeter_via_api(
 
         return result
     except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to start JMeter test via API: {e}", extra={"api_url": jmeter_api_url})
+        logger.error(
+            f"Failed to start JMeter test via API: {e}",
+            extra={"api_url": jmeter_api_url},
+        )
         raise
 
 
@@ -139,8 +142,10 @@ def _start_jmeter_via_cli(
     cmd = [
         str(jmeter_bin),
         "-n",  # Non-GUI mode
-        "-t", test_plan_path,  # Test plan
-        "-l", results_file,  # Results file
+        "-t",
+        test_plan_path,  # Test plan
+        "-l",
+        results_file,  # Results file
     ]
 
     # Add remote hosts if specified
@@ -197,7 +202,9 @@ def stop_jmeter_test(
     elif process_id:
         return _stop_jmeter_via_cli(process_id)
     else:
-        raise ValueError("Either test_id (for API mode) or process_id (for CLI mode) must be provided")
+        raise ValueError(
+            "Either test_id (for API mode) or process_id (for CLI mode) must be provided"
+        )
 
 
 def _stop_jmeter_via_api(jmeter_api_url: str, test_id: str, timeout: int) -> dict:
@@ -275,7 +282,9 @@ def _get_jmeter_status_via_api(jmeter_api_url: str, test_id: str, timeout: int) 
         raise
 
 
-def _get_jmeter_status_from_results(results_file: str, process_id: Optional[int]) -> dict:
+def _get_jmeter_status_from_results(
+    results_file: str, process_id: Optional[int]
+) -> dict:
     """Parse JMeter results file to get status."""
     import csv
 
@@ -302,11 +311,17 @@ def _get_jmeter_status_from_results(results_file: str, process_id: Optional[int]
             rows = list(reader)
 
         if not rows:
-            return {"status": "completed", "total_samples": 0, "results_file": results_file}
+            return {
+                "status": "completed",
+                "total_samples": 0,
+                "results_file": results_file,
+            }
 
         # Calculate statistics
         total_samples = len(rows)
-        success_count = sum(1 for row in rows if row.get("success", "").lower() == "true")
+        success_count = sum(
+            1 for row in rows if row.get("success", "").lower() == "true"
+        )
         error_count = total_samples - success_count
 
         # Extract response times (if available)
@@ -316,18 +331,25 @@ def _get_jmeter_status_from_results(results_file: str, process_id: Optional[int]
             if elapsed and elapsed.isdigit():
                 response_times.append(int(elapsed))
 
-        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+        avg_response_time = (
+            sum(response_times) / len(response_times) if response_times else 0
+        )
 
         return {
             "status": "completed",
             "total_samples": total_samples,
             "success_count": success_count,
             "error_count": error_count,
-            "success_rate": (success_count / total_samples * 100) if total_samples > 0 else 0,
+            "success_rate": (success_count / total_samples * 100)
+            if total_samples > 0
+            else 0,
             "avg_response_time_ms": avg_response_time,
             "results_file": results_file,
         }
     except Exception as e:
         logger.warning(f"Failed to parse JMeter results file: {e}")
-        return {"status": "completed", "results_file": results_file, "parse_error": str(e)}
-
+        return {
+            "status": "completed",
+            "results_file": results_file,
+            "parse_error": str(e),
+        }

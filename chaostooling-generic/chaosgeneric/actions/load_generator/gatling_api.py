@@ -329,5 +329,3 @@ def _get_gatling_status_from_process(process_id: int) -> dict:
             "status": "completed",
             "process_id": process_id,
         }
-
-

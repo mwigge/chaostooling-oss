@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import psycopg2
 from chaosotel import (
@@ -16,6 +16,8 @@ from chaosotel import (
 from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
+from chaosdb.common.connection import create_postgres_connection
+
 
 def test_postgres_connection(
     host: Optional[str] = None,
@@ -23,14 +25,18 @@ def test_postgres_connection(
     database: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
-) -> dict:
+) -> Dict[str, Any]:
     """
     Simple connectivity check against PostgreSQL with chaosotel tracing/metrics.
     """
-    host = host or os.getenv("POSTGRES_HOST", "localhost")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "postgres")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
+    from chaosdb.common.constants import DatabaseDefaults
+
+    host = host or os.getenv("POSTGRES_HOST", DatabaseDefaults.POSTGRES_DEFAULT_HOST)
+    port = port or int(os.getenv("POSTGRES_PORT", str(DatabaseDefaults.POSTGRES_PORT)))
+    database = database or os.getenv(
+        "POSTGRES_DB", DatabaseDefaults.POSTGRES_DEFAULT_DB
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
     password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     ensure_initialized()
@@ -64,13 +70,12 @@ def test_postgres_connection(
             span.set_attribute("chaos.system", "postgresql")
             span.set_attribute("chaos.operation", "connectivity")
 
-            conn = psycopg2.connect(
+            conn = create_postgres_connection(
                 host=host,
                 port=port,
                 database=database,
                 user=user,
                 password=password,
-                connect_timeout=5,
             )
             cursor = conn.cursor()
             query_start = time.time()
@@ -114,17 +119,41 @@ def test_postgres_connection(
                 "database": database,
                 "host": host,
             }
-    except Exception as e:
-        metrics.record_db_error(
-            db_system=db_system,
-            error_type=type(e).__name__,
-            db_name=database,
-        )
+    except psycopg2.OperationalError as e:
+        logger.error(f"PostgreSQL connection failed: {e}")
+        if metrics:
+            metrics.record_db_error(
+                db_system=db_system,
+                error_type=type(e).__name__,
+                db_name=database,
+            )
         if span:
             span.set_status(StatusCode.ERROR, str(e))
-        logger.error(
-            f"Postgres connection failed: {e}",
-            extra={"error": str(e)},
-        )
         flush()
-        raise
+        return {"success": False, "error": f"Connection error: {e}"}
+    except psycopg2.Error as e:
+        logger.error(f"PostgreSQL database error: {e}")
+        if metrics:
+            metrics.record_db_error(
+                db_system=db_system,
+                error_type=type(e).__name__,
+                db_name=database,
+            )
+        if span:
+            span.set_status(StatusCode.ERROR, str(e))
+        flush()
+        return {"success": False, "error": f"Database error: {e}"}
+    except Exception as e:
+        logger.error(
+            f"Unexpected error testing PostgreSQL connection: {e}", exc_info=True
+        )
+        if metrics:
+            metrics.record_db_error(
+                db_system=db_system,
+                error_type=type(e).__name__,
+                db_name=database,
+            )
+        if span:
+            span.set_status(StatusCode.ERROR, str(e))
+        flush()
+        return {"success": False, "error": f"Unexpected error: {e}"}

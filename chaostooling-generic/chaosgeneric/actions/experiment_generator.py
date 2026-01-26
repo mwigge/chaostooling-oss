@@ -59,7 +59,9 @@ class ChaosExperimentGenerator:
             "tags": self._generate_tags(endpoints),
             "configuration": self._generate_configuration(),
             "controls": self._generate_controls(),
-            "steady-state-hypothesis": self._generate_steady_state_hypothesis(endpoints),
+            "steady-state-hypothesis": self._generate_steady_state_hypothesis(
+                endpoints
+            ),
             "method": self._generate_method(endpoints, load_config),
             "rollbacks": self._generate_rollbacks(),
         }
@@ -92,7 +94,14 @@ class ChaosExperimentGenerator:
 
     def _generate_tags(self, endpoints: list[dict[str, Any]]) -> list[str]:
         """Generate tags based on discovered services."""
-        tags = ["jmeter", "load-testing", "chaos", "resilience", "observability", "auto-generated"]
+        tags = [
+            "jmeter",
+            "load-testing",
+            "chaos",
+            "resilience",
+            "observability",
+            "auto-generated",
+        ]
 
         service_types = {ep.get("service_type", "application") for ep in endpoints}
         for service_type in service_types:
@@ -119,7 +128,9 @@ class ChaosExperimentGenerator:
             "jmeter_test_plan": {
                 "type": "env",
                 "key": "JMETER_TEST_PLAN",
-                "default": str(self.jmeter_data.get("test_plan", {}).get("filename", "")),
+                "default": str(
+                    self.jmeter_data.get("test_plan", {}).get("filename", "")
+                ),
             },
             "jmeter_home": {
                 "type": "env",
@@ -164,10 +175,10 @@ class ChaosExperimentGenerator:
         # Add endpoint-specific configurations
         endpoints = self.jmeter_data.get("endpoints", [])
         for i, endpoint in enumerate(endpoints[:5]):  # Limit to first 5 for brevity
-            host_key = f"endpoint_{i+1}_host"
+            host_key = f"endpoint_{i + 1}_host"
             config[host_key] = {
                 "type": "env",
-                "key": f"ENDPOINT_{i+1}_HOST",
+                "key": f"ENDPOINT_{i + 1}_HOST",
                 "default": endpoint.get("host", ""),
             }
 
@@ -226,7 +237,11 @@ class ChaosExperimentGenerator:
                 continue
             seen_services.add(service_type)
 
-            if service_type == "application" or service_type.startswith("database_") or service_type.startswith("messaging_"):
+            if (
+                service_type == "application"
+                or service_type.startswith("database_")
+                or service_type.startswith("messaging_")
+            ):
                 probe = self._create_service_probe(endpoint, service_type)
                 if probe:
                     probes.append(probe)
@@ -235,17 +250,19 @@ class ChaosExperimentGenerator:
             # Fallback: generic HTTP probe
             if endpoints:
                 first_endpoint = endpoints[0]
-                probes.append({
-                    "name": "probe-endpoint-availability",
-                    "type": "probe",
-                    "provider": {
-                        "type": "http",
-                        "url": first_endpoint.get("url", ""),
-                        "method": "GET",
-                        "timeout": 5,
-                    },
-                    "tolerance": 200,
-                })
+                probes.append(
+                    {
+                        "name": "probe-endpoint-availability",
+                        "type": "probe",
+                        "provider": {
+                            "type": "http",
+                            "url": first_endpoint.get("url", ""),
+                            "method": "GET",
+                            "timeout": 5,
+                        },
+                        "tolerance": 200,
+                    }
+                )
 
         return {
             "title": "System is healthy and endpoints are accessible",
@@ -325,24 +342,28 @@ class ChaosExperimentGenerator:
         method = []
 
         # Phase 1: Baseline
-        method.append({
-            "_comment_phase": "=== PHASE 1: BASELINE - Establish baseline with JMeter load ===",
-            "name": "baseline-with-jmeter-load",
-            "type": "action",
-            "provider": {
-                "type": "python",
-                "module": "chaosgeneric.actions.load_generator.jmeter_api",
-                "func": "get_jmeter_test_status",
-                "arguments": {
-                    "results_file": "/tmp/jmeter-baseline.jtl",
+        method.append(
+            {
+                "_comment_phase": "=== PHASE 1: BASELINE - Establish baseline with JMeter load ===",
+                "name": "baseline-with-jmeter-load",
+                "type": "action",
+                "provider": {
+                    "type": "python",
+                    "module": "chaosgeneric.actions.load_generator.jmeter_api",
+                    "func": "get_jmeter_test_status",
+                    "arguments": {
+                        "results_file": "/tmp/jmeter-baseline.jtl",
+                    },
                 },
-            },
-        })
+            }
+        )
 
         # Phase 2: Chaos scenarios based on discovered services
-        method.append({
-            "_comment_phase": "=== PHASE 2: CHAOS SCENARIOS (During JMeter load) ===",
-        })
+        method.append(
+            {
+                "_comment_phase": "=== PHASE 2: CHAOS SCENARIOS (During JMeter load) ===",
+            }
+        )
 
         # Group endpoints by service type
         service_groups: dict[str, list[dict[str, Any]]] = {}
@@ -362,18 +383,20 @@ class ChaosExperimentGenerator:
             scenario_count += len(scenarios)
 
         # Phase 3: Final validation
-        method.append({
-            "_comment_phase": "=== PHASE 3: FINAL VALIDATION ===",
-            "name": "verify-system-health-after-chaos",
-            "type": "probe",
-            "provider": {
-                "type": "http",
-                "url": endpoints[0].get("url", "") if endpoints else "",
-                "method": "GET",
-                "timeout": 5,
-            },
-            "tolerance": 200,
-        })
+        method.append(
+            {
+                "_comment_phase": "=== PHASE 3: FINAL VALIDATION ===",
+                "name": "verify-system-health-after-chaos",
+                "type": "probe",
+                "provider": {
+                    "type": "http",
+                    "url": endpoints[0].get("url", "") if endpoints else "",
+                    "method": "GET",
+                    "timeout": 5,
+                },
+                "tolerance": 200,
+            }
+        )
 
         return method
 
@@ -384,16 +407,22 @@ class ChaosExperimentGenerator:
         scenarios = []
 
         if service_type.startswith("database_postgres"):
-            scenarios.extend(self._generate_postgres_scenarios(endpoints[0], start_index))
+            scenarios.extend(
+                self._generate_postgres_scenarios(endpoints[0], start_index)
+            )
         elif service_type.startswith("database_mysql"):
             scenarios.extend(self._generate_mysql_scenarios(endpoints[0], start_index))
         elif service_type.startswith("messaging_kafka"):
             scenarios.extend(self._generate_kafka_scenarios(endpoints[0], start_index))
         elif service_type.startswith("messaging_rabbitmq"):
-            scenarios.extend(self._generate_rabbitmq_scenarios(endpoints[0], start_index))
+            scenarios.extend(
+                self._generate_rabbitmq_scenarios(endpoints[0], start_index)
+            )
         else:
             # Generic application/infrastructure scenarios
-            scenarios.extend(self._generate_generic_scenarios(endpoints[0], start_index))
+            scenarios.extend(
+                self._generate_generic_scenarios(endpoints[0], start_index)
+            )
 
         return scenarios
 
@@ -541,4 +570,3 @@ class ChaosExperimentGenerator:
             json.dump(experiment, f, indent=2, ensure_ascii=False)
 
         logger.info(f"Generated chaos experiment: {self.output_path}")
-

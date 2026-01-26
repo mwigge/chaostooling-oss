@@ -3,7 +3,16 @@ import os
 from typing import Optional
 
 import psycopg2
-from logzero import logger
+
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.connection import create_postgres_connection
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
+
+logger = logging.getLogger(__name__)
 
 
 def run_vacuum_analyze(
@@ -17,14 +26,23 @@ def run_vacuum_analyze(
     """
     Run VACUUM ANALYZE on the database or a specific table.
     """
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
-
-    host = host or os.getenv("POSTGRES_HOST", "postgres")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "testdb")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
+    password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     try:
         conn = psycopg2.connect(
@@ -33,7 +51,7 @@ def run_vacuum_analyze(
             database=database,
             user=user,
             password=password,
-            connect_timeout=5,
+            connect_timeout=ConnectionDefaults.CONNECT_TIMEOUT,
         )
         # VACUUM cannot run inside a transaction block
         conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
@@ -51,6 +69,12 @@ def run_vacuum_analyze(
 
         logger.info("VACUUM ANALYZE completed")
         return True
+    except psycopg2.OperationalError as e:
+        logger.error(f"PostgreSQL connection error while running VACUUM ANALYZE: {e}")
+        return False
+    except psycopg2.Error as e:
+        logger.error(f"PostgreSQL database error while running VACUUM ANALYZE: {e}")
+        return False
     except Exception as e:
-        logger.error(f"Failed to run VACUUM ANALYZE: {e}")
+        logger.error(f"Unexpected error running VACUUM ANALYZE: {e}", exc_info=True)
         return False

@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import psycopg2
 from chaosotel import (
@@ -15,6 +15,13 @@ from chaosotel import (
     get_tracer,
 )
 from opentelemetry.trace import StatusCode
+
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
 
 _active_threads = []
 _stop_event = threading.Event()
@@ -30,7 +37,7 @@ def inject_slow_transactions(
     duration_seconds: int = 60,
     transaction_delay_ms: int = 5000,
     table_name: str = "chaos_test_table",
-) -> dict:
+) -> Dict[str, Any]:
     """
     Inject slow transactions by creating long-running transactions that hold locks.
 
@@ -49,8 +56,6 @@ def inject_slow_transactions(
         Dict with results including transactions created, average duration, etc.
     """
     # Handle string input from Chaos Toolkit configuration
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
     num_threads = int(num_threads) if isinstance(num_threads, str) else num_threads
     duration_seconds = (
         int(duration_seconds) if isinstance(duration_seconds, str) else duration_seconds
@@ -61,10 +66,22 @@ def inject_slow_transactions(
         else transaction_delay_ms
     )
 
-    host = host or os.getenv("POSTGRES_HOST", "localhost")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "postgres")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
     password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     ensure_initialized()
@@ -85,7 +102,7 @@ def inject_slow_transactions(
     total_transaction_time = 0
     errors = 0
 
-    def slow_transaction_worker(thread_id: int):
+    def slow_transaction_worker(thread_id: int) -> None:
         """Worker thread that creates slow transactions."""
         nonlocal transactions_completed, total_transaction_time, errors
         conn = None
@@ -115,7 +132,7 @@ def inject_slow_transactions(
                     database=database,
                     user=user,
                     password=password,
-                    connect_timeout=5,
+                    connect_timeout=ConnectionDefaults.CONNECT_TIMEOUT,
                 )
                 conn.autocommit = False
                 cursor = conn.cursor()
@@ -247,7 +264,7 @@ def inject_slow_transactions(
             # Stop all threads
             _stop_event.set()
             for thread in _active_threads:
-                thread.join(timeout=10)
+                thread.join(timeout=ConnectionDefaults.THREAD_JOIN_TIMEOUT_LONG)
 
             duration_ms = (time.time() - start_time) * 1000
             avg_transaction_time = (
@@ -288,16 +305,24 @@ def inject_slow_transactions(
         raise
 
 
-def stop_slow_transactions():
+def stop_slow_transactions() -> None:
     """Stop any running slow transactions."""
     global _stop_event, _active_threads
     _stop_event.set()
     for thread in _active_threads:
-        thread.join(timeout=5)
+        thread.join(timeout=ConnectionDefaults.THREAD_JOIN_TIMEOUT_SHORT)
     _active_threads = []
 
 
-def _prepare_table(host, port, database, user, password, table_name, logger):
+def _prepare_table(
+    host: str,
+    port: int,
+    database: str,
+    user: str,
+    password: str,
+    table_name: str,
+    logger: logging.Logger,
+) -> None:
     """
     Ensure the chaos table exists with the expected schema before starting worker threads.
     Running DDL once prevents duplicate sequence / index errors raised when each thread executes CREATE TABLE.
@@ -310,7 +335,7 @@ def _prepare_table(host, port, database, user, password, table_name, logger):
             database=database,
             user=user,
             password=password,
-            connect_timeout=5,
+            connect_timeout=ConnectionDefaults.CONNECT_TIMEOUT,
         )
         conn.autocommit = True
         cursor = conn.cursor()

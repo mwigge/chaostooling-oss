@@ -11,11 +11,27 @@ Records:
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from opentelemetry.sdk._logs import LoggerProvider
 
 logger = logging.getLogger("chaosotel.log_core")
+
+
+def _handle_log_error(operation: str, error: Exception) -> None:
+    """
+    Standardized error handling for log operations.
+
+    Args:
+        operation: Description of the operation that failed
+        error: The exception that occurred
+    """
+    if isinstance(error, (ValueError, AttributeError, TypeError)):
+        logger.error(f"Invalid parameter for {operation}: {error}")
+        raise
+    else:
+        logger.error(f"Unexpected error in {operation}: {error}", exc_info=True)
+        raise RuntimeError(f"Failed to {operation}: {error}") from error
 
 
 class LogCore:
@@ -76,7 +92,7 @@ class LogCore:
 
             logger.info(f"Action started: {action_name}", extra=log_data)
         except Exception as e:
-            logger.error(f"Error logging action start: {e}")
+            _handle_log_error("log action start", e)
 
     def log_action_end(
         self,
@@ -112,7 +128,7 @@ class LogCore:
                 extra=log_data,
             )
         except Exception as e:
-            logger.error(f"Error logging action end: {e}")
+            _handle_log_error("log action end", e)
 
     # ========================================================================
     # PROBE LOGGING
@@ -142,7 +158,7 @@ class LogCore:
 
             logger.info(f"Probe started: {probe_name}", extra=log_data)
         except Exception as e:
-            logger.error(f"Error logging probe start: {e}")
+            _handle_log_error("log probe start", e)
 
     def log_probe_end(
         self,
@@ -175,7 +191,7 @@ class LogCore:
             level = logging.INFO if status == "success" else logging.ERROR
             logger.log(level, f"Probe ended: {probe_name}", extra=log_data)
         except Exception as e:
-            logger.error(f"Error logging probe end: {e}")
+            _handle_log_error("log probe end", e)
 
     # ========================================================================
     # ERROR LOGGING
@@ -207,7 +223,7 @@ class LogCore:
 
             logger.error(f"Error in {component}: {error_message}", extra=log_data)
         except Exception as e:
-            logger.error(f"Error logging error: {e}")
+            _handle_log_error("log error", e)
 
     # ========================================================================
     # COMPLIANCE LOGGING
@@ -244,7 +260,7 @@ class LogCore:
                 extra=log_data,
             )
         except Exception as e:
-            logger.error(f"Error logging compliance check: {e}")
+            _handle_log_error("log compliance check", e)
 
     # ========================================================================
     # EVENT LOGGING
@@ -281,13 +297,13 @@ class LogCore:
             level = level_map.get(severity.lower(), logging.INFO)
             logger.log(level, f"Event: {event_name}", extra=log_data)
         except Exception as e:
-            logger.error(f"Error logging event: {e}")
+            _handle_log_error("log event", e)
 
     # ========================================================================
     # AUDIT TRAIL
     # ========================================================================
 
-    def get_audit_trail(self) -> list:
+    def get_audit_trail(self) -> List[Dict[str, Any]]:
         """Get audit trail."""
         return self._audit_trail.copy()
 
@@ -336,7 +352,7 @@ class LogCore:
             elif level == "CRITICAL":
                 logger.critical(log_data)
         except Exception as e:
-            logger.error(f"Error in structured logging: {e}")
+            _handle_log_error("structured logging", e)
 
     def shutdown(self) -> None:
         """Shutdown log core."""
@@ -345,4 +361,4 @@ class LogCore:
                 self.logger_provider.shutdown()
             logger.info("LogCore shutdown complete")
         except Exception as e:
-            logger.error(f"Error during LogCore shutdown: {e}")
+            _handle_log_error("LogCore shutdown", e)

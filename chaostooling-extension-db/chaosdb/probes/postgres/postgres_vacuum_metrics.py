@@ -3,7 +3,9 @@ from typing import Optional
 from chaosdb.probes.postgres.postgres_system_metrics import (
     collect_postgres_system_metrics,
 )
-from logzero import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def check_dead_tuples(

@@ -3,7 +3,15 @@ import os
 from typing import Optional
 
 import psycopg2
-from logzero import logger
+
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
+
+logger = logging.getLogger(__name__)
 
 
 def terminate_slow_transactions(
@@ -17,23 +25,31 @@ def terminate_slow_transactions(
     """
     Terminate transactions running longer than max_duration_seconds.
     """
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
-
-    host = host or os.getenv("POSTGRES_HOST", "postgres")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "testdb")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
+    password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     try:
-        conn = psycopg2.connect(
+        conn = create_postgres_connection(
             host=host,
             port=port,
             database=database,
             user=user,
             password=password,
-            connect_timeout=5,
         )
         cursor = conn.cursor()
 
@@ -54,8 +70,20 @@ def terminate_slow_transactions(
 
         logger.info(f"Terminated {terminated_count} slow transactions")
         return True
+    except psycopg2.OperationalError as e:
+        logger.error(
+            f"PostgreSQL connection error while terminating slow transactions: {e}"
+        )
+        return False
+    except psycopg2.Error as e:
+        logger.error(
+            f"PostgreSQL database error while terminating slow transactions: {e}"
+        )
+        return False
     except Exception as e:
-        logger.error(f"Failed to terminate slow transactions: {e}")
+        logger.error(
+            f"Unexpected error terminating slow transactions: {e}", exc_info=True
+        )
         return False
 
 
@@ -70,23 +98,31 @@ def terminate_idle_connections(
     """
     Terminate connections idle for longer than max_idle_seconds.
     """
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
-
-    host = host or os.getenv("POSTGRES_HOST", "postgres")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "testdb")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
+    password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     try:
-        conn = psycopg2.connect(
+        conn = create_postgres_connection(
             host=host,
             port=port,
             database=database,
             user=user,
             password=password,
-            connect_timeout=5,
         )
         cursor = conn.cursor()
 
@@ -107,8 +143,20 @@ def terminate_idle_connections(
 
         logger.info(f"Terminated {terminated_count} idle connections")
         return True
+    except psycopg2.OperationalError as e:
+        logger.error(
+            f"PostgreSQL connection error while terminating idle connections: {e}"
+        )
+        return False
+    except psycopg2.Error as e:
+        logger.error(
+            f"PostgreSQL database error while terminating idle connections: {e}"
+        )
+        return False
     except Exception as e:
-        logger.error(f"Failed to terminate idle connections: {e}")
+        logger.error(
+            f"Unexpected error terminating idle connections: {e}", exc_info=True
+        )
         return False
 
 
@@ -122,23 +170,31 @@ def release_blocking_locks(
     """
     Terminate sessions that are blocking other sessions.
     """
-    if port is not None:
-        port = int(port) if isinstance(port, str) else port
-
-    host = host or os.getenv("POSTGRES_HOST", "postgres")
-    port = port or int(os.getenv("POSTGRES_PORT", "5432"))
-    database = database or os.getenv("POSTGRES_DB", "testdb")
-    user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    host = validate_host(
+        host or os.getenv("POSTGRES_HOST"),
+        DatabaseDefaults.POSTGRES_DEFAULT_HOST,
+        "host",
+    )
+    port = validate_port(
+        port or os.getenv("POSTGRES_PORT"),
+        DatabaseDefaults.POSTGRES_PORT,
+        "port",
+    )
+    database = validate_database_name(
+        database or os.getenv("POSTGRES_DB"),
+        DatabaseDefaults.POSTGRES_DEFAULT_DB,
+        "database",
+    )
+    user = user or os.getenv("POSTGRES_USER", DatabaseDefaults.POSTGRES_DEFAULT_USER)
+    password = password or os.getenv("POSTGRES_PASSWORD", "")
 
     try:
-        conn = psycopg2.connect(
+        conn = create_postgres_connection(
             host=host,
             port=port,
             database=database,
             user=user,
             password=password,
-            connect_timeout=5,
         )
         cursor = conn.cursor()
 
@@ -167,6 +223,12 @@ def release_blocking_locks(
 
         logger.info(f"Terminated {terminated_count} blocking sessions")
         return True
+    except psycopg2.OperationalError as e:
+        logger.error(f"PostgreSQL connection error while releasing blocking locks: {e}")
+        return False
+    except psycopg2.Error as e:
+        logger.error(f"PostgreSQL database error while releasing blocking locks: {e}")
+        return False
     except Exception as e:
-        logger.error(f"Failed to release blocking locks: {e}")
+        logger.error(f"Unexpected error releasing blocking locks: {e}", exc_info=True)
         return False

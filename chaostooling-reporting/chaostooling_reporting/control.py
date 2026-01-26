@@ -122,23 +122,20 @@ def load_control(
     # Initialize dashboard generator if enabled
     dashboard_config = reporting_config.get("dashboard", {})
     dashboard_enabled = dashboard_config.get(
-        "enabled",
-        os.getenv("CHAOS_DASHBOARD_ENABLED", "true").lower() == "true"
+        "enabled", os.getenv("CHAOS_DASHBOARD_ENABLED", "true").lower() == "true"
     )
 
     dashboard_generator = None
     if dashboard_enabled:
         grafana_url = dashboard_config.get(
-            "grafana_url",
-            os.getenv("GRAFANA_URL", "http://grafana:3000")
+            "grafana_url", os.getenv("GRAFANA_URL", "http://grafana:3000")
         )
         grafana_api_key = dashboard_config.get(
-            "api_key",
-            os.getenv("GRAFANA_API_KEY", "")
+            "api_key", os.getenv("GRAFANA_API_KEY", "")
         )
         dashboard_output_dir = dashboard_config.get(
             "output_dir",
-            os.getenv("CHAOS_DASHBOARD_OUTPUT_DIR", f"{output_dir}/dashboards")
+            os.getenv("CHAOS_DASHBOARD_OUTPUT_DIR", f"{output_dir}/dashboards"),
         )
 
         dashboard_generator = DashboardGenerator(
@@ -357,6 +354,7 @@ def after_experiment_control(
                 if not experiment_id:
                     # Generate an ID if not present
                     import uuid
+
                     experiment_id = str(uuid.uuid4())[:12]
 
                 experiment_title = experiment.get("title", "Chaos Experiment")
@@ -383,9 +381,13 @@ def after_experiment_control(
                 )
 
                 if dashboard_result.get("dashboard_url"):
-                    logger.info(f"Dashboard provisioned: {dashboard_result['dashboard_url']}")
+                    logger.info(
+                        f"Dashboard provisioned: {dashboard_result['dashboard_url']}"
+                    )
                 if dashboard_result.get("local_path"):
-                    logger.info(f"Dashboard saved locally: {dashboard_result['local_path']}")
+                    logger.info(
+                        f"Dashboard saved locally: {dashboard_result['local_path']}"
+                    )
 
             except Exception as e:
                 logger.warning(f"Failed to generate dashboard: {e}", exc_info=True)

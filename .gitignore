@@ -138,3 +138,9 @@ celerybeat-schedule
 
 # CI/CD artifacts
 bandit-report.json
+
+# CLAUDE
+.claude/
+CLAUDE_local.md
+
+docs_local/ 

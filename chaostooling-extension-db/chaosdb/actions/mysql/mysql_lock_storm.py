@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import mysql.connector
 from chaosotel import (
@@ -15,6 +15,14 @@ from chaosotel import (
     get_tracer,
 )
 from opentelemetry.trace import StatusCode
+
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.connection import create_mysql_connection
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
 
 _active_threads = []
 _stop_event = threading.Event()
@@ -27,17 +35,16 @@ def _prepare_table(
     user: str,
     password: str,
     table_name: str,
-    logger,
-):
+    logger: logging.Logger,
+) -> None:
     """Prepare test table if it doesn't exist."""
     try:
-        conn = mysql.connector.connect(
+        conn = create_mysql_connection(
             host=host,
             port=port,
             database=database,
             user=user,
             password=password,
-            connect_timeout=5,
         )
         conn.autocommit = True
         cursor = conn.cursor()
@@ -152,13 +159,12 @@ def inject_lock_storm(
                     chaos_thread_id=thread_id,
                 )
 
-                conn = mysql.connector.connect(
+                conn = create_mysql_connection(
                     host=host,
                     port=port,
                     database=database,
                     user=user,
                     password=password,
-                    connect_timeout=5,
                 )
                 conn.autocommit = False
                 cursor = conn.cursor()
@@ -337,7 +343,7 @@ def inject_lock_storm(
         raise
 
 
-def stop_lock_storm():
+def stop_lock_storm() -> None:
     """Stop any running lock storm."""
     global _stop_event, _active_threads
     _stop_event.set()

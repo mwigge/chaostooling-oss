@@ -3,11 +3,27 @@
 """MetricsCore - Unified Prometheus metrics recording interface."""
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from opentelemetry.sdk.metrics import MeterProvider
 
 logger = logging.getLogger("chaosotel.metrics_core")
+
+
+def _handle_metric_error(operation: str, error: Exception) -> None:
+    """
+    Standardized error handling for metric operations.
+
+    Args:
+        operation: Description of the operation that failed
+        error: The exception that occurred
+    """
+    if isinstance(error, (ValueError, AttributeError, TypeError)):
+        logger.error(f"Invalid parameter for {operation}: {error}")
+        raise
+    else:
+        logger.error(f"Unexpected error in {operation}: {error}", exc_info=True)
+        raise RuntimeError(f"Failed to {operation}: {error}") from error
 
 
 class MetricsCore:
@@ -50,7 +66,7 @@ class MetricsCore:
             histogram.record(float(duration_ms), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording action duration: {e}")
+            _handle_metric_error("record action duration", e)
 
     def record_action_count(
         self,
@@ -74,7 +90,7 @@ class MetricsCore:
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording action count: {e}")
+            _handle_metric_error("record action count", e)
 
     def record_probe_duration(
         self,
@@ -99,7 +115,7 @@ class MetricsCore:
             histogram.record(float(duration_ms), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording probe duration: {e}")
+            _handle_metric_error("record probe duration", e)
 
     def record_probe_count(
         self,
@@ -118,7 +134,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording probe count: {e}")
+            _handle_metric_error("record probe count", e)
 
     def record_recovery_time(
         self,
@@ -138,7 +154,7 @@ class MetricsCore:
                 tags={"target_type": target_type} if target_type else None,
             )
         except Exception as e:
-            logger.error(f"Error recording recovery time: {e}")
+            _handle_metric_error("record recovery time", e)
 
     def record_compliance_score(
         self,
@@ -168,7 +184,7 @@ class MetricsCore:
                 return
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording compliance score: {e}")
+            _handle_metric_error("record compliance score", e)
 
     def record_compliance_violation(
         self, regulation: str, violation: str, severity: str = "medium"
@@ -186,7 +202,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording compliance violation: {e}")
+            _handle_metric_error("record compliance violation", e)
 
     def record_impact_scope(
         self,
@@ -210,7 +226,7 @@ class MetricsCore:
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording impact scope: {e}")
+            _handle_metric_error("record impact scope", e)
 
     def record_custom_metric(
         self,
@@ -260,11 +276,11 @@ class MetricsCore:
 
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording custom metric: {e}")
+            _handle_metric_error("record custom metric", e)
 
     def _get_or_create_histogram(
         self, name: str, unit: str = "1", description: str = ""
-    ):
+    ) -> Any:
         """Get or create histogram."""
         cache_key = f"histogram_{name}"
         if cache_key not in self._instruments:
@@ -273,7 +289,9 @@ class MetricsCore:
             )
         return self._instruments[cache_key]
 
-    def _get_or_create_counter(self, name: str, unit: str = "1", description: str = ""):
+    def _get_or_create_counter(
+        self, name: str, unit: str = "1", description: str = ""
+    ) -> Any:
         """Get or create counter."""
         cache_key = f"counter_{name}"
         if cache_key not in self._instruments:
@@ -282,7 +300,9 @@ class MetricsCore:
             )
         return self._instruments[cache_key]
 
-    def _get_or_create_gauge(self, name: str, unit: str = "1", description: str = ""):
+    def _get_or_create_gauge(
+        self, name: str, unit: str = "1", description: str = ""
+    ) -> Any:
         """Get or create gauge."""
         cache_key = f"gauge_{name}"
         if cache_key not in self._instruments:
@@ -320,7 +340,7 @@ class MetricsCore:
             histogram.record(float(duration_ms), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording db query latency: {e}")
+            _handle_metric_error("record db query latency", e)
 
     def record_db_query_count(
         self,
@@ -345,7 +365,7 @@ class MetricsCore:
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording db query count: {e}")
+            _handle_metric_error("record db query count", e)
 
     def record_db_error(
         self,
@@ -370,7 +390,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording db error: {e}")
+            _handle_metric_error("record db error", e)
 
     def record_db_deadlock(
         self,
@@ -398,7 +418,7 @@ class MetricsCore:
             )
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording db deadlock: {e}")
+            _handle_metric_error("record db deadlock", e)
 
     def record_db_lock(
         self,
@@ -423,7 +443,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording db lock: {e}")
+            _handle_metric_error("record db lock", e)
 
     def record_db_slow_query_count(
         self,
@@ -449,7 +469,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording slow query count: {e}")
+            _handle_metric_error("record slow query count", e)
 
     def record_db_connection_pool_utilization(
         self,
@@ -476,7 +496,7 @@ class MetricsCore:
                 gauge.set(float(utilization_percent), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording connection pool utilization: {e}")
+            _handle_metric_error("record connection pool utilization", e)
 
     def record_db_connection_failure(
         self,
@@ -498,7 +518,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording db connection failure: {e}")
+            _handle_metric_error("record db connection failure", e)
 
     def record_db_gauge(
         self,
@@ -533,7 +553,7 @@ class MetricsCore:
                 return
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording db gauge: {e}")
+            _handle_metric_error("record db gauge", e)
 
     def record_db_counter(
         self,
@@ -558,7 +578,7 @@ class MetricsCore:
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording db counter: {e}")
+            _handle_metric_error("record db counter", e)
 
     def record_db_histogram(
         self,
@@ -585,7 +605,7 @@ class MetricsCore:
             histogram.record(float(value), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording db histogram: {e}")
+            _handle_metric_error("record db histogram", e)
 
     # ========================================================================
     # Messaging Metrics - Reusable across messaging system extensions
@@ -616,7 +636,7 @@ class MetricsCore:
             histogram.record(float(duration_ms), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording messaging operation latency: {e}")
+            _handle_metric_error("record messaging operation latency", e)
 
     def record_messaging_operation_count(
         self,
@@ -642,7 +662,7 @@ class MetricsCore:
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording messaging operation count: {e}")
+            _handle_metric_error("record messaging operation count", e)
 
     def record_messaging_error(
         self,
@@ -670,7 +690,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording messaging error: {e}")
+            _handle_metric_error("record messaging error", e)
 
     def record_messaging_connection_failure(
         self,
@@ -692,7 +712,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording messaging connection failure: {e}")
+            _handle_metric_error("record messaging connection failure", e)
 
     def record_messaging_gauge(
         self,
@@ -727,7 +747,7 @@ class MetricsCore:
                 return
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording messaging gauge: {e}")
+            _handle_metric_error("record messaging gauge", e)
 
     def record_messaging_counter(
         self,
@@ -752,7 +772,7 @@ class MetricsCore:
             counter.add(int(count), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording messaging counter: {e}")
+            _handle_metric_error("record messaging counter", e)
 
     def record_messaging_histogram(
         self,
@@ -779,7 +799,7 @@ class MetricsCore:
             histogram.record(float(value), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording messaging histogram: {e}")
+            _handle_metric_error("record messaging histogram", e)
 
     # ========================================================================
     # Transaction Metrics
@@ -812,7 +832,7 @@ class MetricsCore:
             total_counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording transaction: {e}")
+            _handle_metric_error("record transaction", e)
 
     def record_transaction_reconnection_attempt(
         self,
@@ -834,7 +854,7 @@ class MetricsCore:
             counter.add(1, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording transaction reconnection: {e}")
+            _handle_metric_error("record transaction reconnection", e)
 
     def record_transaction_integrity(
         self,
@@ -861,7 +881,7 @@ class MetricsCore:
                 gauge.set(float(value), attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording transaction integrity: {e}")
+            _handle_metric_error("record transaction integrity", e)
 
     # ========================================================================
     # MTTR (Mean Time To Recovery) Metrics
@@ -905,7 +925,7 @@ class MetricsCore:
                 gauge.set(recovery_time_seconds, attributes=attributes)
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording MTTR: {e}")
+            _handle_metric_error("record MTTR", e)
 
     # ========================================================================
     # Experiment Metrics - Track experiment lifecycle and status
@@ -952,7 +972,7 @@ class MetricsCore:
 
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording experiment start: {e}")
+            _handle_metric_error("record experiment start", e)
 
     def record_experiment_end(
         self,
@@ -1027,7 +1047,7 @@ class MetricsCore:
 
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording experiment end: {e}")
+            _handle_metric_error("record experiment end", e)
 
     def record_experiment_risk_level(
         self,
@@ -1078,7 +1098,7 @@ class MetricsCore:
 
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording experiment risk level: {e}")
+            _handle_metric_error("record experiment risk level", e)
 
     def record_experiment_complexity(
         self,
@@ -1110,7 +1130,7 @@ class MetricsCore:
 
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording experiment complexity: {e}")
+            _handle_metric_error("record experiment complexity", e)
 
     def record_experiment_activity(
         self,
@@ -1150,13 +1170,13 @@ class MetricsCore:
 
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording experiment activity: {e}")
+            _handle_metric_error("record experiment activity", e)
 
     def record_experiment_systems(
         self,
         experiment_id: str,
         experiment_title: str,
-        systems: list,
+        systems: List[str],
         tags: Optional[Dict[str, str]] = None,
     ) -> None:
         """Record which systems an experiment affects."""
@@ -1181,7 +1201,7 @@ class MetricsCore:
 
             self._metric_count += 1
         except Exception as e:
-            logger.error(f"Error recording experiment systems: {e}")
+            _handle_metric_error("record experiment systems", e)
 
     def shutdown(self) -> None:
         """Shutdown metrics core."""
@@ -1190,4 +1210,4 @@ class MetricsCore:
                 self.meter_provider.shutdown()
             logger.info("MetricsCore shutdown complete")
         except Exception as e:
-            logger.error(f"Error during shutdown: {e}")
+            _handle_metric_error("MetricsCore shutdown", e)

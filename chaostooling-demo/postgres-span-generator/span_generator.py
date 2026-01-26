@@ -5,6 +5,7 @@ PostgreSQL Span Generator
 Monitors pg_stat_statements and generates OpenTelemetry server-side spans
 for PostgreSQL queries to enable service graph visibility and query-level tracing.
 """
+
 import os
 import time
 import psycopg2
@@ -17,8 +18,7 @@ from opentelemetry.trace import SpanKind, Status, StatusCode
 import logging
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -29,18 +29,22 @@ class PostgresSpanGenerator:
     def __init__(self):
         # Initialize OTEL tracer
         service_name = os.getenv("POSTGRES_SERVICE_NAME", "postgres-primary-site-a")
-        resource = Resource.create({
-            "service.name": service_name,
-            "service.namespace": "database",
-            "db.system": "postgresql",
-            "db.name": os.getenv("POSTGRES_DB", "testdb"),
-        })
+        resource = Resource.create(
+            {
+                "service.name": service_name,
+                "service.namespace": "database",
+                "db.system": "postgresql",
+                "db.name": os.getenv("POSTGRES_DB", "testdb"),
+            }
+        )
 
         provider = TracerProvider(resource=resource)
         processor = BatchSpanProcessor(
             OTLPSpanExporter(
-                endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"),
-                insecure=True
+                endpoint=os.getenv(
+                    "OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"
+                ),
+                insecure=True,
             )
         )
         provider.add_span_processor(processor)
@@ -58,7 +62,9 @@ class PostgresSpanGenerator:
 
         logger.info(f"PostgreSQL Span Generator initialized")
         logger.info(f"Service: {service_name}")
-        logger.info(f"Database: {os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}")
+        logger.info(
+            f"Database: {os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+        )
         logger.info(f"OTEL Endpoint: {os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT')}")
 
     def connect_to_database(self):
@@ -79,7 +85,9 @@ class PostgresSpanGenerator:
                 return
             except psycopg2.OperationalError as e:
                 if attempt < max_retries - 1:
-                    logger.warning(f"Connection attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {retry_delay}s...")
+                    logger.warning(
+                        f"Connection attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {retry_delay}s..."
+                    )
                     time.sleep(retry_delay)
                 else:
                     logger.error(f"Failed to connect after {max_retries} attempts")
@@ -99,7 +107,9 @@ class PostgresSpanGenerator:
 
             if result[0] == 0:
                 logger.error("pg_stat_statements extension is NOT enabled!")
-                logger.error("Enable it by running: CREATE EXTENSION pg_stat_statements;")
+                logger.error(
+                    "Enable it by running: CREATE EXTENSION pg_stat_statements;"
+                )
                 return False
 
             logger.info("pg_stat_statements extension is enabled")
@@ -135,8 +145,19 @@ class PostgresSpanGenerator:
 
             stats = {}
             for row in cursor.fetchall():
-                (queryid, query, calls, total_time, mean_time, min_time, max_time,
-                 rows, blks_hit, blks_read, blks_written) = row
+                (
+                    queryid,
+                    query,
+                    calls,
+                    total_time,
+                    mean_time,
+                    min_time,
+                    max_time,
+                    rows,
+                    blks_hit,
+                    blks_read,
+                    blks_written,
+                ) = row
 
                 stats[queryid] = {
                     "query": query,
@@ -199,7 +220,9 @@ class PostgresSpanGenerator:
                 span.set_attribute("db.name", os.getenv("POSTGRES_DB", "testdb"))
                 span.set_attribute("db.user", os.getenv("POSTGRES_USER", "postgres"))
                 span.set_attribute("db.statement", self.sanitize_query(stats["query"]))
-                span.set_attribute("db.operation", self.extract_operation(stats["query"]))
+                span.set_attribute(
+                    "db.operation", self.extract_operation(stats["query"])
+                )
 
                 # Network attributes for service graph (critical for visibility)
                 db_host = os.getenv("POSTGRES_HOST", "postgres-primary-site-a")

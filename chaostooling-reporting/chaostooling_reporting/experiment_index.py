@@ -168,9 +168,10 @@ class ExperimentIndex:
             if tag and tag not in exp.get("tags", []):
                 continue
 
-            if title_contains and title_contains.lower() not in exp.get(
-                "title", ""
-            ).lower():
+            if (
+                title_contains
+                and title_contains.lower() not in exp.get("title", "").lower()
+            ):
                 continue
 
             if date_range:
@@ -244,7 +245,9 @@ class ExperimentIndex:
                 "risk_distribution": {},
             }
 
-        successful = sum(1 for e in experiments if e.get("status") in ("completed", "success"))
+        successful = sum(
+            1 for e in experiments if e.get("status") in ("completed", "success")
+        )
         failed = sum(1 for e in experiments if e.get("status") == "failed")
         durations = [
             e.get("duration_seconds")
@@ -262,8 +265,12 @@ class ExperimentIndex:
             "total_experiments": len(experiments),
             "successful": successful,
             "failed": failed,
-            "success_rate": (successful / len(experiments) * 100) if experiments else 0.0,
-            "avg_duration_seconds": sum(durations) / len(durations) if durations else 0.0,
+            "success_rate": (successful / len(experiments) * 100)
+            if experiments
+            else 0.0,
+            "avg_duration_seconds": sum(durations) / len(durations)
+            if durations
+            else 0.0,
             "systems_tested": self.get_systems(),
             "risk_distribution": risk_dist,
         }

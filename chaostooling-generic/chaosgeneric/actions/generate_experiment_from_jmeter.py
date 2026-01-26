@@ -137,4 +137,3 @@ def generate_experiment_from_jmeter_cli(
     )
 
     return result["output_file"]
-

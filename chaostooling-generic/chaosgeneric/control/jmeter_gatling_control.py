@@ -40,14 +40,14 @@ def configure_control(
     Configuration options:
     - tool: "jmeter" or "gatling" (required)
     - auto_start: "true" or "false" (default: "true")
-    
+
     For JMeter:
     - jmeter_test_plan: Path to .jmx test plan file
     - jmeter_home: JMeter installation directory
     - jmeter_api_url: URL of custom JMeter API wrapper (optional)
     - jmeter_remote_hosts: Comma-separated list of remote hosts
     - jmeter_properties: Dict of JMeter properties
-    
+
     For Gatling:
     - gatling_simulation_class: Fully qualified simulation class name
     - gatling_simulation_path: Path to simulation file (optional)
@@ -63,9 +63,7 @@ def configure_control(
 
     tool = config.get("tool", "").lower()
     if tool not in ["jmeter", "gatling"]:
-        raise ValueError(
-            f"Invalid tool '{tool}'. Must be 'jmeter' or 'gatling'."
-        )
+        raise ValueError(f"Invalid tool '{tool}'. Must be 'jmeter' or 'gatling'.")
 
     auto_start = config.get("auto_start_load_generator", "true").lower() == "true"
 
@@ -76,24 +74,30 @@ def configure_control(
 
     # Tool-specific configuration
     if tool == "jmeter":
-        _load_generator_config.update({
-            "test_plan": config.get("jmeter_test_plan"),
-            "jmeter_home": config.get("jmeter_home"),
-            "jmeter_api_url": config.get("jmeter_api_url"),
-            "remote_hosts": config.get("jmeter_remote_hosts", "").split(",") if config.get("jmeter_remote_hosts") else None,
-            "properties": config.get("jmeter_properties", {}),
-            "results_file": config.get("jmeter_results_file"),
-        })
+        _load_generator_config.update(
+            {
+                "test_plan": config.get("jmeter_test_plan"),
+                "jmeter_home": config.get("jmeter_home"),
+                "jmeter_api_url": config.get("jmeter_api_url"),
+                "remote_hosts": config.get("jmeter_remote_hosts", "").split(",")
+                if config.get("jmeter_remote_hosts")
+                else None,
+                "properties": config.get("jmeter_properties", {}),
+                "results_file": config.get("jmeter_results_file"),
+            }
+        )
     elif tool == "gatling":
-        _load_generator_config.update({
-            "simulation_class": config.get("gatling_simulation_class"),
-            "simulation_path": config.get("gatling_simulation_path"),
-            "gatling_home": config.get("gatling_home"),
-            "gatling_api_url": config.get("gatling_api_url"),
-            "api_token": config.get("gatling_api_token"),
-            "team_id": config.get("gatling_team_id"),
-            "properties": config.get("gatling_properties", {}),
-        })
+        _load_generator_config.update(
+            {
+                "simulation_class": config.get("gatling_simulation_class"),
+                "simulation_path": config.get("gatling_simulation_path"),
+                "gatling_home": config.get("gatling_home"),
+                "gatling_api_url": config.get("gatling_api_url"),
+                "api_token": config.get("gatling_api_token"),
+                "team_id": config.get("gatling_team_id"),
+                "properties": config.get("gatling_properties", {}),
+            }
+        )
 
     logger.info(
         f"JMeter/Gatling control configured: tool={tool}, auto_start={auto_start}"
@@ -197,15 +201,21 @@ def after_experiment_control(
             result = stop_jmeter_test(
                 test_id=_load_generator_run_info.get("test_id"),
                 process_id=_load_generator_run_info.get("process_id"),
-                jmeter_api_url=_load_generator_config.get("jmeter_api_url") if _load_generator_config else None,
+                jmeter_api_url=_load_generator_config.get("jmeter_api_url")
+                if _load_generator_config
+                else None,
             )
         elif tool == "gatling":
             logger.info("Stopping Gatling load generator")
             result = stop_gatling_simulation(
                 run_id=_load_generator_run_info.get("run_id"),
                 process_id=_load_generator_run_info.get("process_id"),
-                gatling_api_url=_load_generator_config.get("gatling_api_url") if _load_generator_config else None,
-                api_token=_load_generator_config.get("api_token") if _load_generator_config else None,
+                gatling_api_url=_load_generator_config.get("gatling_api_url")
+                if _load_generator_config
+                else None,
+                api_token=_load_generator_config.get("api_token")
+                if _load_generator_config
+                else None,
             )
 
         logger.info(f"Load generator stopped: {result}")
@@ -289,18 +299,22 @@ def cleanup_control(
                 stop_jmeter_test(
                     test_id=_load_generator_run_info.get("test_id"),
                     process_id=_load_generator_run_info.get("process_id"),
-                    jmeter_api_url=_load_generator_config.get("jmeter_api_url") if _load_generator_config else None,
+                    jmeter_api_url=_load_generator_config.get("jmeter_api_url")
+                    if _load_generator_config
+                    else None,
                 )
             elif tool == "gatling":
                 stop_gatling_simulation(
                     run_id=_load_generator_run_info.get("run_id"),
                     process_id=_load_generator_run_info.get("process_id"),
-                    gatling_api_url=_load_generator_config.get("gatling_api_url") if _load_generator_config else None,
-                    api_token=_load_generator_config.get("api_token") if _load_generator_config else None,
+                    gatling_api_url=_load_generator_config.get("gatling_api_url")
+                    if _load_generator_config
+                    else None,
+                    api_token=_load_generator_config.get("api_token")
+                    if _load_generator_config
+                    else None,
                 )
             _load_generator_started = False
             _load_generator_run_info = None
         except Exception as e:
             logger.warning(f"Failed to stop load generator during cleanup: {e}")
-
-

@@ -23,6 +23,22 @@ except ImportError:
     DB_SYSTEM_MAP = {}
     MESSAGING_SYSTEM_MAP = {}
 
+# Re-export constants
+from .constants import (
+    ConnectionDefaults,
+    DatabaseDefaults,
+    MessagingDefaults,
+    StressDefaults,
+)
+
+# Re-export connection utilities
+from .connection import (
+    create_mysql_connection,
+    create_postgres_connection,
+    get_mysql_connection_params,
+    get_postgres_connection_params,
+)
+
 __all__ = [
     "instrument_db_span",
     "instrument_messaging_span",
@@ -31,4 +47,17 @@ __all__ = [
     "get_system_name_from_module",
     "DB_SYSTEM_MAP",
     "MESSAGING_SYSTEM_MAP",
+    "DatabaseDefaults",
+    "MessagingDefaults",
+    "ConnectionDefaults",
+    "StressDefaults",
+    "validate_port",
+    "validate_host",
+    "validate_database_name",
+    "validate_timeout",
+    "validate_positive_int",
+    "create_postgres_connection",
+    "get_postgres_connection_params",
+    "create_mysql_connection",
+    "get_mysql_connection_params",
 ]

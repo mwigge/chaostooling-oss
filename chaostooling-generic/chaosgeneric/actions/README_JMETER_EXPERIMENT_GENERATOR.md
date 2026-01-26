@@ -100,6 +100,7 @@ The generated experiment includes:
 ### Steady-State Hypothesis
 
 Probes generated based on discovered services:
+
 - Database connectivity probes (PostgreSQL, MySQL, etc.)
 - Messaging system probes (Kafka, RabbitMQ, etc.)
 - HTTP endpoint availability probes
@@ -122,6 +123,7 @@ Probes generated based on discovered services:
 The parser automatically identifies service types from hostnames and URLs:
 
 ### Databases
+
 - `database_postgres` - PostgreSQL
 - `database_mysql` - MySQL/MariaDB
 - `database_mongodb` - MongoDB
@@ -130,17 +132,20 @@ The parser automatically identifies service types from hostnames and URLs:
 - `database_mssql` - Microsoft SQL Server
 
 ### Messaging
+
 - `messaging_kafka` - Apache Kafka
 - `messaging_rabbitmq` - RabbitMQ
 - `messaging_activemq` - ActiveMQ
 
 ### Infrastructure
+
 - `load_balancer` - HAProxy, Nginx, load balancers
 - `application` - Generic application services
 
 ## Example Workflow
 
 1. **Create/Use JMeter Test Plan**
+
    ```bash
    # Your existing JMeter test plan (.jmx file)
    /path/to/my-load-test.jmx
@@ -248,6 +253,7 @@ If parsing fails, check:
 ### Missing Service Detection
 
 If services aren't detected:
+
 - Check hostnames in JMeter test plan
 - Manually edit generated experiment to add correct service types
 - Use custom scenarios for specific services
@@ -255,6 +261,7 @@ If services aren't detected:
 ### JMeter Control Issues
 
 If JMeter doesn't start:
+
 - Verify `JMETER_HOME` environment variable
 - Check test plan path is correct
 - Ensure JMeter is installed and accessible
