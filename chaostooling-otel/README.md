@@ -1,210 +1,385 @@
-# chaostooling-otel
+# ChaosTooling OTEL
 
-OpenTelemetry extensions for Chaos Toolkit.
+**OpenTelemetry Observability Foundation for Chaos Toolkit**
+
+A production-ready OpenTelemetry instrumentation layer providing distributed tracing, metrics, logging, and compliance tracking for chaos engineering experiments. Serves as the observability foundation for all ChaosTooling extensions.
+
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![OpenTelemetry](https://img.shields.io/badge/opentelemetry-1.20%2B-orange.svg)](https://opentelemetry.io/)
+[![Chaos Toolkit](https://img.shields.io/badge/chaos--toolkit-compatible-green.svg)](https://chaostoolkit.org/)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Core Components](#core-components)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Chaos Toolkit Integration](#chaos-toolkit-integration)
+- [Instrumentation Patterns](#instrumentation-patterns)
+- [Service Graph Generation](#service-graph-generation)
+- [Metrics](#metrics)
+- [Configuration](#configuration)
+- [Examples](#examples)
+
+---
 
 ## Overview
 
-`chaostooling-otel` provides comprehensive observability (metrics, logs, and traces) for chaos engineering experiments using OpenTelemetry. It integrates with Tempo/Jaeger for distributed tracing, enabling visualization of service graphs and transaction flows across complex distributed systems.
+ChaosTooling OTEL provides comprehensive OpenTelemetry instrumentation for chaos engineering experiments, enabling full observability across distributed systems. It automatically captures traces, metrics, and logs from chaos actions, making your experiments visible in Grafana, Tempo, Prometheus, and Loki.
+
+### Why ChaosTooling OTEL?
+
+✅ **Unified Observability** - Single library for traces, metrics, logs, and compliance
+✅ **Zero-Boilerplate** - 7 decorators for automatic instrumentation
+✅ **60+ Built-in Metrics** - Ready-to-use metrics for databases, messaging, experiments
+✅ **Service Graph Generation** - Databases and messaging systems automatically appear in Grafana service graphs
+✅ **Chaos Toolkit Native** - Deep integration via control hooks and lifecycle management
+✅ **Production-Ready** - Error handling, batching, caching, and performance optimizations
+✅ **Compliance Tracking** - Built-in SOX, GDPR, PCI-DSS, HIPAA support
+✅ **Extensible** - Modular helpers for custom instrumentation
+
+### Key Capabilities
+
+- **Distributed Tracing** via OpenTelemetry (Tempo, Jaeger)
+- **Prometheus Metrics** with 60+ built-in metrics
+- **Structured Logging** to Loki with trace correlation
+- **Service Graphs** automatically showing databases, queues, and services
+- **Risk & Complexity Scoring** for experiment assessment
+- **Compliance Auditing** with violation tracking
+- **Resource Usage Monitoring** (CPU, memory during experiments)
+
+---
+
+## Architecture
+
+### Overall Observability Stack
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Chaos Toolkit Experiment                         │
+│         experiment.json with actions/probes/rollbacks               │
+└────────────────────────┬────────────────────────────────────────────┘
+                         │
+                         │ Lifecycle Hooks
+                         │
+┌────────────────────────▼────────────────────────────────────────────┐
+│              chaostooling-otel CONTROL MODULE                       │
+│                                                                     │
+│  Lifecycle Events:                                                  │
+│  • configure_control()         → Initialize OTEL SDK               │
+│  • before_experiment_control() → Start root experiment span        │
+│  • before_activity_control()   → Start activity span               │
+│  • after_activity_control()    → End activity span, record metrics │
+│  • after_experiment_control()  → End root span, calculate totals   │
+│  • cleanup_control()           → Flush telemetry                   │
+└────────────────────────┬────────────────────────────────────────────┘
+                         │
+                         │ Uses Core Components
+                         │
+┌────────────────────────▼────────────────────────────────────────────┐
+│                    CHAOSTOOLING-OTEL CORE                           │
+│                                                                     │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐      │
+│  │  MetricsCore   │  │   LogCore      │  │  TraceCore     │      │
+│  │                │  │                │  │                │      │
+│  │ • 60+ built-in │  │ • Structured   │  │ • DB/msg       │      │
+│  │   metrics      │  │   logs         │  │   helpers      │      │
+│  │ • Database     │  │ • Audit trail  │  │ • Auto service │      │
+│  │ • Messaging    │  │ • Trace context│  │   name mapping │      │
+│  │ • Experiments  │  │ • Severity     │  │ • Span attrs   │      │
+│  │ • Compliance   │  │   levels       │  │ • System       │      │
+│  │ • Custom       │  │                │  │   detection    │      │
+│  └────────┬───────┘  └────────┬───────┘  └────────┬───────┘      │
+│           │                   │                    │              │
+│           └───────────────────┴────────────────────┘              │
+│                               │                                   │
+│  ┌────────────────────────────▼──────────────────────────────┐   │
+│  │             ComplianceCore                                 │   │
+│  │  • SOX, GDPR, PCI-DSS, HIPAA tracking                      │   │
+│  │  • Violation detection                                     │   │
+│  │  • Compliance scoring                                      │   │
+│  └────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌────────────────────────────────────────────────────────────┐   │
+│  │             INSTRUMENTATION DECORATORS                     │   │
+│  │                                                            │   │
+│  │  @instrument_action      @track_compliance                │   │
+│  │  @instrument_probe       @track_impact                    │   │
+│  │  @instrument_rollback    @record_metric                   │   │
+│  │                instrumented_section (context manager)     │   │
+│  └────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────┬───────────────────────────────────────┘
+                              │
+                              │ OTLP Export
+                              │
+┌─────────────────────────────▼───────────────────────────────────────┐
+│                    OpenTelemetry SDK                                │
+│                                                                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
+│  │ TracerProvider│ │ MeterProvider │ │LoggerProvider │            │
+│  │              │  │              │  │              │            │
+│  │ • Batch      │  │ • Periodic   │  │ • Batch      │            │
+│  │   Span       │  │   Exporter   │  │   Processor  │            │
+│  │   Processor  │  │   Reader     │  │              │            │
+│  │ • OTLP       │  │ • Prometheus │  │ • OTLP       │            │
+│  │   Exporter   │  │ • OTLP       │  │   Exporter   │            │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘            │
+│         │                 │                  │                     │
+│         │  ┌──────────────▼──────────────────┘                     │
+│         │  │  ServiceNameSpanProcessor                             │
+│         │  │  (db.system → resource.service.name)                  │
+│         │  │  (messaging.system → resource.service.name)           │
+│         └──┴──────────────┬────────────────────────────────────────┤
+│                           │                                        │
+│                    OTLP Protocol (gRPC/HTTP)                       │
+└───────────────────────────┼────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                   OpenTelemetry Collector                           │
+│                    (Optional - Recommended)                         │
+│                                                                     │
+│  • Receive OTLP (4317/4318)                                         │
+│  • Process/filter/batch telemetry                                   │
+│  • Export to multiple backends                                      │
+└───────────┬─────────────────────────────────────────────────────────┘
+            │
+            ├─────────────────┬─────────────────┬───────────────────┐
+            ▼                 ▼                 ▼                   ▼
+┌───────────────────┐  ┌────────────┐  ┌──────────────┐  ┌──────────────┐
+│      Tempo        │  │ Prometheus │  │     Loki     │  │   Grafana    │
+│  (Traces)         │  │ (Metrics)  │  │   (Logs)     │  │(Dashboards)  │
+└───────────────────┘  └────────────┘  └──────────────┘  └──────────────┘
+```
+
+### Core Components Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        CHAOSTOOLING-OTEL                            │
+│                                                                     │
+│  ┌────────────────────────────────────────────────────────────┐   │
+│  │                    MetricsCore                             │   │
+│  │                                                            │   │
+│  │  Database Metrics:                                         │   │
+│  │  ├─ record_db_query_latency()                             │   │
+│  │  ├─ record_db_connection_pool_utilization()               │   │
+│  │  ├─ record_db_slow_query_count()                          │   │
+│  │  ├─ record_db_deadlock()                                  │   │
+│  │  ├─ record_db_lock()                                      │   │
+│  │  └─ record_db_error()                                     │   │
+│  │                                                            │   │
+│  │  Messaging Metrics:                                        │   │
+│  │  ├─ record_messaging_operation_latency()                  │   │
+│  │  ├─ record_messaging_operation_count()                    │   │
+│  │  ├─ record_messaging_connection_failure()                 │   │
+│  │  └─ record_messaging_error()                              │   │
+│  │                                                            │   │
+│  │  Experiment Metrics:                                       │   │
+│  │  ├─ record_experiment_start/end()                         │   │
+│  │  ├─ record_experiment_risk_level()                        │   │
+│  │  ├─ record_experiment_complexity()                        │   │
+│  │  └─ record_mttr()                                         │   │
+│  │                                                            │   │
+│  │  Compliance Metrics:                                       │   │
+│  │  ├─ record_compliance_score()                             │   │
+│  │  ├─ record_compliance_violation()                         │   │
+│  │  └─ record_impact_scope()                                 │   │
+│  └────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌────────────────────────────────────────────────────────────┐   │
+│  │                       LogCore                              │   │
+│  │                                                            │   │
+│  │  ├─ log_action_start() / log_action_end()                 │   │
+│  │  ├─ log_probe_execution()                                 │   │
+│  │  ├─ log_error()                                           │   │
+│  │  ├─ log_compliance_check()                                │   │
+│  │  ├─ log_custom_event()                                    │   │
+│  │  └─ get_audit_trail()                                     │   │
+│  └────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌────────────────────────────────────────────────────────────┐   │
+│  │                       TraceCore                            │   │
+│  │                                                            │   │
+│  │  Span Instrumentation:                                     │   │
+│  │  ├─ instrument_db_span(name, db_system, ...)              │   │
+│  │  ├─ instrument_messaging_span(name, system, ...)          │   │
+│  │  ├─ create_instrumented_span(name)                        │   │
+│  │  └─ set_db_span_attributes()                              │   │
+│  │                                                            │   │
+│  │  System Mappings:                                          │   │
+│  │  ├─ Database: PostgreSQL, MySQL, MSSQL, MongoDB,          │   │
+│  │  │   Redis, Cassandra, DuckDB, SQLite, Oracle             │   │
+│  │  └─ Messaging: Kafka, RabbitMQ, ActiveMQ,                 │   │
+│  │      NATS, Pulsar, SQS                                     │   │
+│  └────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌────────────────────────────────────────────────────────────┐   │
+│  │                    ComplianceCore                          │   │
+│  │                                                            │   │
+│  │  Regulations: SOX | GDPR | PCI-DSS | HIPAA                │   │
+│  │                                                            │   │
+│  │  ├─ calculate_compliance_score(regulation) → 0-100        │   │
+│  │  ├─ add_violation(regulation, severity, description)      │   │
+│  │  ├─ get_violations(regulation, severity_filter)           │   │
+│  │  ├─ assess_risk(impact, likelihood)                       │   │
+│  │  └─ generate_audit_trail()                                │   │
+│  └────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Core Components
+
+### 1. MetricsCore
+
+**Purpose**: Unified Prometheus metrics recording interface with 60+ built-in metrics.
+
+**Usage**:
+```python
+from chaosotel import get_metrics_core, get_metric_tags
+
+metrics = get_metrics_core()
+tags = get_metric_tags(db_system="postgresql", db_name="production")
+
+metrics.record_db_query_latency(duration_ms=45.2, tags=tags)
+metrics.record_db_connection_pool_utilization(percent=67, tags=tags)
+```
+
+### 2. LogCore
+
+**Purpose**: Structured logging interface for Loki with automatic trace correlation.
+
+**Usage**:
+```python
+from chaosotel import get_log_core
+
+log_core = get_log_core()
+
+log_core.log_action_start(
+    action_name="postgres_pool_exhaustion",
+    target="postgres-primary",
+    severity="medium"
+)
+```
+
+### 3. TraceCore
+
+**Purpose**: Distributed tracing interface with automatic system detection and service graph support.
+
+**Usage**:
+```python
+from chaosotel.core.trace_core import instrument_db_span
+
+with instrument_db_span(
+    name="query_saturation",
+    db_system="postgresql",
+    db_name="production",
+    db_host="postgres-primary",
+    db_port=5432
+) as span:
+    execute_queries()
+```
+
+### 4. ComplianceCore
+
+**Purpose**: Regulatory compliance tracking for SOX, GDPR, PCI-DSS, and HIPAA.
+
+**Usage**:
+```python
+from chaosotel import get_compliance_core
+
+compliance = get_compliance_core()
+compliance.add_violation(
+    regulation="SOX",
+    severity="high",
+    description="Unauthorized database access"
+)
+score = compliance.calculate_compliance_score("SOX")
+```
+
+---
 
 ## Features
 
-- **Distributed Tracing**: Full OpenTelemetry trace support with automatic service graph generation
-- **Metrics**: Prometheus-compatible metrics collection
-- **Logs**: Structured logging with OpenTelemetry
-- **Service Graph Visibility**: Automatic mapping of database and messaging systems to service names
-- **Modular Tracing Helpers**: Easy-to-use instrumentation for databases and messaging systems
+### Automatic Service Graph Generation
 
-## Quick Start
+**The Innovation**: `ServiceNameSpanProcessor`
 
-### Installation
+Databases and messaging systems automatically appear in Grafana/Tempo service graphs.
+
+**How it works**:
+1. Span attributes `db.system` or `messaging.system` are detected
+2. Processor maps to `resource.service.name`
+3. Service appears in Grafana service graph
+
+**Supported Systems**:
+- **Databases**: PostgreSQL, MySQL, MSSQL, MongoDB, Redis, Cassandra, DuckDB, SQLite, Oracle
+- **Messaging**: Kafka, RabbitMQ, ActiveMQ, NATS, Pulsar, SQS
+
+### Zero-Boilerplate Decorators
+
+**7 Decorators** for automatic instrumentation:
+
+```python
+from chaosotel.decorators import instrument_action
+
+@instrument_action(
+    name="kill_connections",
+    target_type="database",
+    severity="high"
+)
+def kill_connections(host, database):
+    # Your chaos logic - tracing/metrics/logs automatic
+    pass
+```
+
+---
+
+## Installation
 
 ```bash
 pip install chaostooling-otel
 ```
 
-### Basic Usage
+---
 
-```python
-from chaosotel.control import initialize_observability
+## Quick Start
 
-# Initialize in your experiment configuration
-initialize_observability(
-    tempo_endpoint="http://tempo:4317",
-    service_name="my-chaos-experiment"
-)
-```
+### 1. Basic Experiment with Observability
 
-## Distributed Tracing
-
-### Automatic Service Name Mapping
-
-The `ServiceNameSpanProcessor` automatically maps database and messaging system attributes to `resource.service.name`, ensuring all systems appear in Grafana/Tempo service graphs.
-
-**Supported Database Systems:**
-- PostgreSQL, MySQL, MSSQL, MongoDB, Redis, Cassandra, DuckDB, SQLite, Oracle
-
-**Supported Messaging Systems:**
-- Kafka, RabbitMQ, ActiveMQ, NATS, Pulsar, SQS
-
-The processor automatically:
-- Maps `db.system` → `resource.service.name` (e.g., "postgresql", "mysql")
-- Maps `messaging.system` → `resource.service.name` (e.g., "kafka", "rabbitmq")
-- Works with both existing and new instrumentation
-
-### Span Instrumentation Helpers
-
-The `trace_core` module provides convenient helpers for instrumenting database and messaging operations:
-
-#### Database Instrumentation
-
-```python
-from chaosotel.core.trace_core import instrument_db_span, InstrumentedSpan
-
-# Simple usage
-with InstrumentedSpan(instrument_db_span(
-    "query.execute",
-    db_system="postgresql",
-    db_name="mydb",
-    db_host="localhost",
-    db_port=5432
-)) as span:
-    # Your database operation here
-    cursor.execute("SELECT * FROM users")
-```
-
-#### Messaging Instrumentation
-
-```python
-from chaosotel.core.trace_core import instrument_messaging_span, InstrumentedSpan
-
-# Messaging operations
-with InstrumentedSpan(instrument_messaging_span(
-    "message.publish",
-    messaging_system="kafka",
-    destination="user-events",
-    destination_kind="topic"
-)) as span:
-    # Your messaging operation here
-    producer.send("user-events", message)
-```
-
-#### Auto-Detection
-
-The helpers can auto-detect the system from the calling module:
-
-```python
-from chaosotel.core.trace_core import create_instrumented_span
-
-# System name auto-detected from module path
-span = create_instrumented_span("operation.execute")
-# Automatically sets db.system or messaging.system based on module
-```
-
-### Custom System Mappings
-
-You can extend support for new databases or messaging systems via environment variables:
-
-```bash
-# Add custom database system mapping
-export CHAOS_DB_SYSTEM_MAP='{"duckdb": "duckdb", "clickhouse": "clickhouse"}'
-
-# Add custom messaging system mapping
-export CHAOS_MESSAGING_SYSTEM_MAP='{"nats": "nats", "pulsar": "pulsar"}'
-```
-
-The mappings are JSON objects that extend the default system maps.
-
-### Migration from Existing Code
-
-If you have existing code that sets `db.system` or `messaging.system` manually, the `ServiceNameSpanProcessor` will automatically enhance those spans. No code changes required!
-
-For new code, use the helpers for better consistency:
-
-```python
-# Old way (still works, but less convenient)
-span.set_attribute("db.system", "postgresql")
-span.set_attribute("db.name", "mydb")
-
-# New way (recommended)
-from chaosotel.core.trace_core import instrument_db_span, InstrumentedSpan
-with InstrumentedSpan(instrument_db_span(
-    "query.execute",
-    db_system="postgresql",
-    db_name="mydb"
-)) as span:
-    # Your code
-```
-
-## Architecture
-
-### Components
-
-- **`traces.py`**: Trace exporter setup and `ServiceNameSpanProcessor`
-- **`core/trace_core.py`**: Core tracing interface and span instrumentation helpers
-- **`core/metrics_core.py`**: Metrics collection
-- **`core/log_core.py`**: Structured logging
-- **`core/compliance_core.py`**: Compliance tracking
-
-### Service Name Processor
-
-The `ServiceNameSpanProcessor` runs automatically when tracing is initialized. It:
-
-1. Intercepts all spans before export
-2. Checks for `db.system` or `messaging.system` attributes
-3. Maps them to `resource.service.name` using system mappings
-4. Ensures service graph visibility in Grafana/Tempo
-
-This happens transparently - no changes needed to existing code.
-
-## Integration with Chaos Extensions
-
-### extension-db
-
-The `chaostooling-extension-db` package re-exports the span helpers for convenience:
-
-```python
-# Both work the same way
-from chaosotel.core.trace_core import instrument_db_span
-from chaosdb.common import instrument_db_span  # Re-exported
-```
-
-### extension-compute
-
-Compute stress actions automatically create traces with proper instrumentation.
-
-### extension-network
-
-Network chaos actions are traced with network-specific attributes.
-
-## Configuration
-
-### Environment Variables
-
-- `CHAOS_DB_SYSTEM_MAP`: JSON mapping for custom database systems
-- `CHAOS_MESSAGING_SYSTEM_MAP`: JSON mapping for custom messaging systems
-- `TEMPO_ENDPOINT`: Tempo OTLP endpoint (default: `http://localhost:4317`)
-- `SERVICE_NAME`: Service name for traces (default: `chaos-experiment`)
-
-### Experiment Configuration
+Create `experiment.json`:
 
 ```json
 {
-  "configuration": {
-    "tempo_endpoint": {
-      "type": "env",
-      "key": "TEMPO_ENDPOINT",
-      "default": "http://tempo:4317"
-    }
-  },
+  "version": "1.0.0",
+  "title": "Database Test with Observability",
   "controls": [
     {
-      "name": "chaosotel",
+      "name": "opentelemetry",
       "provider": {
         "type": "python",
-        "module": "chaosotel.control",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "method": [
+    {
+      "type": "action",
+      "name": "exhaust-pool",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "postgres_pool_exhaustion",
         "arguments": {
-          "tempo_endpoint": "${tempo_endpoint}",
-          "service_name": "production-chaos-experiment"
+          "host": "localhost",
+          "num_connections": 100,
+          "duration": 60
         }
       }
     }
@@ -212,53 +387,218 @@ Network chaos actions are traced with network-specific attributes.
 }
 ```
 
-## Service Graph Visualization
-
-With proper instrumentation, all systems appear in Grafana/Tempo service graphs:
-
-- **Databases**: PostgreSQL, MySQL, MSSQL, MongoDB, Redis, Cassandra
-- **Messaging**: Kafka, RabbitMQ, ActiveMQ
-- **Application Services**: App servers, payment services, order services
-- **Infrastructure**: HA-Proxy, load balancers
-
-The service graph query should include all system names:
-
-```traceql
-{ resource.service.name =~ ".*(postgresql|mysql|mssql|mongodb|redis|cassandra|kafka|rabbitmq|activemq).*" }
+**Configure environment**:
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+export OTEL_SERVICE_NAME=chaos-experiment
 ```
 
-## Best Practices
+**Run experiment**:
+```bash
+chaos run experiment.json
+```
 
-1. **Use Helpers**: Prefer `instrument_db_span()` and `instrument_messaging_span()` over manual attribute setting
-2. **Context Managers**: Use `InstrumentedSpan` for automatic span lifecycle management
-3. **System Names**: Use standard OpenTelemetry system names (e.g., "postgresql", not "postgres")
-4. **Custom Mappings**: Add new systems via environment variables, not code changes
-5. **Service Names**: Let the processor handle `resource.service.name` - don't set it manually
+---
 
-## Troubleshooting
+## Chaos Toolkit Integration
 
-### Systems Not Appearing in Service Graph
+ChaosTooling OTEL integrates with Chaos Toolkit via the `control` module:
 
-1. Check that `ServiceNameSpanProcessor` is registered (automatic if using `chaosotel.control`)
-2. Verify spans have `db.system` or `messaging.system` attributes
-3. Check dashboard query includes the system name
-4. Ensure traces are being exported to Tempo
+```json
+{
+  "controls": [
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ]
+}
+```
 
-### Custom Systems Not Working
+**Lifecycle Hooks**:
+1. **`configure_control()`** - Initialize OTEL SDK
+2. **`before_experiment_control()`** - Start root experiment span
+3. **`before_activity_control()`** - Start activity span
+4. **`after_activity_control()`** - End activity span, record metrics
+5. **`after_experiment_control()`** - End root span, calculate totals
+6. **`cleanup_control()`** - Flush telemetry
 
-1. Verify environment variable JSON is valid
-2. Check system name matches exactly (case-sensitive)
-3. Ensure the system is in the correct map (DB vs Messaging)
+---
 
-## Contributing
+## Instrumentation Patterns
 
-When adding support for new databases or messaging systems:
+### Pattern 1: Automatic via Decorators
 
-1. Add to `DB_SYSTEM_MAP` or `MESSAGING_SYSTEM_MAP` in `trace_core.py`
-2. Add aliases if needed (e.g., "postgres" → "postgresql")
-3. Update this README with the new system
-4. Test with service graph visualization
+```python
+from chaosotel.decorators import instrument_action
+
+@instrument_action(name="my_chaos", target_type="database", severity="medium")
+def my_chaos_action(host: str):
+    # Automatic tracing/metrics/logs
+    pass
+```
+
+### Pattern 2: Manual Span Creation
+
+```python
+from chaosotel import get_tracer, ensure_initialized, flush
+
+ensure_initialized()
+tracer = get_tracer()
+
+with tracer.start_as_current_span("my_operation") as span:
+    span.set_attribute("custom_attr", "value")
+    result = do_something()
+
+flush()
+```
+
+### Pattern 3: Instrumentation Helpers
+
+```python
+from chaosotel.core.trace_core import instrument_db_span
+
+with instrument_db_span(
+    name="query_users",
+    db_system="postgresql",
+    db_name="production",
+    db_host="postgres-primary",
+    db_port=5432
+) as span:
+    cursor.execute("SELECT * FROM users")
+```
+
+---
+
+## Service Graph Generation
+
+### Multi-Instance Support
+
+**Single Instance**:
+```python
+span.set_attribute("db.system", "postgresql")
+# Service name: "postgresql"
+```
+
+**Multi-Instance with Network Peer**:
+```python
+span.set_attribute("db.system", "postgresql")
+span.set_attribute("network.peer.address", "postgres-primary:5432")
+# Service name: "postgres-primary"
+```
+
+---
+
+## Metrics
+
+### Built-in Metrics (60+)
+
+#### Database Metrics
+- `db_query_latency` - Query execution time
+- `db_connection_pool_utilization` - Pool usage %
+- `db_slow_query_count` - Slow queries
+- `db_deadlock_count` - Deadlocks detected
+- `db_lock_count` - Active locks
+
+#### Messaging Metrics
+- `messaging_operation_latency` - Message operation time
+- `messaging_queue_depth` - Queue depth
+- `messaging_consumer_lag` - Consumer lag
+
+#### Experiment Metrics
+- `experiment_duration_seconds` - Total duration
+- `experiment_risk_level` - Risk level (1-4)
+- `experiment_complexity_score` - Complexity (0-100)
+
+---
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# OTLP exporter
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+
+# Service identification
+OTEL_SERVICE_NAME=chaos-experiment
+OTEL_SERVICE_NAMESPACE=chaos-engineering
+ENVIRONMENT=production
+```
+
+### Programmatic Configuration
+
+```python
+from chaosotel import initialize
+
+initialize(
+    service_name="chaos-experiment",
+    service_version="1.0.0",
+    target_type="database",
+    regulations=["SOX", "GDPR"]
+)
+```
+
+---
+
+## Examples
+
+### Service Graph Example
+
+```python
+from chaosotel import initialize, get_tracer, flush
+from chaosotel.core.trace_core import instrument_db_span, instrument_messaging_span
+
+initialize(service_name="payment-service")
+tracer = get_tracer()
+
+with tracer.start_as_current_span("process_payment"):
+    # Database call
+    with instrument_db_span(
+        name="fetch_user",
+        db_system="postgresql",
+        db_name="users",
+        db_host="postgres-primary",
+        db_port=5432
+    ):
+        pass
+
+    # Message queue
+    with instrument_messaging_span(
+        name="publish_event",
+        messaging_system="kafka",
+        destination="payments",
+        destination_kind="topic"
+    ):
+        pass
+
+flush()
+```
+
+---
 
 ## License
 
-See main project LICENSE file.
+[MIT License](../LICENSE)
+
+---
+
+## Related Projects
+
+- **chaostooling-extension-db**: Database and messaging chaos engineering
+- **chaostooling-reporting**: Automated experiment reporting
+- **chaostooling-generic**: Generic chaos engineering controls
+- **chaostooling-demo**: Full demo environment
+
+---
+
+## Acknowledgments
+
+Built with:
+- [OpenTelemetry](https://opentelemetry.io/)
+- [Chaos Toolkit](https://chaostoolkit.org/)
+- [Grafana](https://grafana.com/)
+- [Prometheus](https://prometheus.io/)

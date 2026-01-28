@@ -1,0 +1,44 @@
+# Gitleaks configuration for chaostooling-oss
+# This file defines rules for detecting secrets and patterns to exclude
+
+[extend]
+# Use default gitleaks rules as baseline
+useDefault = true
+
+# Allow Chaos Toolkit configuration "key" fields in experiment JSON files
+[[allowlist]]
+description = "Chaos Toolkit configuration key field"
+regexTarget = "line"
+regexes = [
+  '''"key":\s*"[A-Z_]+"''',  # Matches "key": "ENV_VAR_NAME" pattern
+]
+paths = [
+  '''.*experiment.*\.json$''',
+  '''chaostooling-experiments/.*\.json$''',
+]
+
+# Allow environment variable references in configuration
+[[allowlist]]
+description = "Environment variable configuration blocks"
+regexTarget = "match"
+regexes = [
+  '''"type":\s*"env"''',
+]
+paths = [
+  '''.*\.json$''',
+]
+
+# Entropy-based exclusions for false positives
+[[allowlist]]
+description = "Low entropy strings that look like keys but aren't"
+stopwords = [
+  "POSTGRES_HOST",
+  "POSTGRES_PORT",
+  "POSTGRES_USER",
+  "POSTGRES_PASSWORD",
+  "POSTGRES_DB",
+  "ENABLE_SCENARIO",
+  "PROMETHEUS_URL",
+  "TEMPO_URL",
+  "LOKI_URL",
+]
