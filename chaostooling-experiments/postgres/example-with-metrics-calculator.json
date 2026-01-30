@@ -1,0 +1,177 @@
+{
+  "version": "1.0",
+  "title": "PostgreSQL with Metrics Calculation",
+  "description": "Example experiment showing how to use metrics_calculator_control to automatically calculate and track risk/complexity/test scores for every experiment run.",
+  
+  "configuration": {
+    "prometheus_url": {
+      "type": "env",
+      "key": "PROMETHEUS_URL",
+      "default": "http://prometheus:9090"
+    }
+  },
+  
+  "steady-state-hypothesis": {
+    "title": "PostgreSQL is healthy",
+    "probes": [
+      {
+        "name": "check-postgres-connectivity",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "postgresql_backends",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 3.0,
+            "description": "PostgreSQL is accessible"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "check-postgres-query-performance",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "postgresql_commits_total",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Query throughput is normal"
+          }
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  
+  "controls": [
+    {
+      "name": "metrics-calculator",
+      "description": "Automatically calculate experiment risk/complexity/test scores",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.metrics_calculator_control"
+      }
+    },
+    {
+      "name": "database-storage",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_storage_control"
+      }
+    }
+  ],
+  
+  "method": [
+    {
+      "name": "collect-pre-chaos-metrics",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.actions.mcp_metrics_collector",
+        "func": "collect_metric_snapshot",
+        "arguments": {
+          "grafana_url": "http://grafana:3000",
+          "metrics": [
+            "postgresql_backends{postgresql_database_name='testdb'}",
+            "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])"
+          ],
+          "service_name": "postgres",
+          "phase": "before",
+          "output_file": "pre_chaos_metrics.json"
+        }
+      }
+    },
+    {
+      "name": "simulate-load",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.load_generator",
+        "func": "generate_load",
+        "arguments": {
+          "host": "postgres-primary-site-a",
+          "port": 5432,
+          "database": "testdb",
+          "user": "postgres",
+          "password": "postgres",
+          "duration_seconds": 30,
+          "concurrent_connections": 20
+        }
+      }
+    },
+    {
+      "name": "collect-during-chaos-metrics",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.actions.mcp_metrics_collector",
+        "func": "collect_metric_snapshot",
+        "arguments": {
+          "grafana_url": "http://grafana:3000",
+          "metrics": [
+            "postgresql_backends{postgresql_database_name='testdb'}",
+            "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])"
+          ],
+          "service_name": "postgres",
+          "phase": "method",
+          "output_file": "during_chaos_metrics.json"
+        }
+      }
+    }
+  ],
+  
+  "rollbacks": [
+    {
+      "name": "stop-load-generation",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.load_generator",
+        "func": "stop_load"
+      }
+    },
+    {
+      "name": "collect-post-chaos-metrics",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.actions.mcp_metrics_collector",
+        "func": "collect_metric_snapshot",
+        "arguments": {
+          "grafana_url": "http://grafana:3000",
+          "metrics": [
+            "postgresql_backends{postgresql_database_name='testdb'}",
+            "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])"
+          ],
+          "service_name": "postgres",
+          "phase": "after",
+          "output_file": "post_chaos_metrics.json"
+        }
+      }
+    }
+  ],
+  
+  "post-experiment-analysis": {
+    "name": "postgres-load-analysis",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosgeneric.actions.mcp_result_analyzer",
+      "func": "analyze_experiment_results",
+      "arguments": {
+        "baseline_file": "postgres/baseline_metrics.json",
+        "pre_chaos_file": "pre_chaos_metrics.json",
+        "during_chaos_file": "during_chaos_metrics.json",
+        "post_chaos_file": "post_chaos_metrics.json"
+      }
+    }
+  }
+}

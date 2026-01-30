@@ -79,6 +79,19 @@ receivers:
     tls:
       insecure: true
 
+  # PostgreSQL receiver for chaos platform database - monitors the metadata store
+  postgresql/chaos-platform:
+    endpoint: chaos-platform-db:5432
+    transport: tcp
+    username: chaos_admin
+    password: chaos_admin_secure_password
+    databases:
+      - chaos_platform
+    collection_interval: 10s
+    initial_delay: 10s
+    tls:
+      insecure: true
+
 processors:
   batch:
 
@@ -110,7 +123,7 @@ service:
       exporters: [otlphttp/tempo, servicegraph, debug]
 
     metrics:
-      receivers: [otlp, prometheus, docker_stats, postgresql, postgresql/replica, servicegraph]
+      receivers: [otlp, prometheus, docker_stats, postgresql, postgresql/replica, postgresql/chaos-platform, servicegraph]
       processors: [batch]
       exporters: [prometheus]
 

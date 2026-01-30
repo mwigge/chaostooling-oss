@@ -1,4 +1,24 @@
 services:
+  # --- Data Repository (Chaos Platform) ---
+
+  chaos-platform-db:
+    image: postgres:15-alpine
+    container_name: chaos_platform_db
+    environment:
+      - POSTGRES_USER=chaos_admin
+      - POSTGRES_PASSWORD=chaos_admin_secure_password
+      - POSTGRES_DB=chaos_platform
+    ports:
+      - "5434:5432"  # Use 5434 for chaos platform database
+    volumes:
+      - ./postgres/init-chaos-platform.sql:/docker-entrypoint-initdb.d/01-init-chaos-platform.sql
+      - chaos-platform-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chaos_admin -d chaos_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # --- Observability Stack ---
 
   tempo:
@@ -613,6 +633,13 @@ services:
 
       # E2E Application
       - API_URL=http://haproxy-site-a:80
+      
+      # Chaos Platform Database (for storing baseline metrics and experiment results)
+      - CHAOS_DB_HOST=chaos_platform_db
+      - CHAOS_DB_PORT=5432
+      - CHAOS_DB_NAME=chaos_platform
+      - CHAOS_DB_USER=chaos_admin
+      - CHAOS_DB_PASSWORD=chaos_admin_secure_password
     working_dir: /experiments
     command: tail -f /dev/null
 
@@ -658,6 +685,7 @@ volumes:
   chaos-experiment-logs:
   postgres-replica-site-a-data:
   tempo-data:
+  chaos-platform-data:
 
 
 networks:

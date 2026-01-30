@@ -28,6 +28,18 @@ if [ -f /etc/profile.d/chaostooling-pythonpath.sh ]; then
     source /etc/profile.d/chaostooling-pythonpath.sh
 fi
 
+# Create a shell profile that automatically sources setup on every shell invocation
+cat > /etc/profile.d/chaos-auto-setup.sh << 'EOF'
+# Auto-setup Chaos extensions on shell startup
+if [ -f "/chaostooling-oss/chaostooling-demo/scripts/setup-extensions.sh" ]; then
+    source /chaostooling-oss/chaostooling-demo/scripts/setup-extensions.sh >/dev/null 2>&1
+elif [ -f "/setup-extensions.sh" ]; then
+    source /setup-extensions.sh >/dev/null 2>&1
+fi
+EOF
+
+chmod +x /etc/profile.d/chaos-auto-setup.sh
+
 # Execute the original command (chaos run, bash, etc.)
 exec "$@"
 

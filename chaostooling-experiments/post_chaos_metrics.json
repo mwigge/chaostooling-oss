@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-01-29T14:00:40.389041",
+  "service_name": "postgres",
+  "phase": "pre_chaos",
+  "time_range": "5m",
+  "datasource": "prometheus",
+  "metrics": {
+    "postgresql_backends{postgresql_database_name='testdb'}": {
+      "query": "postgresql_backends{postgresql_database_name='testdb'}",
+      "result": {
+        "status": "no data",
+        "frames": []
+      },
+      "status": "success"
+    },
+    "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])": {
+      "query": "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])",
+      "result": {
+        "status": "no data",
+        "frames": []
+      },
+      "status": "success"
+    },
+    "postgresql_replication_data_delay_bytes": {
+      "query": "postgresql_replication_data_delay_bytes",
+      "result": {
+        "status": "no data",
+        "frames": []
+      },
+      "status": "success"
+    },
+    "rate(postgresql_bgwriter_checkpoint_count_total[5m])": {
+      "query": "rate(postgresql_bgwriter_checkpoint_count_total[5m])",
+      "result": {
+        "status": "no data",
+        "frames": []
+      },
+      "status": "success"
+    }
+  }
+}

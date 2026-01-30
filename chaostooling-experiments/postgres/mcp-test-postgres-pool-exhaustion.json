@@ -1,0 +1,548 @@
+{
+  "version": "1.0",
+  "title": "PostgreSQL Connection Pool Exhaustion Test",
+  "description": "Comprehensive chaos test showcasing baseline metrics, database integration, and automated metrics scoring. Tests connection pool resilience by exhausting available connections while collecting pre/during/post chaos metrics, calculating experiment quality scores (risk/complexity/test), storing results in chaos-platform-db, and visualizing baseline comparisons.",
+  "tags": ["database", "postgres", "connection-pool", "performance", "chaos-engineering"],
+  "baseline-metrics-summary": {
+    "description": "Baseline metrics from healthy baseline collection phase (collected from postgres/baseline-collection-postgres.json)",
+    "service": "postgres",
+    "source": "chaos_platform.baseline_metrics table",
+    "metrics": [
+      {
+        "name": "postgresql_backends",
+        "otel_receiver": "postgresql receiver on primary",
+        "description": "Number of active backend connections to database",
+        "baseline_expected_mean": "5-15 connections",
+        "baseline_expected_stddev": "1-3 connections"
+      },
+      {
+        "name": "postgresql_commits_total (rate)",
+        "otel_receiver": "postgresql receiver on primary",
+        "description": "Commit rate per second (measures throughput)",
+        "baseline_expected_mean": "10-50 commits/sec",
+        "baseline_expected_stddev": "2-5 commits/sec"
+      },
+      {
+        "name": "postgresql_replication_data_delay_bytes",
+        "otel_receiver": "postgresql receiver on replica",
+        "description": "Replication lag in bytes (0 means in sync)",
+        "baseline_expected_mean": "0 bytes (primary focus)",
+        "baseline_expected_stddev": "<100 bytes"
+      }
+    ]
+  },
+  "experiment-objectives": [
+    "Establish baseline metrics from healthy system state and store in database",
+    "Inject connection pool exhaustion (100 connections for 60 seconds)",
+    "Capture metrics during chaos phase (connection spikes, latency increases)",
+    "Record recovery metrics during rollback phase",
+    "Calculate experiment quality scores: risk (disruption potential), complexity (test structure), test score (metric coverage)",
+    "Compare experiment metrics against baseline using sigma-based thresholds",
+    "Generate experiment summary with anomalies and recommendations"
+  ],
+  "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "postgres-pool-exhaustion-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
+    "postgres_host": {
+      "type": "env",
+      "key": "POSTGRES_HOST",
+      "default": "postgres-primary"
+    },
+    "postgres_port": {
+      "type": "env",
+      "key": "POSTGRES_PORT",
+      "default": "5432"
+    },
+    "postgres_db": {
+      "type": "env",
+      "key": "POSTGRES_DB",
+      "default": "testdb"
+    },
+    "postgres_user": {
+      "type": "env",
+      "key": "POSTGRES_USER",
+      "default": "postgres"
+    },
+    "postgres_password": {
+      "type": "env",
+      "key": "POSTGRES_PASSWORD",
+      "default": "postgres"
+    },
+    "prometheus_url": {
+      "type": "env",
+      "key": "PROMETHEUS_URL",
+      "default": "http://prometheus:9090"
+    },
+    "tempo_url": {
+      "type": "env",
+      "key": "TEMPO_URL",
+      "default": "http://tempo:3100"
+    },
+    "loki_url": {
+      "type": "env",
+      "key": "LOKI_URL",
+      "default": "http://loki:3100"
+    },
+    "grafana_url": {
+      "type": "env",
+      "key": "GRAFANA_URL",
+      "default": "http://grafana:3000"
+    },
+    "grafana_api_token": {
+      "type": "env",
+      "key": "GRAFANA_API_TOKEN",
+      "default": ""
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
+    }
+  },
+  "controls": [
+    {
+      "name": "experiment-orchestrator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.experiment_orchestrator_control"
+      }
+    },
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "database-storage",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_storage_control"
+      }
+    },
+    {
+      "name": "database-display",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_display_control",
+        "arguments": {
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}"
+        }
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "metrics-calculator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.metrics_calculator_control",
+        "func": "before_experiment_start",
+        "description": "Automatically calculates and stores experiment quality scores: risk_score (0-255, disruption potential), complexity_score (0-255, test structure), test_score (0-255, metric coverage). Inserts metrics into chaos_platform.experiment_runs and chaos_platform.experiment_test_metrics tables."
+      }
+    }
+  ],
+  "steady-state-hypothesis": {
+    "title": "PostgreSQL Database is accessible with normal connection pool utilization and setup latency",
+    "probes": [
+      {
+        "name": "probe-postgres-connectivity",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosdb.probes.postgres.postgres_connectivity",
+          "func": "probe_postgres_connectivity",
+          "arguments": {
+            "host": "${postgres_host}",
+            "port": "${postgres_port}",
+            "database": "${postgres_db}",
+            "user": "${postgres_user}",
+            "password": "${postgres_password}"
+          }
+        },
+        "tolerance": true,
+        "notes": "Absolute check: database must respond to connections"
+      },
+      {
+        "name": "probe-postgres-connection-pool-utilization",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "postgresql_backends{postgresql_database_name='testdb'}",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Active connections within 2-sigma of baseline",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-postgres-commit-rate",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Commit rate within 2-sigma of baseline",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-postgres-operations-rate",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "rate(postgresql_operations_total{postgresql_database_name='testdb'}[5m])",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Database operations rate within 2-sigma of baseline",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "probe-postgres-database-size",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "postgresql_db_size_bytes{postgresql_database_name='testdb'}",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Database size within 2-sigma of baseline",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
+          }
+        },
+        "tolerance": true
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "inject-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "inject_connection_pool_exhaustion",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "num_connections": 100,
+          "duration_seconds": 60,
+          "leak_connections": false
+        }
+      }
+    },
+    {
+      "name": "collect-chaos-metrics",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.actions.mcp_metrics_collector",
+        "func": "collect_baseline_snapshot",
+        "arguments": {
+          "grafana_url": "${grafana_url}",
+          "metrics": [
+            "postgresql_backends{postgresql_database_name='testdb'}",
+            "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])",
+            "postgresql_replication_data_delay_bytes",
+            "rate(postgresql_bgwriter_checkpoint_count_total[5m])"
+          ],
+          "service_name": "postgres",
+          "output_file": "./during_chaos_metrics.json",
+          "datasource_uid": "prometheus",
+          "time_range": "5m",
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}"
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "stop_pool_exhaustion"
+      }
+    },
+    {
+      "name": "collect-recovery-metrics",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.actions.mcp_metrics_collector",
+        "func": "collect_baseline_snapshot",
+        "arguments": {
+          "grafana_url": "${grafana_url}",
+          "metrics": [
+            "postgresql_backends{postgresql_database_name='testdb'}",
+            "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])",
+            "postgresql_replication_data_delay_bytes",
+            "rate(postgresql_bgwriter_checkpoint_count_total[5m])"
+          ],
+          "service_name": "postgres",
+          "output_file": "./post_chaos_metrics.json",
+          "datasource_uid": "prometheus",
+          "time_range": "5m",
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}"
+        }
+      }
+    }
+  ],
+  "post-experiment-analysis": {
+    "name": "postgres-pool-exhaustion-analysis",
+    "type": "action",
+    "provider": {
+      "type": "python",
+      "module": "chaosgeneric.actions.mcp_result_analyzer",
+      "func": "analyze_experiment_results",
+      "arguments": {
+        "baseline_file": "postgres/baseline_metrics.json",
+        "pre_chaos_file": "postgres/pre_chaos_metrics.json",
+        "during_chaos_file": "postgres/during_chaos_metrics.json",
+        "post_chaos_file": "postgres/post_chaos_metrics.json",
+        "service_name": "postgres",
+        "output_report": "postgres/postgres-pool-exhaustion-analysis.json"
+      }
+    }
+  },
+  "visualization": {
+    "title": "Experiment Results Visualization & Summary",
+    "description": "Comprehensive visualization configuration for baseline metrics, metrics comparison, and experiment summary reporting",
+    "baseline-metrics-table": {
+      "title": "PostgreSQL Baseline Metrics (from chaos_platform.baseline_metrics)",
+      "description": "Statistical baselines from healthy system state: mean, standard deviation, percentiles, and sigma bounds",
+      "data_source": "chaos_platform.baseline_metrics WHERE service_id=(SELECT id FROM services WHERE name='postgres')",
+      "columns": [
+        {
+          "name": "metric_name",
+          "description": "OTEL metric name (e.g., postgresql_backends)"
+        },
+        {
+          "name": "mean",
+          "description": "Mean value during baseline collection phase"
+        },
+        {
+          "name": "stddev",
+          "description": "Standard deviation (measures variability)"
+        },
+        {
+          "name": "p95",
+          "description": "95th percentile value"
+        },
+        {
+          "name": "p99",
+          "description": "99th percentile value"
+        },
+        {
+          "name": "bounds_2sigma",
+          "description": "Normal operating range ±2σ (95% confidence)"
+        },
+        {
+          "name": "bounds_3sigma",
+          "description": "Extended range ±3σ (99.7% confidence)"
+        }
+      ],
+      "example_query": "SELECT metric_name, ROUND(mean,2) as mean, ROUND(stddev,2) as stddev, ROUND(percentile_95,2) as p95, ROUND(percentile_99,2) as p99, CONCAT('[',ROUND(mean-2*stddev,2),' to ',ROUND(mean+2*stddev,2),']') as bounds_2sigma FROM baseline_metrics WHERE service_id IN (SELECT id FROM services WHERE name='postgres') ORDER BY metric_name;"
+    },
+    "metrics-captured": {
+      "title": "Metrics Captured During Experiment",
+      "description": "All metrics collected across phases and stored in chaos_platform.metric_snapshots table",
+      "phases": {
+        "pre-chaos": {
+          "duration": "30 seconds before pool exhaustion starts",
+          "purpose": "Establish baseline behavior before intervention",
+          "metrics": ["postgresql_backends", "postgresql_commits_total (rate)", "postgresql_replication_data_delay_bytes"]
+        },
+        "during-chaos": {
+          "duration": "During 60-second pool exhaustion injection",
+          "purpose": "Capture impact of chaos (connection spikes, throughput changes, latency increases)",
+          "metrics": ["postgresql_backends", "postgresql_commits_total (rate)", "postgresql_replication_data_delay_bytes"],
+          "expected_anomalies": [
+            "postgresql_backends: Sharp increase (attempt to use 100 connections)",
+            "postgresql_commits_total: May decrease (connections blocked/waiting)",
+            "postgresql_replication_data_delay_bytes: Possible increase if primary overloaded"
+          ]
+        },
+        "post-chaos": {
+          "duration": "5 minutes after rollback",
+          "purpose": "Monitor recovery and return to baseline state",
+          "metrics": ["postgresql_backends", "postgresql_commits_total (rate)", "postgresql_replication_data_delay_bytes"],
+          "expected_behavior": "All metrics should return within 2-3σ of baseline"
+        }
+      }
+    },
+    "experiment-summary": {
+      "title": "Experiment Summary Report",
+      "description": "Consolidated view of experiment execution, scoring, and outcomes",
+      "sections": [
+        {
+          "name": "Experiment Metadata",
+          "fields": [
+            "experiment_run_id (from chaos_platform.experiment_runs)",
+            "experiment_title: PostgreSQL Connection Pool Exhaustion Test",
+            "executed_at (timestamp)",
+            "duration_seconds (total experiment time)",
+            "service_tested: postgres (testdb)",
+            "chaos_type: connection_pool_exhaustion"
+          ]
+        },
+        {
+          "name": "Experiment Quality Scores (0-255 scale)",
+          "description": "Automatically calculated by metrics-calculator control",
+          "fields": [
+            "risk_score: Measures disruption potential (1-255). 10pts/action, 30-70pts/type, 1pt/60sec duration. Typical: 60-100 for pool exhaustion",
+            "complexity_score: Measures test structure (1-255). 5pts/probe, 10pts/rollback, 20pts/phase. Typical: 80-120",
+            "test_score: Measures metric coverage (1-255). 5pts/metric, 10pts/critical metric, 5pts/high metric. Typical: 50-80",
+            "risk_level: Categorical (low|medium|high|critical) derived from risk_score. Typical: high",
+            "overall_quality: Composite (risk + complexity + test) / 3 / 255"
+          ]
+        },
+        {
+          "name": "Chaos Phase Results",
+          "description": "Metrics comparison with baseline during chaos injection",
+          "comparison_method": "Z-score analysis: (current_value - baseline_mean) / baseline_stddev",
+          "fields": [
+            "postgresql_backends: Expected 3-5σ spike (100 connection attempt)",
+            "postgresql_commits_total: Expected 0-2σ decrease (connections blocked)",
+            "postgresql_replication_data_delay_bytes: Expected 0-1σ increase (primary lag)"
+          ]
+        },
+        {
+          "name": "Recovery Phase Results",
+          "description": "Metrics comparison with baseline after rollback",
+          "acceptance_criteria": "All metrics return within 2σ of baseline within 2 minutes",
+          "fields": [
+            "Time to full recovery (when all metrics within 2σ)",
+            "Maximum deviation during recovery",
+            "Residual anomalies (if any metrics exceed 3σ)"
+          ]
+        },
+        {
+          "name": "Key Findings",
+          "description": "Critical observations and anomalies detected",
+          "fields": [
+            "Anomalies detected by experiment_analysis phase",
+            "Comparison against baseline thresholds (2σ/3σ)",
+            "Performance impact assessment",
+            "Replication health during chaos"
+          ]
+        },
+        {
+          "name": "Stored Results Locations",
+          "description": "Where to find detailed data for further analysis",
+          "fields": [
+            "chaos_platform.experiment_runs: Core experiment record + scores + risk_level",
+            "chaos_platform.experiment_test_metrics: All metrics tested with criticality levels",
+            "chaos_platform.metric_snapshots: Time-series snapshots (pre/during/post)",
+            "chaos_platform.experiment_analysis: Anomaly detection results",
+            "postgres/postgres-pool-exhaustion-analysis.json: JSON report file",
+            "Grafana dashboards: Live visualization of metrics during execution"
+          ]
+        }
+      ]
+    },
+    "grafana-dashboard-links": {
+      "description": "Pre-built dashboards to view baseline and experiment metrics",
+      "dashboards": [
+        {
+          "name": "PostgreSQL Baseline Metrics",
+          "description": "Statistical baselines from chaos_platform.baseline_metrics table showing mean, stddev, and sigma bounds",
+          "query": "SELECT metric_name, ROUND(mean_value,2) as mean, ROUND(stddev_value,2) as stddev, ROUND(p95::numeric,2) as p95 FROM chaos_platform.baseline_metrics WHERE service_id=(SELECT service_id FROM chaos_platform.services WHERE service_name='postgres') ORDER BY metric_name"
+        },
+        {
+          "name": "Connection Pool Utilization",
+          "description": "Real-time view of active PostgreSQL connections (postgresql_backends). Spike expected during chaos phase (threshold 3-5σ above baseline)",
+          "metric": "postgresql_backends{postgresql_database_name='testdb'}",
+          "baseline_mean": 1.0,
+          "baseline_stddev": 0.5,
+          "expected_chaos_value": 30.0,
+          "alert_threshold_sigma": 3.0
+        },
+        {
+          "name": "Commit Rate",
+          "description": "Transaction commit rate per second. May decrease during chaos due to connection exhaustion",
+          "metric": "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])",
+          "baseline_mean": 0.0,
+          "baseline_stddev": 0.1,
+          "recovery_metric": "Should return to baseline within 2 minutes post-chaos"
+        },
+        {
+          "name": "Database Operations",
+          "description": "Overall database operations rate (reads/writes). Useful for detecting complete query blocking during chaos",
+          "metric": "rate(postgresql_operations_total{postgresql_database_name='testdb'}[5m])",
+          "baseline_mean": 0.0,
+          "baseline_stddev": 0.1,
+          "chaos_impact": "Should drop significantly during pool exhaustion"
+        },
+        {
+          "name": "Database Size Monitoring",
+          "description": "Database size stability check. Should remain constant during and after chaos (indicates no data loss)",
+          "metric": "postgresql_db_size_bytes{postgresql_database_name='testdb'}",
+          "baseline_mean": 1000000.0,
+          "baseline_stddev": 10000.0,
+          "expected_behavior": "Should stay within 2σ of baseline throughout experiment"
+        }
+      ]
+    }
+  }
+}

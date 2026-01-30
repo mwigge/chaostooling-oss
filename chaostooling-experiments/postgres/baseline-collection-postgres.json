@@ -1,0 +1,63 @@
+{
+  "version": "1.0",
+  "title": "PostgreSQL Baseline Collection",
+  "description": "Collect baseline metrics from PostgreSQL to establish steady-state reference. Run this once before chaos experiments.",
+  "configuration": {
+    "prometheus_url": {
+      "type": "env",
+      "key": "PROMETHEUS_URL",
+      "default": "http://prometheus:9090"
+    },
+    "grafana_url": {
+      "type": "env",
+      "key": "GRAFANA_URL",
+      "default": "http://grafana:3000"
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
+    }
+  },
+  "steady-state-hypothesis": {
+    "title": "PostgreSQL is healthy",
+    "probes": []
+  },
+  "method": [
+    {
+      "name": "collect-postgres-baseline",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.actions.mcp_metrics_collector",
+        "func": "collect_baseline_snapshot",
+        "arguments": {
+          "grafana_url": "${grafana_url}",
+          "metrics": [
+            "postgresql_backends{postgresql_database_name='testdb'}",
+            "rate(postgresql_commits_total{postgresql_database_name='testdb'}[5m])",
+            "postgresql_replication_data_delay_bytes",
+            "postgresql_db_size_bytes{postgresql_database_name='testdb'}",
+            "rate(postgresql_operations_total{postgresql_database_name='testdb'}[5m])",
+            "postgresql_table_count{postgresql_database_name='testdb'}",
+            "postgresql_index_size_bytes{postgresql_database_name='testdb'}",
+            "rate(postgresql_bgwriter_checkpoint_count_total[5m])"
+          ],
+          "service_name": "postgres",
+          "output_file": "postgres/baseline_metrics.json",
+          "datasource_uid": "prometheus",
+          "time_range": "24h",
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}",
+          "phase": "baseline_collection"
+        }
+      }
+    }
+  ],
+  "rollbacks": []
+}

@@ -36,6 +36,7 @@ RUN pip install \
     stomp.py \
     requests \
     psutil \
+    mcp \
     opentelemetry-api \
     opentelemetry-sdk \
     opentelemetry-exporter-otlp \
@@ -50,8 +51,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 COPY scripts/docker-entrypoint.sh /docker-entrypoint.sh
 COPY scripts/chaos-runner-entrypoint.sh /chaos-runner-entrypoint.sh
 COPY scripts/setup-extensions.sh /setup-extensions.sh
-RUN dos2unix /docker-entrypoint.sh /chaos-runner-entrypoint.sh /setup-extensions.sh && \
-    chmod +x /docker-entrypoint.sh /chaos-runner-entrypoint.sh /setup-extensions.sh
+COPY scripts/run-chaos.sh /usr/local/bin/run-chaos
+RUN dos2unix /docker-entrypoint.sh /chaos-runner-entrypoint.sh /setup-extensions.sh /usr/local/bin/run-chaos && \
+    chmod +x /docker-entrypoint.sh /chaos-runner-entrypoint.sh /setup-extensions.sh /usr/local/bin/run-chaos
 
 # Run setup-extensions.sh during build to pre-install extensions
 RUN /setup-extensions.sh || true

@@ -140,6 +140,13 @@
       }
     },
     {
+      "name": "database-storage",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_storage_control"
+      }
+    },
+    {
       "name": "opentelemetry",
       "provider": {
         "type": "python",

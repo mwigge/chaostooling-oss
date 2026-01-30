@@ -63,10 +63,10 @@
     }
   ],
   "steady-state-hypothesis": {
-    "title": "Database is accessible",
+    "title": "PostgreSQL accessible with normal transaction duration and lock hold times",
     "probes": [
       {
-        "name": "probe-postgres",
+        "name": "connectivity",
         "type": "probe",
         "provider": {
           "type": "python",
@@ -78,6 +78,57 @@
             "database": "${postgres_db}",
             "user": "${postgres_user}",
             "password": "${postgres_password}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "transaction-duration",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "pg_transaction_duration_p95_ms",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 1.5,
+            "description": "Transaction duration p95 within 1.5-sigma of baseline (strict)"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "lock-hold-time",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "pg_lock_hold_duration_ms",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Lock hold time within 2-sigma of baseline"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "idle-in-transaction",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "pg_idle_in_transaction_count",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 1.5,
+            "description": "Idle-in-transaction sessions within 1.5-sigma"
           }
         },
         "tolerance": true
