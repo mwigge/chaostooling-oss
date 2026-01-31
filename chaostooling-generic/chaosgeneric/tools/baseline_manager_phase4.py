@@ -310,7 +310,6 @@ class BaselineManager:
             if not baselines_rows:
                 self.logger.info(f"No baselines found for experiment {experiment_id}")
                 return {
-                    "status": "success",
                     "experiment_id": experiment_id,
                     "experiment_name": experiment.get("title", ""),
                     "baselines": [],

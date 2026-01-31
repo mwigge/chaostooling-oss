@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS chaos_platform.baseline_metrics (
     p50 NUMERIC(12, 4),
     p95 NUMERIC(12, 4),
     p99 NUMERIC(12, 4),
-    
+    p999 NUMERIC(12, 4),
+
     -- Anomaly detection bounds (mean ± n*sigma)
     lower_bound_2sigma NUMERIC(12, 4),
     upper_bound_2sigma NUMERIC(12, 4),

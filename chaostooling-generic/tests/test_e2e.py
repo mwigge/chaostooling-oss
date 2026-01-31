@@ -115,7 +115,7 @@ class TestEndToEndWorkflow:
             )
             versions = db_cursor.fetchall()
             assert isinstance(versions, list)
-        except:
+        except Exception:
             pytest.skip("Versioning table may not exist")
 
     @pytest.mark.e2e
@@ -133,7 +133,7 @@ class TestEndToEndWorkflow:
             )
             audit_entries = db_cursor.fetchall()
             assert isinstance(audit_entries, list)
-        except:
+        except Exception:
             pytest.skip("Audit table may not exist")
 
     @pytest.mark.e2e
@@ -237,7 +237,7 @@ class TestExperimentIntegration:
             )
             result = db_cursor.fetchone()
             assert result["count"] >= 1
-        except:
+        except Exception:
             pytest.skip("Cannot test experiment mappings")
 
     @pytest.mark.e2e

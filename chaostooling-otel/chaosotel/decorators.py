@@ -619,7 +619,7 @@ class instrumented_section:
         self.log_core = None
         self.span = None
 
-    def __enter__(self) -> "InstrumentedSection":
+    def __enter__(self) -> "instrumented_section":
         """Enter instrumented section."""
         try:
             ensure_initialized()

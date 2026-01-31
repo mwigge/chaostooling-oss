@@ -214,7 +214,7 @@ def probe_host_reachable(
                     finally:
                         try:
                             sock.close()
-                        except:
+                        except Exception:
                             pass
             else:
                 # ping not available and TCP fallback disabled

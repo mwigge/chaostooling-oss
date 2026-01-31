@@ -37,6 +37,7 @@ class MCPBaselineControl:
         self.loaded_baselines: dict[str, BaselineMetric] = {}
         self.db: Optional[ChaosDb] = None
         self.experiment_id: Optional[int] = None
+        self.discovery_method: Optional[str] = None
 
     def before_experiment_starts(self, context: dict[str, Any], **config):
         """
@@ -88,15 +89,15 @@ class MCPBaselineControl:
             logger.info("✓ Initialized BaselineLoader")
 
             # Get discovery configuration
-            discovery_method = config.get("discovery_method", "system")
+            self.discovery_method = config.get("discovery_method", "system")
             discovery_params = config.get("discovery_params", {})
 
-            logger.info(f"\nDiscovery Method: {discovery_method}")
+            logger.info(f"\nDiscovery Method: {self.discovery_method}")
             logger.info(f"Discovery Params: {discovery_params}")
 
             # Load baselines using specified discovery method
             self.loaded_baselines = self._load_baselines_by_method(
-                discovery_method, discovery_params
+                self.discovery_method, discovery_params
             )
 
             if not self.loaded_baselines:
@@ -323,7 +324,7 @@ class MCPBaselineControl:
                     critical_sigma=3.0,
                     enable_anomaly_detection=True,
                     anomaly_method="zscore",
-                    discovery_method=discovery_method,
+                    discovery_method=self.discovery_method,
                 )
                 mapping_count += 1
                 logger.debug(f"  ✓ Created mapping {mapping_id} for {metric_name}")

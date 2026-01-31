@@ -748,11 +748,11 @@ class ChaosDb:
             logger.error(f"Failed to save metric snapshot: {str(e)}")
             raise
 
-    def save_baseline_metrics(
+    def save_baseline_metrics_batch(
         self, service_name: str, metrics: dict[str, Any]
     ) -> list[int]:
         """
-        Save baseline metrics (steady state analysis).
+        Save baseline metrics in batch (steady state analysis).
         Called during baseline collection to establish reference points.
 
         Args:
@@ -1404,23 +1404,23 @@ class ChaosDb:
                     cur.execute(
                         """
                         SELECT
-                            baseline_id as metric_id,
-                            metric_name,
-                            service_name,
-                            environment as system,
-                            mean_value as mean,
-                            stddev_value as stdev,
-                            min_value,
-                            max_value,
-                            p50 as percentile_50,
-                            p95 as percentile_95,
-                            p99 as percentile_99,
-                            COALESCE(p999, p99) as percentile_999,
-                            upper_bound_2sigma,
-                            upper_bound_3sigma,
-                            version as baseline_version_id,
-                            created_at as collection_timestamp,
-                            data_completeness_percent / 100.0 as quality_score
+                            bm.baseline_id as metric_id,
+                            bm.metric_name,
+                            s.service_name,
+                            s.environment as system,
+                            bm.mean_value as mean,
+                            bm.stddev_value as stdev,
+                            bm.min_value,
+                            bm.max_value,
+                            bm.p50 as percentile_50,
+                            bm.p95 as percentile_95,
+                            bm.p99 as percentile_99,
+                            COALESCE(bm.p999, bm.p99) as percentile_999,
+                            bm.upper_bound_2sigma,
+                            bm.upper_bound_3sigma,
+                            bm.version as baseline_version_id,
+                            bm.created_at as collection_timestamp,
+                            bm.data_completeness_percent / 100.0 as quality_score
                         FROM chaos_platform.baseline_metrics bm
                         JOIN chaos_platform.services s ON bm.service_id = s.service_id
                         WHERE bm.metric_name = %s

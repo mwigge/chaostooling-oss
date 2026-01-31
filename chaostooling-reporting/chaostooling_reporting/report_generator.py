@@ -238,7 +238,7 @@ class ReportGenerator:
 
         # Generate test state/coverage
         test_state_coverage = self._generate_test_state_coverage(
-            run, steady_state, experiment
+            run, steady_state, experiment, journal
         )
 
         # Generate summary of all tests run
@@ -327,7 +327,7 @@ class ReportGenerator:
         <h2>Testing Summary</h2>
         <p>This experiment demonstrates systematic testing of system resilience.</p>
 
-        {self._generate_test_state_coverage(run, steady_state, experiment)}
+        {self._generate_test_state_coverage(run, steady_state, experiment, journal)}
 
         {self._generate_scenario_summary(run)}
 
@@ -1295,6 +1295,7 @@ class ReportGenerator:
         run: list[dict[str, Any]],
         steady_state: dict[str, Any],
         experiment: dict[str, Any],
+        journal: dict[str, Any],
     ) -> str:
         """
         Generate Test State/Coverage metric as an initial overview.

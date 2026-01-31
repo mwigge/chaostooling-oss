@@ -861,7 +861,9 @@ class SteadyStateAnalyzer:
         loki_url: str = None,
         analysis_period_days: int = 14,
     ):
-        self.prometheus = PrometheusClient(prometheus_url)
+        # TODO: PrometheusClient class is not defined - needs implementation
+        self.prometheus_url = prometheus_url
+        self.prometheus = None
         self.tempo_url = tempo_url
         self.loki_url = loki_url
         self.analysis_period_days = analysis_period_days

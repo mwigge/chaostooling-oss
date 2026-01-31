@@ -228,7 +228,7 @@ def _display_experiment_overview_table(run_row: tuple) -> None:
 
         duration = (end_dt - start_dt).total_seconds()
         duration_str = f"{int(duration)}s"
-    except:
+    except Exception:
         duration_str = "N/A"
 
     # Metadata section

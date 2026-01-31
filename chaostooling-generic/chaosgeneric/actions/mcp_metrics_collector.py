@@ -227,7 +227,7 @@ def collect_baseline_snapshot(
                                     "sample_count": 1,
                                 }
 
-                    db.save_baseline_metrics(
+                    db.save_baseline_metrics_batch(
                         service_name=service_name, metrics=baseline_metrics
                     )
                     logger.info("[OK] Baseline metrics saved to database")

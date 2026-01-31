@@ -50,7 +50,7 @@ class LinuxNetworkChaos:
                     ["ip", "link", "show", iface], capture_output=True, check=True
                 )
                 return iface
-            except:
+            except subprocess.CalledProcessError:
                 continue
 
         raise NetworkChaosError("Could not detect network interface")
@@ -123,7 +123,7 @@ class LinuxNetworkChaos:
                     ["tc", "qdisc", "del", "dev", interface, "root"],
                     capture_output=True,
                 )
-            except:
+            except Exception:
                 pass
 
             logger.error(f"Latency injection failed: {e}")
@@ -194,7 +194,7 @@ class LinuxNetworkChaos:
                     ["tc", "qdisc", "del", "dev", interface, "root"],
                     capture_output=True,
                 )
-            except:
+            except Exception:
                 pass
 
             logger.error(f"Packet loss injection failed: {e}")
@@ -269,7 +269,7 @@ class LinuxNetworkChaos:
                     ["tc", "qdisc", "del", "dev", interface, "root"],
                     capture_output=True,
                 )
-            except:
+            except Exception:
                 pass
 
             logger.error(f"Bandwidth limitation failed: {e}")

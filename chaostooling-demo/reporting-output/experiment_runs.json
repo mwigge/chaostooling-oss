@@ -567,9 +567,9 @@
     ]
   },
   "Extensive PostgreSQL Chaos Experiment": {
-    "total_runs": 35,
-    "successful_runs": 31,
-    "failed_runs": 4,
+    "total_runs": 38,
+    "successful_runs": 33,
+    "failed_runs": 5,
     "runs": [
       {
         "experiment_id": "2905-20260116145745-3bb72ddc",
@@ -815,6 +815,27 @@
         "status": "completed",
         "success": true,
         "duration": 773.7485122680664
+      },
+      {
+        "experiment_id": "0914-20260131172639-50ea7902",
+        "run_timestamp": "2026-01-31T12:30:49.104942+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 3091.239915370941
+      },
+      {
+        "experiment_id": "4297-20260131175930-ec39baf1",
+        "run_timestamp": "2026-01-31T17:18:24.062514+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 495.0258536338806
+      },
+      {
+        "experiment_id": "4551-20260131180436-9424c3c3",
+        "run_timestamp": "2026-01-31T17:51:54.674746+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 455.61342549324036
       }
     ]
   },
