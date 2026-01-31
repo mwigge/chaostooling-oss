@@ -11,13 +11,13 @@ Hooks into experiment lifecycle to:
 REQUIRES: experiment-orchestrator control to run FIRST
 """
 
-import os
 import json
 import logging
-import requests
+import os
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 
+import requests
 from chaoslib.control import Control
 from chaoslib.exceptions import ChaosException
 
@@ -25,7 +25,7 @@ logger = logging.getLogger("chaosgeneric.control.database_storage")
 
 # Import calculator for risk and complexity scoring
 try:
-    from chaosotel.calculator import calculate_risk_level, calculate_complexity_score
+    from chaosotel.calculator import calculate_complexity_score, calculate_risk_level
 except ImportError:
     calculate_risk_level = None
     calculate_complexity_score = None
@@ -83,9 +83,9 @@ def unload_control(control: Control):
 
 
 def before_experiment_control(
-    context: Dict[str, Any],
+    context: dict[str, Any],
     state: Any = None,
-    experiment: Dict[str, Any] = None,
+    experiment: dict[str, Any] = None,
     **kwargs,
 ):
     """
@@ -180,7 +180,7 @@ def before_experiment_control(
 
 
 def after_experiment_step(
-    context: Dict[str, Any], step: Dict[str, Any], result: Dict[str, Any], state: str
+    context: dict[str, Any], step: dict[str, Any], result: dict[str, Any], state: str
 ):
     """
     Called after each experiment step (action/probe).
@@ -206,10 +206,10 @@ def after_experiment_step(
 
 
 def after_experiment_control(
-    context: Dict[str, Any],
+    context: dict[str, Any],
     state: Any = None,
-    journal: Dict[str, Any] = None,
-    experiment: Dict[str, Any] = None,
+    journal: dict[str, Any] = None,
+    experiment: dict[str, Any] = None,
     **kwargs,
 ):
     """

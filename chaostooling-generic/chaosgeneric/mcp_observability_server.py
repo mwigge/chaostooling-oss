@@ -13,14 +13,14 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Optional
 
 import requests
-from mcp.server.models import InitializationOptions
 from mcp.server import Server, stdio_server
+from mcp.server.models import InitializationOptions
 from mcp.types import (
-    Tool,
     TextContent,
+    Tool,
     ToolResult,
 )
 
@@ -28,8 +28,8 @@ from mcp.types import (
 try:
     from .tools.baseline_manager import (
         PrometheusClient,
-        parse_time_range,
         calculate_statistics,
+        parse_time_range,
     )
 
     BASELINE_MANAGER_AVAILABLE = True

@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import redis
 from chaosotel import (
@@ -29,7 +29,7 @@ def inject_key_contention(
     num_threads: int = 10,
     duration_seconds: int = 60,
     key_name: str = "chaos:contention:test",
-) -> Dict:
+) -> dict:
     """Inject Redis key contention by concurrent operations on same key."""
     # Handle string input from Chaos Toolkit configuration
     if port is not None:

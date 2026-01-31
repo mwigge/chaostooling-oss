@@ -13,7 +13,7 @@ Tracks compliance for:
 import logging
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger("chaosotel.compliance_core")
 
@@ -60,7 +60,7 @@ class ComplianceCore:
     - HIPAA (healthcare data)
     """
 
-    def __init__(self, regulations: Optional[List[str]] = None):
+    def __init__(self, regulations: Optional[list[str]] = None):
         """
         Initialize ComplianceCore.
 
@@ -76,15 +76,15 @@ class ComplianceCore:
                 logger.warning(f"Unknown regulation: {reg}")
 
         # Compliance state
-        self._compliance_scores: Dict[str, float] = {
+        self._compliance_scores: dict[str, float] = {
             reg: 100.0 for reg in self.regulations
         }
-        self._violations: Dict[str, List[Dict[str, Any]]] = {
+        self._violations: dict[str, list[dict[str, Any]]] = {
             reg: [] for reg in self.regulations
         }
-        self._audit_trail: List[Dict[str, Any]] = []
-        self._action_count: Dict[str, int] = {reg: 0 for reg in self.regulations}
-        self._violation_count: Dict[str, int] = {reg: 0 for reg in self.regulations}
+        self._audit_trail: list[dict[str, Any]] = []
+        self._action_count: dict[str, int] = {reg: 0 for reg in self.regulations}
+        self._violation_count: dict[str, int] = {reg: 0 for reg in self.regulations}
 
         logger.info(
             f"ComplianceCore initialized for regulations: {', '.join(self.regulations)}"
@@ -159,7 +159,7 @@ class ComplianceCore:
         regulation: str,
         violation: str,
         severity: str = "medium",
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
         remediation: Optional[str] = None,
     ) -> None:
         """
@@ -220,7 +220,7 @@ class ComplianceCore:
         except Exception as e:
             _handle_compliance_error("record violation", e)
 
-    def get_violations(self, regulation: Optional[str] = None) -> Dict[str, List]:
+    def get_violations(self, regulation: Optional[str] = None) -> dict[str, list]:
         """
         Get violations for regulation(s).
 
@@ -295,7 +295,7 @@ class ComplianceCore:
     # COMPLIANCE REPORT GENERATION
     # ========================================================================
 
-    def generate_compliance_report(self) -> Dict[str, Any]:
+    def generate_compliance_report(self) -> dict[str, Any]:
         """
         Generate comprehensive compliance report.
 
@@ -330,7 +330,7 @@ class ComplianceCore:
     # AUDIT TRAIL
     # ========================================================================
 
-    def get_audit_trail(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_audit_trail(self, limit: Optional[int] = None) -> list[dict[str, Any]]:
         """
         Get audit trail entries.
 
@@ -354,7 +354,7 @@ class ComplianceCore:
     # RISK ASSESSMENT
     # ========================================================================
 
-    def get_compliance_risk_level(self) -> Dict[str, Any]:
+    def get_compliance_risk_level(self) -> dict[str, Any]:
         """
         Calculate compliance risk level based on scores and violations.
 

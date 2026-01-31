@@ -5,15 +5,15 @@ import threading
 import time
 
 import psycopg2
+
+# Import from chaosotel for auto-instrumentation
+from chaosotel import initialize
+from chaosotel.core.trace_core import trace_kafka_consume
 from flask import Flask, jsonify
 from kafka import KafkaConsumer
 from opentelemetry import trace
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.trace import Status, StatusCode
-
-# Import from chaosotel for auto-instrumentation
-from chaosotel import initialize
-from chaosotel.core.trace_core import trace_kafka_consume
 
 # Setup OpenTelemetry with auto-instrumentation
 service_name = os.getenv("OTEL_SERVICE_NAME", "notification-service")
@@ -116,8 +116,8 @@ def process_message(message):
                     conn = get_db_connection()
                     cur = conn.cursor()
                     cur.execute(
-                        """INSERT INTO notifications (user_id, type, message, status, created_at) 
-                           VALUES (%s, %s, %s, %s, NOW()) 
+                        """INSERT INTO notifications (user_id, type, message, status, created_at)
+                           VALUES (%s, %s, %s, %s, NOW())
                            ON CONFLICT DO NOTHING""",
                         (user_id, "purchase", f"Purchase completed: ${amount}", "sent"),
                     )
@@ -181,8 +181,8 @@ def process_message(message):
                     conn = get_db_connection()
                     cur = conn.cursor()
                     cur.execute(
-                        """INSERT INTO notifications (user_id, type, message, status, created_at) 
-                           VALUES (%s, %s, %s, %s, NOW()) 
+                        """INSERT INTO notifications (user_id, type, message, status, created_at)
+                           VALUES (%s, %s, %s, %s, NOW())
                            ON CONFLICT DO NOTHING""",
                         (user_id, "purchase", f"Purchase completed: ${amount}", "sent"),
                     )

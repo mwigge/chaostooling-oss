@@ -2,13 +2,13 @@ import logging
 import os
 
 import pymysql
-from flask import Flask, jsonify, request
-from opentelemetry import trace
-from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
 # Import from chaosotel for auto-instrumentation
 from chaosotel import initialize
-from chaosotel.core.trace_core import trace_kafka_produce, set_db_span_attributes
+from chaosotel.core.trace_core import set_db_span_attributes, trace_kafka_produce
+from flask import Flask, jsonify, request
+from opentelemetry import trace
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
 # Setup OpenTelemetry with auto-instrumentation
 service_name = os.getenv("OTEL_SERVICE_NAME", "order-service")

@@ -10,8 +10,7 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-from string import Template
+from typing import Any, Optional
 
 import requests
 
@@ -64,11 +63,11 @@ class DashboardGenerator:
             f"template_path={self.template_path}"
         )
 
-    def _load_template(self) -> Dict[str, Any]:
+    def _load_template(self) -> dict[str, Any]:
         """Load dashboard template from file."""
         try:
             if self.template_path.exists():
-                with open(self.template_path, "r") as f:
+                with open(self.template_path) as f:
                     return json.load(f)
             else:
                 logger.warning(
@@ -79,7 +78,7 @@ class DashboardGenerator:
             logger.error(f"Error loading template: {e}")
             return self._get_minimal_template()
 
-    def _get_minimal_template(self) -> Dict[str, Any]:
+    def _get_minimal_template(self) -> dict[str, Any]:
         """Return a minimal dashboard template."""
         return {
             "annotations": {"list": []},
@@ -117,11 +116,11 @@ class DashboardGenerator:
         experiment_title: str,
         start_time: datetime,
         end_time: Optional[datetime] = None,
-        systems: Optional[List[str]] = None,
-        journal: Optional[Dict[str, Any]] = None,
+        systems: Optional[list[str]] = None,
+        journal: Optional[dict[str, Any]] = None,
         report_url: Optional[str] = None,
         provision: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate a dashboard for an experiment run.
 
@@ -195,7 +194,7 @@ class DashboardGenerator:
 
         return result
 
-    def _apply_template(self, variables: Dict[str, str]) -> Dict[str, Any]:
+    def _apply_template(self, variables: dict[str, str]) -> dict[str, Any]:
         """Apply variables to template using string substitution."""
         # Convert template to string
         template_str = json.dumps(self.template)
@@ -210,8 +209,8 @@ class DashboardGenerator:
         return json.loads(template_str)
 
     def _add_journal_data(
-        self, dashboard_json: Dict[str, Any], journal: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, dashboard_json: dict[str, Any], journal: dict[str, Any]
+    ) -> dict[str, Any]:
         """Add experiment journal data to dashboard annotations."""
         # Extract key events from journal
         events = []
@@ -257,7 +256,7 @@ class DashboardGenerator:
 
         return dashboard_json
 
-    def _save_locally(self, dashboard_json: Dict[str, Any], experiment_id: str) -> Path:
+    def _save_locally(self, dashboard_json: dict[str, Any], experiment_id: str) -> Path:
         """Save dashboard JSON to local file."""
         # Create safe filename
         safe_id = re.sub(r"[^a-zA-Z0-9_-]", "_", experiment_id)
@@ -271,7 +270,7 @@ class DashboardGenerator:
         logger.info(f"Dashboard saved locally: {filepath}")
         return filepath
 
-    def _provision_to_grafana(self, dashboard_json: Dict[str, Any]) -> str:
+    def _provision_to_grafana(self, dashboard_json: dict[str, Any]) -> str:
         """
         Provision dashboard to Grafana via API.
 
@@ -360,7 +359,7 @@ class DashboardGenerator:
         return deleted
 
 
-def extract_systems_from_experiment(experiment: Dict[str, Any]) -> List[str]:
+def extract_systems_from_experiment(experiment: dict[str, Any]) -> list[str]:
     """
     Extract system names from experiment definition.
 
@@ -419,7 +418,7 @@ def extract_systems_from_experiment(experiment: Dict[str, Any]) -> List[str]:
 
 
 def extract_timestamps_from_journal(
-    journal: Dict[str, Any],
+    journal: dict[str, Any],
 ) -> tuple[datetime, datetime]:
     """
     Extract start and end timestamps from journal.

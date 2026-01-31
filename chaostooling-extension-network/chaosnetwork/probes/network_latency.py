@@ -39,7 +39,7 @@ def _measure_tcp_latency(host: str, port: int = 80, timeout: float = 5.0) -> flo
         sock.close()
         latency_ms = (time.time() - start) * 1000
         return latency_ms
-    except (socket.gaierror, socket.timeout, socket.error, OSError):
+    except (socket.gaierror, socket.timeout, OSError):
         return -1
 
 

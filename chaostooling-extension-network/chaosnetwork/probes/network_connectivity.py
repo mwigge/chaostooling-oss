@@ -209,7 +209,7 @@ def probe_host_reachable(
                         sock.close()
                         reachable = True
                         break
-                    except (socket.gaierror, socket.timeout, socket.error, OSError):
+                    except (socket.gaierror, socket.timeout, OSError):
                         continue
                     finally:
                         try:

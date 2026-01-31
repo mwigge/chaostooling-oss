@@ -145,7 +145,13 @@ target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP"]
-ignore = ["E501"]
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "N999",   # Invalid module name (packages use hyphens, not underscores) 
+    "N803",   # Argument name should be lowercase (MongoDB API requires authSource camelCase)
+    "N806",   # Variable in function should be lowercase (MongoDB API requires authSource camelCase)
+    "E402",   # Module level import not at top (some scripts require dynamic imports)
+]
 
 [tool.black]
 line-length = 100

@@ -1,8 +1,9 @@
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
-import mysql.connector
+from chaosdb.common.connection import create_mysql_connection
+from chaosdb.common.constants import DatabaseDefaults
 from chaosotel import (
     ensure_initialized,
     flush,
@@ -13,9 +14,6 @@ from chaosotel import (
 )
 from opentelemetry.trace import StatusCode
 
-from chaosdb.common.connection import create_mysql_connection
-from chaosdb.common.constants import DatabaseDefaults
-
 
 def test_mysql_connection(
     host: Optional[str] = None,
@@ -23,7 +21,7 @@ def test_mysql_connection(
     database: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Simple connectivity check against MySQL with chaosotel tracing/metrics.
     """

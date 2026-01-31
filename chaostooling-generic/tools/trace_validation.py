@@ -17,11 +17,10 @@ Usage:
 
 import json
 import logging
-from datetime import datetime
-from typing import Dict, List, Optional
-import time
 import random
 import string
+import time
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ class TraceGenerator:
         return "".join(random.choices(string.hexdigits[:-6], k=8))
 
     @classmethod
-    def create_baseline_discovery_trace(cls) -> Dict:
+    def create_baseline_discovery_trace(cls) -> dict:
         """Create a complete baseline discovery trace with hierarchy."""
         trace_id = cls.generate_trace_id()
         root_span_id = cls.generate_span_id()
@@ -172,7 +171,7 @@ class TraceGenerator:
         }
 
     @classmethod
-    def create_experiment_baseline_mapping_trace(cls) -> Dict:
+    def create_experiment_baseline_mapping_trace(cls) -> dict:
         """Create trace for baseline-experiment mapping operation."""
         trace_id = cls.generate_trace_id()
         root_span_id = cls.generate_span_id()
@@ -229,7 +228,7 @@ class TraceValidator:
     """Validate trace structure."""
 
     @staticmethod
-    def validate_trace(trace: Dict) -> Dict:
+    def validate_trace(trace: dict) -> dict:
         """Validate trace structure."""
         issues = []
 
@@ -348,11 +347,11 @@ def main():
     print("\n" + "=" * 60)
     print("To view traces in Grafana/Tempo:")
     print("=" * 60)
-    print(f"\n1. Open Grafana: http://localhost:3000")
-    print(f"2. Go to Explore > Tempo data source")
-    print(f"3. Search by service: baseline-metrics")
-    print(f"4. Look for operations: baseline.discover, baseline.map_experiment")
-    print(f"\n5. Example curl for trace lookup:")
+    print("\n1. Open Grafana: http://localhost:3000")
+    print("2. Go to Explore > Tempo data source")
+    print("3. Search by service: baseline-metrics")
+    print("4. Look for operations: baseline.discover, baseline.map_experiment")
+    print("\n5. Example curl for trace lookup:")
     print(f"   curl -s http://localhost:3100/api/traces/{trace1['traceID']} | jq")
     print()
 

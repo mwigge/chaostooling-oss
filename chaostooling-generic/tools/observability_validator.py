@@ -17,18 +17,18 @@ Usage:
     python observability_validator.py --output results.json
 """
 
-import os
-import sys
 import json
 import logging
-import subprocess
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Any
-from pathlib import Path
-from dataclasses import dataclass, asdict, field
-import time
+import os
 import random
 import string
+import subprocess
+import sys
+import time
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Optional
 
 # Configure logging
 logging.basicConfig(
@@ -58,7 +58,7 @@ class CheckResult:
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     remediation: Optional[str] = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         return asdict(self)
 
@@ -70,11 +70,11 @@ class ValidationPhaseResult:
     phase: int
     phase_name: str
     status: str  # pass, fail, partial
-    checks: List[CheckResult] = field(default_factory=list)
+    checks: list[CheckResult] = field(default_factory=list)
     duration_seconds: float = 0.0
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         data = asdict(self)
         data["checks"] = [c.to_dict() for c in self.checks]
@@ -87,10 +87,10 @@ class ValidationReport:
 
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     overall_status: str = "pending"  # pending, pass, fail, partial
-    phases: List[ValidationPhaseResult] = field(default_factory=list)
-    summary: Dict[str, Any] = field(default_factory=dict)
+    phases: list[ValidationPhaseResult] = field(default_factory=list)
+    summary: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         data = asdict(self)
         data["phases"] = [p.to_dict() for p in self.phases]
@@ -110,7 +110,7 @@ class Phase1InstrumentationChecker:
     """Check instrumentation and configuration requirements."""
 
     def __init__(self):
-        self.checks: List[CheckResult] = []
+        self.checks: list[CheckResult] = []
 
     def check_otel_endpoint(self) -> CheckResult:
         """Check OTEL_EXPORTER_OTLP_ENDPOINT is configured."""
@@ -320,9 +320,9 @@ class Phase2TraceValidator:
     """Validate traces in Tempo."""
 
     def __init__(self):
-        self.checks: List[CheckResult] = []
+        self.checks: list[CheckResult] = []
 
-    def generate_baseline_discovery_trace(self) -> Dict:
+    def generate_baseline_discovery_trace(self) -> dict:
         """Generate a sample trace for baseline discovery."""
         trace_id = "".join(random.choices(string.hexdigits[:-6], k=16))
 
@@ -428,7 +428,6 @@ class Phase2TraceValidator:
         """Check span names are meaningful."""
         trace = self.generate_baseline_discovery_trace()
 
-        required_operations = ["baseline.discover", "query_database", "validate"]
         found_operations = [s["operationName"] for s in trace["spans"]]
 
         # Check if meaningful operations are present
@@ -536,7 +535,7 @@ class Phase3MetricsValidator:
     """Validate metrics in Prometheus."""
 
     def __init__(self):
-        self.checks: List[CheckResult] = []
+        self.checks: list[CheckResult] = []
 
     def check_prometheus_connectivity(self) -> CheckResult:
         """Check Prometheus is reachable."""
@@ -655,7 +654,7 @@ class Phase4LogsValidator:
     """Validate logs in Loki."""
 
     def __init__(self):
-        self.checks: List[CheckResult] = []
+        self.checks: list[CheckResult] = []
 
     def check_loki_connectivity(self) -> CheckResult:
         """Check Loki is reachable."""
@@ -768,7 +767,7 @@ class Phase5DashboardValidator:
     """Validate dashboard templates."""
 
     def __init__(self):
-        self.checks: List[CheckResult] = []
+        self.checks: list[CheckResult] = []
 
     def check_dashboard_template_exists(self) -> CheckResult:
         """Check dashboard template file exists."""
@@ -879,7 +878,7 @@ class ObservabilityValidator:
         else:
             raise ValueError(f"Unknown phase: {phase_num}")
 
-    def run_all_phases(self, phases: Optional[List[int]] = None) -> ValidationReport:
+    def run_all_phases(self, phases: Optional[list[int]] = None) -> ValidationReport:
         """Run all or specific phases."""
         if phases is None:
             phases = [1, 2, 3, 4, 5]
@@ -928,7 +927,7 @@ class ObservabilityValidator:
         print("=" * 80)
         print(f"\nTimestamp: {self.report.timestamp}")
         print(f"Overall Status: {self.report.overall_status.upper()}")
-        print(f"\nSummary:")
+        print("\nSummary:")
         for key, value in self.report.summary.items():
             print(f"  {key}: {value}")
 

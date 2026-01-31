@@ -11,10 +11,9 @@ Coverage targets:
 Total: 32 unit tests
 """
 
-import pytest
-from typing import Dict
 from datetime import datetime, timedelta
 
+import pytest
 from chaosgeneric.tools.baseline_loader import BaselineLoader, BaselineMetric
 
 
@@ -175,8 +174,8 @@ class TestLoadByService:
         loader = BaselineLoader(db_client=mock_db_client)
 
         # Should work with different cases
-        result1 = loader.load_by_service("postgres")
-        result2 = loader.load_by_service("PostgreSQL")
+        loader.load_by_service("postgres")
+        loader.load_by_service("PostgreSQL")
 
         # Method should be called regardless
         assert mock_db_client.get_baselines_for_service.called

@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import pika
 from chaosotel import (
@@ -32,7 +32,7 @@ def inject_queue_saturation(
     num_producers: int = 20,
     messages_per_producer: int = 1000,
     duration_seconds: int = 60,
-) -> Dict:
+) -> dict:
     """Saturate RabbitMQ queue with high message volume."""
     # Handle string input from Chaos Toolkit configuration
     if port is not None:

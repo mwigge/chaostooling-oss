@@ -1,7 +1,8 @@
 from typing import Optional
 
-from chaosnetwork.probes.network_latency import probe_network_latency
 from logzero import logger
+
+from chaosnetwork.probes.network_latency import probe_network_latency
 
 
 def check_network_latency(

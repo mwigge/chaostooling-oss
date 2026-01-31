@@ -10,11 +10,10 @@ Installation:
 """
 
 import logging
-import os
 import platform
 import subprocess
 import time
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger("chaosnetwork")
 
@@ -62,7 +61,7 @@ class LinuxNetworkChaos:
         jitter_ms: int = 10,
         duration_seconds: int = 60,
         interface: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Inject network latency using tc (qdisc).
 
@@ -135,7 +134,7 @@ class LinuxNetworkChaos:
         loss_percent: float = 5.0,
         duration_seconds: int = 60,
         interface: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Inject packet loss using tc.
 
@@ -204,7 +203,7 @@ class LinuxNetworkChaos:
     @staticmethod
     def limit_bandwidth(
         rate_mbps: int = 10, duration_seconds: int = 60, interface: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Limit bandwidth using tc.
 
@@ -286,7 +285,7 @@ class WindowsNetworkChaos:
         jitter_ms: int = 10,
         duration_seconds: int = 60,
         interface: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Inject latency on Windows using NetLimiter or netsh.
         (Requires admin privileges)
@@ -331,7 +330,7 @@ class WindowsNetworkChaos:
         loss_percent: float = 5.0,
         duration_seconds: int = 60,
         interface: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Inject packet loss on Windows.
         (Requires admin privileges and NetLimiter or equivalent)
@@ -372,7 +371,7 @@ class WindowsNetworkChaos:
     @staticmethod
     def limit_bandwidth(
         rate_mbps: int = 10, duration_seconds: int = 60, interface: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Limit bandwidth on Windows.
         (Requires admin privileges and NetLimiter)
@@ -432,7 +431,7 @@ def inject_latency(
     jitter_ms: int = 10,
     duration_seconds: int = 60,
     interface: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Inject network latency.
 
@@ -455,7 +454,7 @@ def inject_latency(
     logger.info(f"[NETWORK] Injecting {latency_ms}ms latency for {duration_seconds}s")
     chaos = get_network_chaos()
     result = chaos.inject_latency(latency_ms, jitter_ms, duration_seconds, interface)
-    logger.info(f"[NETWORK] Latency injection completed")
+    logger.info("[NETWORK] Latency injection completed")
     return result
 
 
@@ -463,7 +462,7 @@ def inject_packet_loss(
     loss_percent: float = 5.0,
     duration_seconds: int = 60,
     interface: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Inject packet loss.
 
@@ -487,13 +486,13 @@ def inject_packet_loss(
     )
     chaos = get_network_chaos()
     result = chaos.inject_packet_loss(loss_percent, duration_seconds, interface)
-    logger.info(f"[NETWORK] Packet loss injection completed")
+    logger.info("[NETWORK] Packet loss injection completed")
     return result
 
 
 def limit_bandwidth(
     rate_mbps: int = 10, duration_seconds: int = 60, interface: Optional[str] = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Limit network bandwidth.
 
@@ -517,5 +516,5 @@ def limit_bandwidth(
     )
     chaos = get_network_chaos()
     result = chaos.limit_bandwidth(rate_mbps, duration_seconds, interface)
-    logger.info(f"[NETWORK] Bandwidth limitation completed")
+    logger.info("[NETWORK] Bandwidth limitation completed")
     return result

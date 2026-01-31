@@ -1,9 +1,9 @@
+import logging
 from typing import Optional
 
 from chaosdb.probes.postgres.postgres_system_metrics import (
     collect_postgres_system_metrics,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 

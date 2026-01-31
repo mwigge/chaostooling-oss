@@ -21,16 +21,14 @@ Examples:
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
-from typing import Dict, List
 
 
-def load_json(file_path: str) -> Dict:
+def load_json(file_path: str) -> dict:
     """Load JSON file."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             return json.load(f)
     except FileNotFoundError:
         print(f"❌ Error: File not found: {file_path}")
@@ -40,21 +38,21 @@ def load_json(file_path: str) -> Dict:
         sys.exit(1)
 
 
-def save_json(data: Dict, file_path: str) -> None:
+def save_json(data: dict, file_path: str) -> None:
     """Save JSON file with proper formatting."""
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2)
     print(f"✅ Saved: {file_path}")
 
 
-def has_template_panels(panels: List[Dict]) -> bool:
+def has_template_panels(panels: list[dict]) -> bool:
     """Check if dashboard already has template panels."""
     template_ids = {999, 100, 101, 102, 103, 104, 105, 106}
     panel_ids = {p.get("id") for p in panels if "id" in p}
     return bool(template_ids & panel_ids)
 
 
-def calculate_template_height(template_panels: List[Dict]) -> int:
+def calculate_template_height(template_panels: list[dict]) -> int:
     """Calculate total height of template panels."""
     if not template_panels:
         return 0
@@ -69,7 +67,7 @@ def calculate_template_height(template_panels: List[Dict]) -> int:
     return max_y
 
 
-def adjust_panel_positions(panels: List[Dict], y_offset: int) -> List[Dict]:
+def adjust_panel_positions(panels: list[dict], y_offset: int) -> list[dict]:
     """Adjust Y positions of all panels by offset."""
     adjusted = []
     for panel in panels:
@@ -81,13 +79,13 @@ def adjust_panel_positions(panels: List[Dict], y_offset: int) -> List[Dict]:
     return adjusted
 
 
-def get_dashboard_title(dashboard: Dict) -> str:
+def get_dashboard_title(dashboard: dict) -> str:
     """Extract dashboard title."""
     return dashboard.get("title", "Unknown Dashboard")
 
 
 def update_service_graph_title(
-    template_panels: List[Dict], dashboard_title: str
+    template_panels: list[dict], dashboard_title: str
 ) -> None:
     """Update service graph title to include dashboard name."""
     for panel in template_panels:
@@ -173,7 +171,7 @@ def apply_template(
 
     # Save dashboard
     save_json(dashboard, str(output_path))
-    print(f"\n✅ Template applied successfully!")
+    print("\n✅ Template applied successfully!")
     print(f"   Dashboard: {dashboard_title}")
     print(f"   File: {output_path}")
 

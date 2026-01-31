@@ -1,7 +1,8 @@
 from typing import Optional
 
-from chaoscompute.probes.compute_system import get_cpu_usage
 from logzero import logger
+
+from chaoscompute.probes.compute_system import get_cpu_usage
 
 
 def check_cpu_usage(max_cpu_percent: Optional[float] = None) -> float:

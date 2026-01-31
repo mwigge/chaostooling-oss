@@ -17,7 +17,7 @@ Architecture:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from opentelemetry import metrics as otel_metrics
 from opentelemetry import trace as otel_trace
@@ -42,8 +42,8 @@ _compliance_core: Optional[ComplianceCore] = None
 
 
 def auto_instrument_databases_and_messaging(
-    databases: Optional[List[str]] = None,
-    messaging: Optional[List[str]] = None,
+    databases: Optional[list[str]] = None,
+    messaging: Optional[list[str]] = None,
 ) -> None:
     """
     Auto-instrument database and messaging libraries with proper callbacks.
@@ -71,9 +71,9 @@ def auto_instrument_databases_and_messaging(
     """
     from chaosotel.traces import (
         create_db_span_callback,
-        create_redis_span_callback,
         create_mongodb_span_callback,
         create_rabbitmq_span_callback,
+        create_redis_span_callback,
     )
 
     # Default to all supported systems if not specified
@@ -85,8 +85,8 @@ def auto_instrument_databases_and_messaging(
     # Instrument PostgreSQL
     if "postgresql" in databases:
         try:
-            from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
             import psycopg2
+            from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
 
             Psycopg2Instrumentor().instrument(
                 skip_dep_check=True,  # Handle psycopg2-binary
@@ -103,8 +103,8 @@ def auto_instrument_databases_and_messaging(
     # Instrument MySQL
     if "mysql" in databases:
         try:
-            from opentelemetry.instrumentation.pymysql import PyMySQLInstrumentor
             import pymysql
+            from opentelemetry.instrumentation.pymysql import PyMySQLInstrumentor
 
             PyMySQLInstrumentor().instrument(
                 request_hook=create_db_span_callback("MYSQL_HOST", "mysql")
@@ -118,8 +118,8 @@ def auto_instrument_databases_and_messaging(
     # Instrument Redis
     if "redis" in databases:
         try:
-            from opentelemetry.instrumentation.redis import RedisInstrumentor
             import redis
+            from opentelemetry.instrumentation.redis import RedisInstrumentor
 
             RedisInstrumentor().instrument(
                 request_hook=create_redis_span_callback("REDIS_HOST", "redis")
@@ -148,8 +148,8 @@ def auto_instrument_databases_and_messaging(
     # Instrument RabbitMQ
     if "rabbitmq" in messaging:
         try:
-            from opentelemetry.instrumentation.pika import PikaInstrumentor
             import pika
+            from opentelemetry.instrumentation.pika import PikaInstrumentor
 
             PikaInstrumentor().instrument(
                 request_hook=create_rabbitmq_span_callback("RABBITMQ_HOST", "rabbitmq")
@@ -184,7 +184,7 @@ def initialize(
     target_type: str = "unknown",
     service_name: str = "chaostoolkit",
     service_version: str = "1.0.0",
-    regulations: Optional[List[str]] = None,
+    regulations: Optional[list[str]] = None,
     auto_instrument: bool = True,
     auto_instrument_databases: bool = False,
     auto_instrument_messaging: bool = False,
@@ -397,7 +397,7 @@ def get_logger(name: str = "chaosotel") -> Any:
     return _logger_provider.get_logger(name)
 
 
-def get_metric_tags(**kwargs: Any) -> Dict[str, str]:
+def get_metric_tags(**kwargs: Any) -> dict[str, str]:
     """
     Build metric tags dictionary from keyword arguments.
 

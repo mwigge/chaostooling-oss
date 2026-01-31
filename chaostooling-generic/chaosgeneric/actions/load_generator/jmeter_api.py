@@ -306,7 +306,7 @@ def _get_jmeter_status_from_results(
 
     # Parse .jtl file (CSV format)
     try:
-        with open(results_file, "r") as f:
+        with open(results_file) as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 

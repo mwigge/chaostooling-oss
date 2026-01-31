@@ -10,7 +10,8 @@ This module implements Task 2.1 of the Baseline Metrics Integration.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any, Optional
+
 from chaosgeneric.data.chaos_db import ChaosDb
 from chaosgeneric.tools.baseline_loader import BaselineLoader, BaselineMetric
 
@@ -33,11 +34,11 @@ class MCPBaselineControl:
 
     def __init__(self):
         self.loader: Optional[BaselineLoader] = None
-        self.loaded_baselines: Dict[str, BaselineMetric] = {}
+        self.loaded_baselines: dict[str, BaselineMetric] = {}
         self.db: Optional[ChaosDb] = None
         self.experiment_id: Optional[int] = None
 
-    def before_experiment_starts(self, context: Dict[str, Any], **config):
+    def before_experiment_starts(self, context: dict[str, Any], **config):
         """
         Called before experiment starts. Load and validate baselines.
 
@@ -121,7 +122,7 @@ class MCPBaselineControl:
             context["baseline_config"] = config
 
             logger.info("\n" + "=" * 80)
-            logger.info(f"✓ Baseline loading complete")
+            logger.info("✓ Baseline loading complete")
             logger.info(f"  Baselines loaded: {len(self.loaded_baselines)}")
             logger.info(f"  Mappings created: {mapping_count}")
             logger.info("=" * 80)
@@ -131,7 +132,7 @@ class MCPBaselineControl:
             raise
 
     def after_experiment_ends(
-        self, context: Dict[str, Any], state: Dict[str, Any], **config
+        self, context: dict[str, Any], state: dict[str, Any], **config
     ):
         """
         Called after experiment completes.
@@ -149,8 +150,8 @@ class MCPBaselineControl:
         logger.info("Baseline results stored in baseline_experiment_mapping table")
 
     def _load_baselines_by_method(
-        self, discovery_method: str, discovery_params: Dict[str, Any]
-    ) -> Dict[str, BaselineMetric]:
+        self, discovery_method: str, discovery_params: dict[str, Any]
+    ) -> dict[str, BaselineMetric]:
         """
         Load baselines using specified discovery method.
 
@@ -234,7 +235,7 @@ class MCPBaselineControl:
 
         return baselines
 
-    def _validate_and_log_baselines(self, validation_config: Dict[str, Any]) -> None:
+    def _validate_and_log_baselines(self, validation_config: dict[str, Any]) -> None:
         """
         Validate baselines and log results.
 
@@ -307,7 +308,7 @@ class MCPBaselineControl:
             )
             return 0
 
-        logger.info(f"\nCreating baseline-experiment mappings...")
+        logger.info("\nCreating baseline-experiment mappings...")
 
         mapping_count = 0
         for metric_name, baseline in self.loaded_baselines.items():
@@ -334,7 +335,7 @@ class MCPBaselineControl:
 
         return mapping_count
 
-    def get_baseline(self) -> Dict[str, BaselineMetric]:
+    def get_baseline(self) -> dict[str, BaselineMetric]:
         """
         Get loaded baseline data. Can be called by probes and actions.
 

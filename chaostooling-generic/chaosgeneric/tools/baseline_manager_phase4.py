@@ -13,8 +13,8 @@ logging, and type safety.
 
 import logging
 import re
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from datetime import datetime
+from typing import Any, Optional
 
 from chaosgeneric.data.chaos_db import ChaosDb
 from chaosgeneric.tools.baseline_loader import BaselineLoader, BaselineMetric
@@ -80,9 +80,9 @@ class BaselineManager:
         self,
         system_id: Optional[str] = None,
         service_id: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
+        labels: Optional[dict[str, str]] = None,
         show_details: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Discover and load baselines by system, service, or labels.
 
@@ -157,7 +157,7 @@ class BaselineManager:
                 )
 
             # Discover baselines
-            baselines_dict: Dict[str, BaselineMetric] = {}
+            baselines_dict: dict[str, BaselineMetric] = {}
             discovery_method = None
 
             if system_id:
@@ -236,7 +236,7 @@ class BaselineManager:
         experiment_id: int,
         show_inactive: bool = False,
         show_skipped: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get baseline status for an experiment.
 
@@ -406,7 +406,7 @@ class BaselineManager:
 
     def suggest_for_experiment(
         self, experiment_id: int, min_quality_score: int = 75, top_n: int = 20
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Suggest baselines for an experiment based on service.
 
@@ -618,8 +618,8 @@ class BaselineManager:
         self,
         system_id: Optional[str],
         service_id: Optional[str],
-        labels: Optional[Dict[str, str]],
-    ) -> Dict[str, Any]:
+        labels: Optional[dict[str, str]],
+    ) -> dict[str, Any]:
         """Build discovery parameters dictionary."""
         params = {}
         if system_id:
@@ -632,7 +632,7 @@ class BaselineManager:
 
     def _baseline_metric_to_dict(
         self, metric: BaselineMetric, discovery_method: str, show_details: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Convert BaselineMetric to dictionary for discover() response."""
         age_days = (datetime.utcnow() - metric.collection_timestamp).days
         is_fresh = age_days <= MAX_BASELINE_AGE_DAYS
@@ -666,7 +666,7 @@ class BaselineManager:
 
         return result
 
-    def _baseline_status_row_to_dict(self, row: Dict[str, Any]) -> Dict[str, Any]:
+    def _baseline_status_row_to_dict(self, row: dict[str, Any]) -> dict[str, Any]:
         """Convert v_experiment_baselines row to dictionary for status() response."""
         mean = float(row.get("mean_value", 0.0))
         stdev = float(row.get("stddev_value", 0.0))
@@ -712,7 +712,7 @@ class BaselineManager:
             "updated_at": row.get("updated_at", ""),
         }
 
-    def _score_baseline(self, metric: BaselineMetric) -> tuple[float, Dict[str, float]]:
+    def _score_baseline(self, metric: BaselineMetric) -> tuple[float, dict[str, float]]:
         """
         Calculate composite recommendation score for a baseline.
 
@@ -781,8 +781,8 @@ class BaselineManager:
         metric: BaselineMetric,
         metric_name: str,
         overall_score: float,
-        score_breakdown: Dict[str, float],
-    ) -> Dict[str, Any]:
+        score_breakdown: dict[str, float],
+    ) -> dict[str, Any]:
         """Convert scored baseline to dictionary for suggest_for_experiment() response."""
         age_days = (datetime.utcnow() - metric.collection_timestamp).days
 
@@ -803,7 +803,7 @@ class BaselineManager:
             "quality_percentile": self._estimate_quality_percentile(score_breakdown),
         }
 
-    def _generate_recommendation_reason(self, score_breakdown: Dict[str, float]) -> str:
+    def _generate_recommendation_reason(self, score_breakdown: dict[str, float]) -> str:
         """Generate human-readable reason for recommendation based on scores."""
         reasons = []
 
@@ -825,7 +825,7 @@ class BaselineManager:
 
         return " with ".join(reasons) if reasons else "Recommended baseline"
 
-    def _estimate_quality_percentile(self, score_breakdown: Dict[str, float]) -> str:
+    def _estimate_quality_percentile(self, score_breakdown: dict[str, float]) -> str:
         """Estimate quality percentile from score breakdown."""
         overall = score_breakdown.get("overall_score", 0)
         if overall >= 90:
@@ -837,7 +837,7 @@ class BaselineManager:
         else:
             return "below-average"
 
-    def _get_experiment(self, experiment_id: int) -> Optional[Dict[str, Any]]:
+    def _get_experiment(self, experiment_id: int) -> Optional[dict[str, Any]]:
         """
         Get experiment by ID from database.
 
@@ -849,12 +849,12 @@ class BaselineManager:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT 
+                        SELECT
                             experiment_id,
                             title,
                             description,
                             service_id,
-                            (SELECT service_name FROM chaos_platform.services 
+                            (SELECT service_name FROM chaos_platform.services
                              WHERE service_id = experiments.service_id) as service_name
                         FROM chaos_platform.experiments
                         WHERE experiment_id = %s
@@ -871,7 +871,7 @@ class BaselineManager:
             self.logger.error(f"Failed to get experiment {experiment_id}: {str(e)}")
             return None
 
-    def _query_experiment_baselines(self, experiment_id: int) -> List[Dict[str, Any]]:
+    def _query_experiment_baselines(self, experiment_id: int) -> list[dict[str, Any]]:
         """
         Query v_experiment_baselines view for an experiment.
 

@@ -24,19 +24,18 @@ except ImportError:
     MESSAGING_SYSTEM_MAP = {}
 
 # Re-export constants
-from .constants import (
-    ConnectionDefaults,
-    DatabaseDefaults,
-    MessagingDefaults,
-    StressDefaults,
-)
-
 # Re-export connection utilities
 from .connection import (
     create_mysql_connection,
     create_postgres_connection,
     get_mysql_connection_params,
     get_postgres_connection_params,
+)
+from .constants import (
+    ConnectionDefaults,
+    DatabaseDefaults,
+    MessagingDefaults,
+    StressDefaults,
 )
 
 __all__ = [

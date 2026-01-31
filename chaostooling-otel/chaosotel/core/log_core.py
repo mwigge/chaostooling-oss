@@ -11,7 +11,7 @@ Records:
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from opentelemetry.sdk._logs import LoggerProvider
 
@@ -71,7 +71,7 @@ class LogCore:
         action_name: str,
         action_type: Optional[str] = None,
         severity: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Log action start."""
         try:
@@ -99,7 +99,7 @@ class LogCore:
         action_name: str,
         success: bool = True,
         duration_ms: float = 0.0,
-        result: Optional[Dict[str, Any]] = None,
+        result: Optional[dict[str, Any]] = None,
         error: Optional[str] = None,
     ) -> None:
         """Log action end."""
@@ -138,7 +138,7 @@ class LogCore:
         self,
         probe_name: str,
         target_type: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Log probe start."""
         try:
@@ -165,7 +165,7 @@ class LogCore:
         probe_name: str,
         status: str = "success",
         duration_ms: float = 0.0,
-        result: Optional[Dict[str, Any]] = None,
+        result: Optional[dict[str, Any]] = None,
         error: Optional[str] = None,
     ) -> None:
         """Log probe end."""
@@ -202,7 +202,7 @@ class LogCore:
         component: str,
         error_message: str,
         error_type: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
     ) -> None:
         """Log structured error."""
         try:
@@ -234,7 +234,7 @@ class LogCore:
         regulation: str,
         check_name: str,
         passed: bool = True,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         """Log compliance check result."""
         try:
@@ -269,7 +269,7 @@ class LogCore:
     def log_event(
         self,
         event_name: str,
-        event_data: Optional[Dict[str, Any]] = None,
+        event_data: Optional[dict[str, Any]] = None,
         severity: str = "info",
     ) -> None:
         """Log custom event."""
@@ -303,7 +303,7 @@ class LogCore:
     # AUDIT TRAIL
     # ========================================================================
 
-    def get_audit_trail(self) -> List[Dict[str, Any]]:
+    def get_audit_trail(self) -> list[dict[str, Any]]:
         """Get audit trail."""
         return self._audit_trail.copy()
 
@@ -320,7 +320,7 @@ class LogCore:
         """Get ISO 8601 timestamp."""
         return datetime.now(timezone.utc).isoformat()
 
-    def _get_trace_context(self) -> Dict[str, Any]:
+    def _get_trace_context(self) -> dict[str, Any]:
         """Get trace context (trace_id, span_id)."""
         try:
             from opentelemetry import trace
@@ -338,7 +338,7 @@ class LogCore:
                 "span_id": "0000000000000000",
             }
 
-    def _log_structured(self, level: str, log_data: Dict[str, Any]) -> None:
+    def _log_structured(self, level: str, log_data: dict[str, Any]) -> None:
         """Log structured data."""
         try:
             if level == "DEBUG":

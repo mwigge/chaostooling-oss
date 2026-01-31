@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 from cassandra.cluster import Cluster
 from chaosotel import (
@@ -29,7 +29,7 @@ def inject_slow_operations(
     num_threads: int = 5,
     duration_seconds: int = 60,
     operation_delay_ms: int = 5000,
-) -> Dict:
+) -> dict:
     """Inject slow Cassandra operations."""
     host = host or os.getenv("CASSANDRA_HOST", "localhost")
     port = port or int(os.getenv("CASSANDRA_PORT", "9042"))

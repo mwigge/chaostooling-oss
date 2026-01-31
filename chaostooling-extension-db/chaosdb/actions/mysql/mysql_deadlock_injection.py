@@ -4,9 +4,16 @@ import logging
 import os
 import threading
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import mysql.connector
+from chaosdb.common.connection import create_mysql_connection
+from chaosdb.common.constants import DatabaseDefaults
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
 from chaosotel import (
     ensure_initialized,
     flush,
@@ -15,14 +22,6 @@ from chaosotel import (
     get_tracer,
 )
 from opentelemetry.trace import StatusCode
-
-from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
-from chaosdb.common.connection import create_mysql_connection
-from chaosdb.common.validation import (
-    validate_database_name,
-    validate_host,
-    validate_port,
-)
 
 _active_threads = []
 _stop_event = threading.Event()
@@ -37,7 +36,7 @@ def inject_deadlock(
     num_threads: int = 10,
     duration_seconds: int = 60,
     table_name: str = "chaos_deadlock_table",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Inject transaction deadlocks by creating circular dependency deadlocks.
     Creates transactions that lock resources in opposite order, causing circular waits.

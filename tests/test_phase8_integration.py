@@ -16,17 +16,15 @@ Coverage Target: >95%
 Performance Target: <100ms per operation
 """
 
-import os
 import json
+import os
 import time
-import pytest
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import psycopg2
-from psycopg2.extras import DictCursor
 
+import psycopg2
+import pytest
+from psycopg2.extras import DictCursor
 
 # ============================================================================
 # CONFIGURATION & FIXTURES
@@ -84,7 +82,7 @@ def db_cursor(db_connection):
 
 
 @pytest.fixture
-def sample_baseline_metrics() -> Dict:
+def sample_baseline_metrics() -> dict:
     """Sample baseline metrics for testing."""
     return {
         "metric_name": "postgresql_backends",
@@ -120,12 +118,12 @@ def postgres_experiments():
         filepath = postgres_dir / filename
         if filepath.exists():
             try:
-                with open(filepath, "r") as f:
+                with open(filepath) as f:
                     exp = json.load(f)
                     experiments.append(
                         {"filename": filename, "path": filepath, "content": exp}
                     )
-            except (json.JSONDecodeError, IOError) as e:
+            except (OSError, json.JSONDecodeError) as e:
                 pytest.skip(f"Cannot load experiment {filename}: {e}")
 
     return experiments
@@ -210,7 +208,6 @@ class TestBaselineDiscoveryIntegration:
         start = time.perf_counter()
 
         # Simulate discovery operation
-        discovered = {"metrics": [sample_baseline_metrics]}
 
         elapsed = (time.perf_counter() - start) * 1000  # Convert to ms
         assert elapsed < 100, f"Discovery took {elapsed:.2f}ms, expected <100ms"
@@ -418,7 +415,6 @@ class TestBaselineManagerCommandsIntegration:
             start = time.perf_counter()
 
             # Simulate command execution
-            result = {"command": cmd, "status": "success"}
 
             elapsed = (time.perf_counter() - start) * 1000  # ms
             assert elapsed < 100, f"{cmd} command took {elapsed:.2f}ms"
@@ -486,8 +482,8 @@ class TestDatabaseIntegration:
         """Test: Indexes are being used (explain plan shows index usage)."""
         try:
             db_cursor.execute("""
-                EXPLAIN (ANALYZE, BUFFERS) 
-                SELECT * FROM chaos_platform.baseline_metrics 
+                EXPLAIN (ANALYZE, BUFFERS)
+                SELECT * FROM chaos_platform.baseline_metrics
                 WHERE system = 'postgres'
                 LIMIT 10
             """)
@@ -507,7 +503,7 @@ class TestDatabaseIntegration:
         try:
             start = time.perf_counter()
             db_cursor.execute("""
-                SELECT * FROM chaos_platform.baseline_metrics 
+                SELECT * FROM chaos_platform.baseline_metrics
                 LIMIT 100
             """)
             db_cursor.fetchall()
@@ -538,7 +534,7 @@ class TestDatabaseIntegration:
 
                 db_cursor.execute(
                     """
-                    SELECT COUNT(*) as count 
+                    SELECT COUNT(*) as count
                     FROM chaos_platform.baseline_metrics
                     WHERE system = %s AND is_active = true
                 """,
@@ -656,7 +652,7 @@ class TestExperimentIntegration:
     ):
         """Test: Baseline metrics map to experiment probes."""
         # Simulate metric mapping
-        metric_name = sample_baseline_metrics["metric_name"]
+        sample_baseline_metrics["metric_name"]
 
         for exp in postgres_experiments:
             content = exp["content"]

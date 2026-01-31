@@ -14,14 +14,10 @@ Usage:
     python logs_validation.py --format logql
 """
 
-import json
 import csv
-import logging
+import json
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List
-from dataclasses import dataclass, asdict
-import sys
-
 
 # ============================================================================
 # STRUCTURED LOGGING
@@ -44,7 +40,7 @@ class StructuredLogEntry:
     error: str = None
     trace_id: str = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         return asdict(self)
 
@@ -73,7 +69,7 @@ class BaselineLogsGenerator:
     """Generate structured logs for baseline operations."""
 
     @staticmethod
-    def generate_discovery_logs() -> List[StructuredLogEntry]:
+    def generate_discovery_logs() -> list[StructuredLogEntry]:
         """Generate logs for baseline discovery operation."""
         base_time = datetime.utcnow()
 
@@ -122,7 +118,7 @@ class BaselineLogsGenerator:
         ]
 
     @staticmethod
-    def generate_validation_logs() -> List[StructuredLogEntry]:
+    def generate_validation_logs() -> list[StructuredLogEntry]:
         """Generate logs for baseline validation operation."""
         base_time = datetime.utcnow()
 
@@ -171,7 +167,7 @@ class BaselineLogsGenerator:
         ]
 
     @staticmethod
-    def generate_error_logs() -> List[StructuredLogEntry]:
+    def generate_error_logs() -> list[StructuredLogEntry]:
         """Generate logs for error scenarios."""
         base_time = datetime.utcnow()
 
@@ -235,7 +231,7 @@ LOGQL_QUERIES = {
 # ============================================================================
 
 
-def export_logs_json(logs: List[StructuredLogEntry], output_file: str):
+def export_logs_json(logs: list[StructuredLogEntry], output_file: str):
     """Export logs as JSON."""
     data = {
         "timestamp": datetime.utcnow().isoformat(),
@@ -247,7 +243,7 @@ def export_logs_json(logs: List[StructuredLogEntry], output_file: str):
         json.dump(data, f, indent=2)
 
 
-def export_logs_csv(logs: List[StructuredLogEntry], output_file: str):
+def export_logs_csv(logs: list[StructuredLogEntry], output_file: str):
     """Export logs as CSV."""
     with open(output_file, "w", newline="") as f:
         writer = csv.writer(f)
@@ -321,7 +317,7 @@ def export_logql_queries(output_file: str):
 
 ### Time range
 ```logql
-{service_name="baseline-metrics"} 
+{service_name="baseline-metrics"}
 | timestamp > "2026-01-31T12:00:00Z"
 ```
 

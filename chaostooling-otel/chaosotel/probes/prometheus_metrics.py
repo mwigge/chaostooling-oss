@@ -1,5 +1,4 @@
 import time
-from typing import List
 
 import requests
 from logzero import logger
@@ -7,7 +6,7 @@ from logzero import logger
 
 def verify_metrics_exported(
     prometheus_url: str,
-    required_metrics: List[str],
+    required_metrics: list[str],
     timeout: int = 30,
 ) -> bool:
     """

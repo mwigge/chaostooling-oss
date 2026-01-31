@@ -8,11 +8,9 @@ Tests for:
 3. suggest_for_experiment() - baseline recommendations
 """
 
+from datetime import datetime
+
 import pytest
-import logging
-from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock, patch
-from typing import Dict, Any
 
 # These imports would be actual imports in real test
 # from chaosgeneric.tools.baseline_manager_phase4 import BaselineManager

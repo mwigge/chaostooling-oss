@@ -567,8 +567,8 @@
     ]
   },
   "Extensive PostgreSQL Chaos Experiment": {
-    "total_runs": 34,
-    "successful_runs": 30,
+    "total_runs": 35,
+    "successful_runs": 31,
     "failed_runs": 4,
     "runs": [
       {
@@ -808,6 +808,13 @@
         "status": "interrupted",
         "success": false,
         "duration": 318.33489871025085
+      },
+      {
+        "experiment_id": "0502-20260131132220-b3847ce1",
+        "run_timestamp": "2026-01-30T13:44:25.937082+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 773.7485122680664
       }
     ]
   },

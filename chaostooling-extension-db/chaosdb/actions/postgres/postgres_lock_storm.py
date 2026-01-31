@@ -4,18 +4,17 @@ import logging
 import os
 import threading
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import psycopg2
-from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
-from opentelemetry.trace import StatusCode
-
 from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
 from chaosdb.common.validation import (
     validate_database_name,
     validate_host,
     validate_port,
 )
+from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
+from opentelemetry.trace import StatusCode
 
 _active_threads = []
 _stop_event = threading.Event()
@@ -30,7 +29,7 @@ def inject_lock_storm(
     num_threads: int = 10,
     duration_seconds: int = 60,
     table_name: str = "chaos_test_table",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Inject a database lock storm by creating multiple concurrent transactions
     that lock the same rows, causing contention.

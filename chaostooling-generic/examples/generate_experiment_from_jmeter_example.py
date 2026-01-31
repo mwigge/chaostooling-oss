@@ -16,9 +16,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from chaosgeneric.actions import (
+    JMeterTestPlanParser,
     generate_chaos_experiment_from_jmeter,
     generate_experiment_from_jmeter_cli,
-    JMeterTestPlanParser,
 )
 
 
@@ -52,7 +52,7 @@ def example_parse_only():
         for ep in jmeter_data["endpoints"]:
             print(f"  - {ep['url']} ({ep['service_type']})")
 
-        print(f"\nLoad Configuration:")
+        print("\nLoad Configuration:")
         load_config = jmeter_data["load_config"]
         print(f"  - Total Users: {load_config['total_users']}")
         print(f"  - Ramp-up Time: {load_config['ramp_up_time']}s")
@@ -125,10 +125,10 @@ def example_cli_wrapper():
         print(f"\nGenerated experiment: {output_file}")
 
         # Load and display experiment summary
-        with open(output_file, "r") as f:
+        with open(output_file) as f:
             experiment = json.load(f)
 
-        print(f"\nExperiment Summary:")
+        print("\nExperiment Summary:")
         print(f"  Title: {experiment['title']}")
         print(f"  Description: {experiment['description'][:100]}...")
         print(f"  Controls: {len(experiment['controls'])}")

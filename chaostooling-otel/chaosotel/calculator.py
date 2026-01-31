@@ -8,14 +8,14 @@ Automatically calculates and exports:
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from chaosotel.otel import ensure_initialized, get_metrics_core
 
 logger = logging.getLogger("chaosotel.calculator")
 
 
-def calculate_risk_level(experiment: Dict[str, Any]) -> Dict[str, Any]:
+def calculate_risk_level(experiment: dict[str, Any]) -> dict[str, Any]:
     """
     Calculate experiment risk level.
 
@@ -129,7 +129,7 @@ def calculate_risk_level(experiment: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 
-def calculate_complexity_score(experiment: Dict[str, Any]) -> Dict[str, Any]:
+def calculate_complexity_score(experiment: dict[str, Any]) -> dict[str, Any]:
     """
     Calculate experiment complexity score.
 
@@ -254,8 +254,8 @@ def calculate_and_export_metrics(
     num_steps: int = 5,
     num_probes: int = 3,
     num_rollbacks: int = 1,
-    tags: Optional[Dict[str, str]] = None,
-) -> Dict[str, Any]:
+    tags: Optional[dict[str, str]] = None,
+) -> dict[str, Any]:
     """
     Calculate and export experiment metrics to Prometheus.
 
@@ -371,8 +371,8 @@ def calculate_and_export_metrics(
 
 
 def calculate_and_export_metrics_from_dict(
-    experiment: Dict[str, Any],
-) -> Dict[str, Any]:
+    experiment: dict[str, Any],
+) -> dict[str, Any]:
     """
     Calculate and export metrics from experiment dict.
 

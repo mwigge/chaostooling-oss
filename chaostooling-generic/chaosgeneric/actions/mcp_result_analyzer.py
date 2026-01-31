@@ -9,8 +9,8 @@ Generates automated root cause analysis (RCA) and compliance evidence.
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Any, List, Optional
-from statistics import mean, stdev
+from typing import Any, Optional
+
 from chaosgeneric.data.chaos_db import ChaosDb
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def analyze_experiment_results(
     run_id: Optional[int] = None,
     db_host: str = "localhost",
     db_port: int = 5434,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analyze experiment results by comparing metric snapshots to baseline.
     Stores analysis in database (primary) with optional file backup.
@@ -145,7 +145,7 @@ def analyze_experiment_results(
         except Exception as file_error:
             logger.warning(f"Could not save analysis to file: {str(file_error)}")
 
-        logger.info(f"✓ Analysis complete")
+        logger.info("✓ Analysis complete")
         logger.info(f"  Anomalies found: {len(report['anomalies'])}")
         logger.info(f"  RCA findings: {len(report['rca_findings'])}")
         logger.info(f"  Recommendations: {len(report['recommendations'])}")
@@ -165,10 +165,10 @@ def analyze_experiment_results(
         raise
 
 
-def _load_json(filepath: str) -> Dict[str, Any]:
+def _load_json(filepath: str) -> dict[str, Any]:
     """Load JSON file safely."""
     try:
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             return json.load(f)
     except FileNotFoundError:
         logger.warning(f"File not found: {filepath}, returning empty dict")
@@ -176,8 +176,8 @@ def _load_json(filepath: str) -> Dict[str, Any]:
 
 
 def _analyze_phase(
-    baseline: Dict[str, Any], phase_snapshot: Dict[str, Any], phase: str
-) -> Dict[str, Any]:
+    baseline: dict[str, Any], phase_snapshot: dict[str, Any], phase: str
+) -> dict[str, Any]:
     """
     Analyze a single phase (pre/during/post chaos).
 
@@ -211,11 +211,11 @@ def _analyze_phase(
 
 
 def _calculate_impact(
-    baseline: Dict[str, Any],
-    pre_chaos: Dict[str, Any],
-    during_chaos: Dict[str, Any],
-    post_chaos: Dict[str, Any],
-) -> Dict[str, Any]:
+    baseline: dict[str, Any],
+    pre_chaos: dict[str, Any],
+    during_chaos: dict[str, Any],
+    post_chaos: dict[str, Any],
+) -> dict[str, Any]:
     """Calculate the impact of chaos injection."""
     return {
         "max_deviation_sigma": 2.5,
@@ -227,8 +227,8 @@ def _calculate_impact(
 
 
 def _analyze_recovery(
-    baseline: Dict[str, Any], during_chaos: Dict[str, Any], post_chaos: Dict[str, Any]
-) -> Dict[str, Any]:
+    baseline: dict[str, Any], during_chaos: dict[str, Any], post_chaos: dict[str, Any]
+) -> dict[str, Any]:
     """Analyze if system recovered after chaos."""
     return {
         "recovered": True,
@@ -240,8 +240,8 @@ def _analyze_recovery(
 
 
 def _detect_anomalies(
-    baseline: Dict[str, Any], snapshots: List[Dict[str, Any]]
-) -> List[Dict[str, Any]]:
+    baseline: dict[str, Any], snapshots: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     """Detect anomalies in metrics during experiment."""
     anomalies = []
 
@@ -256,10 +256,10 @@ def _detect_anomalies(
 
 
 def _perform_rca(
-    baseline: Dict[str, Any],
-    during_chaos: Dict[str, Any],
-    anomalies: List[Dict[str, Any]],
-) -> List[Dict[str, Any]]:
+    baseline: dict[str, Any],
+    during_chaos: dict[str, Any],
+    anomalies: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """Perform root cause analysis."""
     if not anomalies:
         return [
@@ -281,19 +281,19 @@ def _perform_rca(
 
 
 def _generate_recommendations(
-    service_name: str, impact: Dict[str, Any], rca_findings: List[Dict[str, Any]]
-) -> List[str]:
+    service_name: str, impact: dict[str, Any], rca_findings: list[dict[str, Any]]
+) -> list[str]:
     """Generate recommendations based on analysis."""
     recommendations = [
         f"Implement circuit breaker pattern for {service_name} database connection failures",
-        f"Configure connection pool retry logic with exponential backoff",
-        f"Set up alerting for connection pool utilization > 80%",
+        "Configure connection pool retry logic with exponential backoff",
+        "Set up alerting for connection pool utilization > 80%",
     ]
 
     return recommendations
 
 
-def _check_compliance_status(report: Dict[str, Any]) -> str:
+def _check_compliance_status(report: dict[str, Any]) -> str:
     """
     Check if experiment meets compliance requirements (e.g., DORA).
 

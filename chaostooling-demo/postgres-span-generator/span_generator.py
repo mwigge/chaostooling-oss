@@ -6,16 +6,17 @@ Monitors pg_stat_statements and generates OpenTelemetry server-side spans
 for PostgreSQL queries to enable service graph visibility and query-level tracing.
 """
 
+import logging
 import os
 import time
+
 import psycopg2
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import SpanKind, Status, StatusCode
-import logging
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -60,7 +61,7 @@ class PostgresSpanGenerator:
         # Track last seen query stats
         self.last_stats = {}
 
-        logger.info(f"PostgreSQL Span Generator initialized")
+        logger.info("PostgreSQL Span Generator initialized")
         logger.info(f"Service: {service_name}")
         logger.info(
             f"Database: {os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
@@ -343,7 +344,7 @@ class PostgresSpanGenerator:
                 current_stats = self.fetch_query_stats()
 
                 if current_stats:
-                    span_count = self.generate_spans_for_new_queries(current_stats)
+                    self.generate_spans_for_new_queries(current_stats)
                     self.last_stats = current_stats
                 else:
                     logger.debug("No query stats available")

@@ -1,4 +1,3 @@
-import logging
 import subprocess
 
 from logzero import logger

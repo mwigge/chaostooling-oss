@@ -7,17 +7,16 @@ import time
 from typing import Optional
 
 import psycopg2
-from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
-from opentelemetry._logs import get_logger_provider
-from opentelemetry.sdk._logs import LoggingHandler
-from opentelemetry.trace import StatusCode
-
 from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
 from chaosdb.common.validation import (
     validate_database_name,
     validate_host,
     validate_port,
 )
+from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
+from opentelemetry._logs import get_logger_provider
+from opentelemetry.sdk._logs import LoggingHandler
+from opentelemetry.trace import StatusCode
 
 logger = logging.getLogger("chaosdb.postgres.load")
 

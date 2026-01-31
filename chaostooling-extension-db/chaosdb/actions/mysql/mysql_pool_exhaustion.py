@@ -4,19 +4,18 @@ import logging
 import os
 import threading
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import mysql.connector
-from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
-from opentelemetry.trace import StatusCode
-
-from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
 from chaosdb.common.connection import create_mysql_connection
+from chaosdb.common.constants import DatabaseDefaults
 from chaosdb.common.validation import (
     validate_database_name,
     validate_host,
     validate_port,
 )
+from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
+from opentelemetry.trace import StatusCode
 
 _active_connections = []
 _stop_event = threading.Event()
@@ -31,7 +30,7 @@ def inject_connection_pool_exhaustion(
     num_connections: int = 100,
     duration_seconds: int = 60,
     leak_connections: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Exhaust the connection pool by creating many connections and holding them.
 

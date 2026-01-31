@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import redis
 from chaosotel import (
@@ -30,7 +30,7 @@ def inject_command_saturation(
     commands_per_thread: int = 1000,
     duration_seconds: int = 60,
     slow_command_threshold_ms: int = 1000,
-) -> Dict:
+) -> dict:
     """Saturate Redis with high volume of commands."""
     # Handle string input from Chaos Toolkit configuration
     if port is not None:

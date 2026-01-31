@@ -1,13 +1,10 @@
 import logging
 import os
-import time
 from contextlib import nullcontext
 from typing import Optional
 
 import psycopg2
 from chaosotel import flush, get_metrics_core, get_tracer
-from opentelemetry._logs import get_logger_provider
-from opentelemetry.sdk._logs import LoggingHandler
 from opentelemetry.trace import StatusCode
 
 logger = logging.getLogger("chaosdb.postgres.postgres_error_metrics")

@@ -6,6 +6,7 @@ import subprocess
 from typing import Optional
 
 import psutil
+
 from chaoscompute.config import config
 
 logger = logging.getLogger("chaostoolkit")

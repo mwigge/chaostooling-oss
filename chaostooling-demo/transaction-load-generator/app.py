@@ -23,16 +23,16 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 import requests
+
+# Import from chaosotel for auto-instrumentation
+from chaosotel import initialize
 
 # OpenTelemetry instrumentation for distributed tracing
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
-
-# Import from chaosotel for auto-instrumentation
-from chaosotel import initialize
 
 # Setup OpenTelemetry with auto-instrumentation
 service_name = os.getenv("OTEL_SERVICE_NAME", "transaction-load-generator")
@@ -90,7 +90,7 @@ class TransactionLoadGenerator:
         }
         self.thread = None
 
-    def generate_transaction(self) -> Dict:
+    def generate_transaction(self) -> dict:
         """Generate a single transaction with OpenTelemetry tracing."""
         tracer = trace.get_tracer(__name__)
 
@@ -161,7 +161,7 @@ class TransactionLoadGenerator:
                 )
                 if not enable_secondary:
                     logger.debug(
-                        f"Secondary failover disabled. Set ENABLE_SECONDARY_FAILOVER=true to enable."
+                        "Secondary failover disabled. Set ENABLE_SECONDARY_FAILOVER=true to enable."
                     )
                 else:
                     logger.info(
@@ -278,7 +278,7 @@ class TransactionLoadGenerator:
             self.thread.join(timeout=5)
         logger.info("Load generator stopped")
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get current statistics."""
         stats = self.stats.copy()
         if stats["start_time"]:

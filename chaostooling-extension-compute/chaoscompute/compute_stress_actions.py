@@ -13,8 +13,7 @@ import logging
 import os
 import platform
 import subprocess
-import time
-from typing import Dict, Any, Optional
+from typing import Any
 
 logger = logging.getLogger("chaoscompute")
 
@@ -41,7 +40,7 @@ class LinuxComputeStress:
     @staticmethod
     def cpu_stress(
         workers: int = 1, duration_seconds: int = 60, cpu_percent: int = 100
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Stress CPU cores.
 
@@ -96,7 +95,7 @@ class LinuxComputeStress:
     @staticmethod
     def memory_stress(
         workers: int = 1, memory_percent: int = 80, duration_seconds: int = 60
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Stress memory (RAM).
 
@@ -157,7 +156,7 @@ class LinuxComputeStress:
     @staticmethod
     def disk_io_stress(
         workers: int = 1, duration_seconds: int = 60, directory: str = "/tmp"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Stress disk I/O.
 
@@ -222,7 +221,7 @@ class LinuxComputeStress:
         duration_seconds: int = 60,
         directory: str = "/tmp",
         file_size_mb: int = 10,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Stress filesystem (create/delete/rename files).
 
@@ -289,7 +288,7 @@ class WindowsComputeStress:
     @staticmethod
     def cpu_stress(
         workers: int = 1, duration_seconds: int = 60, cpu_percent: int = 100
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Stress CPU cores on Windows.
         Uses PowerShell to create CPU-intensive tasks.
@@ -302,7 +301,7 @@ class WindowsComputeStress:
             ps_script = f"""
             $duration = {duration_seconds}
             $endTime = (Get-Date).AddSeconds($duration)
-            
+
             $jobs = @()
             for ($i = 0; $i -lt {workers}; $i++) {{
                 $jobs += Start-Job -ScriptBlock {{
@@ -311,7 +310,7 @@ class WindowsComputeStress:
                     }}
                 }}
             }}
-            
+
             foreach ($job in $jobs) {{
                 Wait-Job -Job $job
                 Receive-Job -Job $job
@@ -343,7 +342,7 @@ class WindowsComputeStress:
     @staticmethod
     def memory_stress(
         workers: int = 1, memory_percent: int = 80, duration_seconds: int = 60
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Stress memory on Windows.
         Uses .NET to allocate memory.
@@ -357,10 +356,10 @@ class WindowsComputeStress:
             ps_script = f"""
             $duration = {duration_seconds}
             $endTime = (Get-Date).AddSeconds($duration)
-            
+
             try {{
                 [byte[]]$buffer = New-Object byte[] {memory_to_stress_mb * 1024 * 1024}
-                
+
                 while ((Get-Date) -lt $endTime) {{
                     for ($i = 0; $i -lt $buffer.Length; $i += 4096) {{
                         $buffer[$i] = 1
@@ -398,7 +397,7 @@ class WindowsComputeStress:
     @staticmethod
     def disk_io_stress(
         workers: int = 1, duration_seconds: int = 60, directory: str = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Stress disk I/O on Windows.
         """
@@ -411,10 +410,10 @@ class WindowsComputeStress:
             $duration = {duration_seconds}
             $endTime = (Get-Date).AddSeconds($duration)
             $testFile = Join-Path $directory "chaos_io_test.bin"
-            
+
             try {{
                 $buffer = New-Object byte[] (1MB)
-                
+
                 while ((Get-Date) -lt $endTime) {{
                     [System.IO.File]::WriteAllBytes($testFile, $buffer)
                     [System.IO.File]::ReadAllBytes($testFile) | Out-Null
@@ -466,7 +465,7 @@ def get_compute_stress() -> LinuxComputeStress or WindowsComputeStress:
 
 def stress_cpu(
     duration_seconds: int = 60, workers: int = 0, cpu_percent: int = 100
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Stress CPU cores.
 
@@ -497,7 +496,7 @@ def stress_cpu(
 
 def stress_memory(
     duration_seconds: int = 60, workers: int = 1, memory_percent: int = 80
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Stress memory.
 
@@ -529,7 +528,7 @@ def stress_memory(
 
 def stress_disk_io(
     duration_seconds: int = 60, workers: int = 1, directory: str = "/tmp"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Stress disk I/O.
 
@@ -563,7 +562,7 @@ def stress_filesystem(
     workers: int = 1,
     directory: str = "/tmp",
     file_size_mb: int = 10,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Stress filesystem.
 

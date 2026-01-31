@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import pyodbc
 from chaosotel import (
@@ -30,7 +30,7 @@ def inject_query_timeout_storm(
     num_threads: int = 20,
     duration_seconds: int = 60,
     timeout_seconds: int = 1,
-) -> Dict:
+) -> dict:
     """
     Inject query timeout storm by executing many queries with very short timeouts.
     Tests system behavior when many operations timeout simultaneously.

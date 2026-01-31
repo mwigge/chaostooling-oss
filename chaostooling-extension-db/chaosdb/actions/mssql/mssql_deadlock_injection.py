@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import pyodbc
 from chaosotel import (
@@ -30,7 +30,7 @@ def inject_deadlock(
     num_threads: int = 10,
     duration_seconds: int = 60,
     table_name: str = "chaos_deadlock_table",
-) -> Dict:
+) -> dict:
     """
     Inject transaction deadlocks by creating circular dependency deadlocks.
     Creates transactions that lock resources in opposite order, causing circular waits.

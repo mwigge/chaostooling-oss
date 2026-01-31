@@ -6,9 +6,8 @@ Detects anomalies and assesses impact using statistical analysis.
 """
 
 import logging
-import json
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger("chaosgeneric.control.baseline_validation")
 
@@ -19,7 +18,7 @@ class BaselineValidator:
     @staticmethod
     def get_sigma_bounds(
         mean: float, stddev: float, sigma_level: int = 2
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calculate sigma bounds for anomaly detection.
 
@@ -39,8 +38,8 @@ class BaselineValidator:
 
     @staticmethod
     def check_anomaly(
-        value: float, baseline: Dict[str, Any], sigma_level: int = 2
-    ) -> Dict[str, Any]:
+        value: float, baseline: dict[str, Any], sigma_level: int = 2
+    ) -> dict[str, Any]:
         """
         Check if metric value is anomalous compared to baseline.
 
@@ -96,10 +95,10 @@ class BaselineValidator:
     def validate_experiment_metrics(
         run_id: int,
         service_name: str,
-        post_chaos_metrics: Dict[str, float],
-        baselines: Dict[str, Dict[str, float]],
+        post_chaos_metrics: dict[str, float],
+        baselines: dict[str, dict[str, float]],
         sigma_level: int = 2,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate all experiment metrics against baselines.
 
@@ -219,10 +218,10 @@ class BaselineValidator:
 
 
 def validate_baseline(
-    context: Dict[str, Any],
-    baseline_metrics: Dict[str, Dict[str, float]],
-    post_chaos_metrics: Dict[str, float],
-) -> Dict[str, Any]:
+    context: dict[str, Any],
+    baseline_metrics: dict[str, dict[str, float]],
+    post_chaos_metrics: dict[str, float],
+) -> dict[str, Any]:
     """
     Chaos Toolkit hook: Validate baseline on experiment completion.
 

@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import pyodbc
 from chaosotel import (
@@ -31,7 +31,7 @@ def inject_query_saturation(
     queries_per_thread: int = 1000,
     duration_seconds: int = 60,
     slow_query_threshold_ms: int = 1000,
-) -> Dict:
+) -> dict:
     """Saturate MSSQL with a high volume of queries."""
     host = host or os.getenv("MSSQL_HOST", "localhost")
     port = port or int(os.getenv("MSSQL_PORT", "1433"))

@@ -15,12 +15,11 @@ This ensures consistent experiment identification across:
 - All downstream systems
 """
 
-import os
-import json
-import logging
 import hashlib
+import logging
+import os
 import uuid
-from typing import Dict, Any, Optional
+from typing import Any
 
 from chaoslib.control import Control
 
@@ -74,7 +73,7 @@ def unload_control(control: Control):
     logger.info("Experiment metadata control unloaded")
 
 
-def extract_service_name(experiment: Dict[str, Any]) -> str:
+def extract_service_name(experiment: dict[str, Any]) -> str:
     """
     Extract service name from experiment definition.
 
@@ -169,9 +168,9 @@ def generate_stable_experiment_id(service_name: str, experiment_title: str) -> i
 
 
 def before_experiment_control(
-    context: Dict[str, Any],
+    context: dict[str, Any],
     state: Any = None,
-    experiment: Dict[str, Any] = None,
+    experiment: dict[str, Any] = None,
     **kwargs,
 ):
     """

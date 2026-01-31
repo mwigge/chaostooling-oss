@@ -20,7 +20,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Any, Dict
+from typing import Any
 
 logger = logging.getLogger("chaostoolkit")
 
@@ -79,7 +79,7 @@ KNOWN_SERVICES = {
 }
 
 
-def extract_service_name(experiment: Dict[str, Any]) -> str:
+def extract_service_name(experiment: dict[str, Any]) -> str:
     """
     Extract service name from experiment definition.
 
@@ -158,7 +158,7 @@ def generate_stable_experiment_id(service_name: str, experiment_title: str) -> i
     return experiment_id
 
 
-def configure_control(configuration: Dict[str, Any] = None):
+def configure_control(configuration: dict[str, Any] = None):
     """Initialize the experiment orchestrator control."""
     logger.info("=" * 80)
     logger.info("Experiment Orchestrator Control initialized")
@@ -167,9 +167,9 @@ def configure_control(configuration: Dict[str, Any] = None):
 
 
 def before_experiment_control(
-    context: Dict[str, Any],
+    context: dict[str, Any],
     state: Any = None,
-    experiment: Dict[str, Any] = None,
+    experiment: dict[str, Any] = None,
     **kwargs,
 ):
     """
@@ -238,9 +238,9 @@ def before_experiment_control(
 
 
 def after_experiment_control(
-    context: Dict[str, Any] = None,
+    context: dict[str, Any] = None,
     state: Any = None,
-    experiment: Dict[str, Any] = None,
+    experiment: dict[str, Any] = None,
     **kwargs: Any,
 ) -> None:
     """

@@ -3,9 +3,15 @@
 import os
 import threading
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import psycopg2
+from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.validation import (
+    validate_database_name,
+    validate_host,
+    validate_port,
+)
 from chaosotel import (
     ensure_initialized,
     flush,
@@ -15,13 +21,6 @@ from chaosotel import (
     get_tracer,
 )
 from opentelemetry.trace import StatusCode
-
-from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
-from chaosdb.common.validation import (
-    validate_database_name,
-    validate_host,
-    validate_port,
-)
 
 _active_threads = []
 _stop_event = threading.Event()
@@ -36,7 +35,7 @@ def inject_query_timeout_storm(
     num_threads: int = 20,
     duration_seconds: int = 60,
     timeout_seconds: int = 1,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Inject query timeout storm by executing many queries with very short timeouts.
     Tests system behavior when many operations timeout simultaneously.

@@ -9,7 +9,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from chaostooling_reporting.report_generator import ReportGenerator
 
@@ -26,7 +26,7 @@ def generate_experiment_reports(
     audit: bool = True,
     product_owner: bool = True,
     journal_path: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generate experiment reports from journal.
 
@@ -250,7 +250,7 @@ def generate_experiment_reports(
             }
 
         logger.info(f"Loading journal from {journal_path}")
-        with open(journal_path, "r") as f:
+        with open(journal_path) as f:
             journal = json.load(f)
 
         # Extract experiment from journal

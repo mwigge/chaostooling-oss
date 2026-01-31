@@ -14,11 +14,11 @@ This module implements Tasks 1.1-1.6 of the Baseline Metrics Integration:
 - Task 1.6: validate_baselines() with age, quality, and completeness checks
 """
 
-import re
 import logging
+import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple
+from datetime import datetime
+from typing import Any, Optional
 
 from chaosgeneric.data.chaos_db import ChaosDb
 
@@ -71,7 +71,7 @@ class BaselineMetric:
     collection_timestamp: datetime
     quality_score: float
 
-    def get_thresholds(self, sigma: float = 2.0) -> Dict[str, float]:
+    def get_thresholds(self, sigma: float = 2.0) -> dict[str, float]:
         """
         Calculate threshold values for anomaly detection.
 
@@ -137,9 +137,9 @@ class BaselineLoader:
     def load_by_system(
         self,
         system: str,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
-    ) -> Dict[str, BaselineMetric]:
+        include_patterns: Optional[list[str]] = None,
+        exclude_patterns: Optional[list[str]] = None,
+    ) -> dict[str, BaselineMetric]:
         """
         Load all baseline metrics for a system/environment.
 
@@ -201,9 +201,9 @@ class BaselineLoader:
     def load_by_service(
         self,
         service_name: str,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
-    ) -> Dict[str, BaselineMetric]:
+        include_patterns: Optional[list[str]] = None,
+        exclude_patterns: Optional[list[str]] = None,
+    ) -> dict[str, BaselineMetric]:
         """
         Load all baseline metrics for a specific service.
 
@@ -260,10 +260,10 @@ class BaselineLoader:
 
     def load_by_metrics(
         self,
-        metric_names: List[str],
+        metric_names: list[str],
         service_name: Optional[str] = None,
         require_all: bool = False,
-    ) -> Dict[str, BaselineMetric]:
+    ) -> dict[str, BaselineMetric]:
         """
         Load specific baseline metrics by name.
 
@@ -327,8 +327,8 @@ class BaselineLoader:
             raise
 
     def load_by_labels(
-        self, labels: Dict[str, str], match_all: bool = True
-    ) -> Dict[str, BaselineMetric]:
+        self, labels: dict[str, str], match_all: bool = True
+    ) -> dict[str, BaselineMetric]:
         """
         Load baseline metrics matching Grafana labels.
 
@@ -382,11 +382,11 @@ class BaselineLoader:
 
     def validate_baselines(
         self,
-        baselines: Dict[str, BaselineMetric],
+        baselines: dict[str, BaselineMetric],
         max_age_days: int = 30,
         min_quality_score: float = 0.7,
         min_sample_count: int = 100,
-    ) -> Dict[str, Dict[str, Any]]:
+    ) -> dict[str, dict[str, Any]]:
         """
         Validate baseline metrics for freshness, quality, and completeness.
 
@@ -503,7 +503,7 @@ class BaselineLoader:
 
         return validation_results
 
-    def _row_to_baseline_metric(self, row: Dict[str, Any]) -> BaselineMetric:
+    def _row_to_baseline_metric(self, row: dict[str, Any]) -> BaselineMetric:
         """
         Convert database row to BaselineMetric instance.
 
@@ -543,8 +543,8 @@ class BaselineLoader:
     def _should_include_metric(
         self,
         metric_name: str,
-        include_patterns: Optional[List[str]],
-        exclude_patterns: Optional[List[str]],
+        include_patterns: Optional[list[str]],
+        exclude_patterns: Optional[list[str]],
     ) -> bool:
         """
         Check if a metric should be included based on regex patterns.

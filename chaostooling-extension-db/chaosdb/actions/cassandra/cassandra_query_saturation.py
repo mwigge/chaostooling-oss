@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 from cassandra.cluster import Cluster
 from chaosotel import (
@@ -29,7 +29,7 @@ def inject_query_saturation(
     num_threads: int = 20,
     queries_per_thread: int = 1000,
     duration_seconds: int = 60,
-) -> Dict:
+) -> dict:
     """Saturate Cassandra with high volume of queries."""
     host = host or os.getenv("CASSANDRA_HOST", "localhost")
     port = port or int(os.getenv("CASSANDRA_PORT", "9042"))

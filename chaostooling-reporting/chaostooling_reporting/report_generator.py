@@ -8,7 +8,7 @@ import re
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger("chaostooling_reporting")
 
@@ -19,8 +19,8 @@ class ReportGenerator:
     def __init__(
         self,
         output_dir: str = "./reports",
-        formats: Optional[List[str]] = None,
-        templates: Optional[Dict[str, bool]] = None,
+        formats: Optional[list[str]] = None,
+        templates: Optional[dict[str, bool]] = None,
     ):
         """
         Initialize report generator.
@@ -50,10 +50,10 @@ class ReportGenerator:
 
     def generate_reports(
         self,
-        experiment: Dict[str, Any],
-        journal: Dict[str, Any],
-        configuration: Dict[str, Any],
-    ) -> Dict[str, str]:
+        experiment: dict[str, Any],
+        journal: dict[str, Any],
+        configuration: dict[str, Any],
+    ) -> dict[str, str]:
         """
         Generate all requested reports.
 
@@ -189,7 +189,7 @@ class ReportGenerator:
         return reports
 
     def _generate_json_report(
-        self, experiment: Dict[str, Any], journal: Dict[str, Any], base_filename: str
+        self, experiment: dict[str, Any], journal: dict[str, Any], base_filename: str
     ) -> str:
         """Generate JSON report."""
         output_path = self.output_dir / f"{base_filename}_report.json"
@@ -220,7 +220,7 @@ class ReportGenerator:
         return str(output_path)
 
     def _generate_executive_report(
-        self, experiment: Dict[str, Any], journal: Dict[str, Any], base_filename: str
+        self, experiment: dict[str, Any], journal: dict[str, Any], base_filename: str
     ) -> str:
         """Generate executive summary HTML report."""
         output_path = self.output_dir / f"{base_filename}_executive.html"
@@ -269,7 +269,7 @@ class ReportGenerator:
     </div>
 
     {test_state_coverage}
-    
+
     {tests_summary}
 </body>
 </html>
@@ -282,7 +282,7 @@ class ReportGenerator:
         return str(output_path)
 
     def _generate_compliance_report(
-        self, experiment: Dict[str, Any], journal: Dict[str, Any], base_filename: str
+        self, experiment: dict[str, Any], journal: dict[str, Any], base_filename: str
     ) -> str:
         """Generate compliance report."""
         output_path = self.output_dir / f"{base_filename}_compliance.html"
@@ -326,11 +326,11 @@ class ReportGenerator:
     <div class="section">
         <h2>Testing Summary</h2>
         <p>This experiment demonstrates systematic testing of system resilience.</p>
-        
+
         {self._generate_test_state_coverage(run, steady_state, experiment)}
-        
+
         {self._generate_scenario_summary(run)}
-        
+
         {self._generate_steady_state_details(steady_state, experiment)}
     </div>
 
@@ -352,7 +352,7 @@ class ReportGenerator:
         return str(output_path)
 
     def _generate_audit_report(
-        self, experiment: Dict[str, Any], journal: Dict[str, Any], base_filename: str
+        self, experiment: dict[str, Any], journal: dict[str, Any], base_filename: str
     ) -> str:
         """Generate audit trail report."""
         output_path = self.output_dir / f"{base_filename}_audit.html"
@@ -414,7 +414,7 @@ class ReportGenerator:
         return str(output_path)
 
     def _generate_product_owner_report(
-        self, experiment: Dict[str, Any], journal: Dict[str, Any], base_filename: str
+        self, experiment: dict[str, Any], journal: dict[str, Any], base_filename: str
     ) -> str:
         """Generate product owner report."""
         output_path = self.output_dir / f"{base_filename}_product_owner.html"
@@ -596,7 +596,7 @@ class ReportGenerator:
     <p><strong>Experiment:</strong> {experiment.get("title", "N/A")}</p>
     <p><strong>Execution Date:</strong> {journal.get("start", "N/A")}</p>
     <p><strong>Overall Status:</strong> {journal.get("status", "unknown")}</p>
-    
+
     <h2>Testing Coverage</h2>
 """
 
@@ -634,7 +634,7 @@ class ReportGenerator:
             <li>Messaging system reliability</li>
             <li>API endpoint availability and response times</li>
         </ul>
-        
+
         <h3>Next Steps</h3>
         <ul>
             <li>Review detailed traces in Grafana Tempo for failed activities</li>
@@ -655,7 +655,7 @@ class ReportGenerator:
         return str(output_path)
 
     def _generate_csv_report(
-        self, experiment: Dict[str, Any], journal: Dict[str, Any], base_filename: str
+        self, experiment: dict[str, Any], journal: dict[str, Any], base_filename: str
     ) -> str:
         """Generate CSV report."""
         import csv
@@ -689,9 +689,9 @@ class ReportGenerator:
     def _store_experiment_run(
         self,
         experiment_id: str,
-        experiment: Dict[str, Any],
-        journal: Dict[str, Any],
-        configuration: Dict[str, Any],
+        experiment: dict[str, Any],
+        journal: dict[str, Any],
+        configuration: dict[str, Any],
     ) -> None:
         """Store experiment run information for tracking and statistics."""
         try:
@@ -699,9 +699,9 @@ class ReportGenerator:
             runs_data = {}
             if self.tracking_file.exists():
                 try:
-                    with open(self.tracking_file, "r") as f:
+                    with open(self.tracking_file) as f:
                         runs_data = json.load(f)
-                except (json.JSONDecodeError, IOError):
+                except (OSError, json.JSONDecodeError):
                     runs_data = {}
 
             experiment_title = experiment.get("title", "Unknown Experiment")
@@ -822,7 +822,7 @@ class ReportGenerator:
         except Exception as e:
             logger.warning(f"Failed to store experiment run tracking: {e}")
 
-    def _get_experiment_run_stats(self, experiment_title: str) -> Dict[str, Any]:
+    def _get_experiment_run_stats(self, experiment_title: str) -> dict[str, Any]:
         """Get statistics for an experiment based on run history."""
         try:
             if not self.tracking_file.exists():
@@ -833,7 +833,7 @@ class ReportGenerator:
                     "success_rate": 0.0,
                 }
 
-            with open(self.tracking_file, "r") as f:
+            with open(self.tracking_file) as f:
                 runs_data = json.load(f)
 
             if experiment_title not in runs_data:
@@ -1012,7 +1012,7 @@ class ReportGenerator:
         return "Unknown"
 
     def _generate_steady_state_details(
-        self, steady_state: Dict[str, Any], experiment: Dict[str, Any]
+        self, steady_state: dict[str, Any], experiment: dict[str, Any]
     ) -> str:
         """
         Generate detailed steady state validation information with failure details and suggestions.
@@ -1145,7 +1145,7 @@ class ReportGenerator:
         provider_func: str,
         error_msg: Any,
         probe_output: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Generate suggestions based on probe failure type and error message.
         """
@@ -1245,8 +1245,8 @@ class ReportGenerator:
         return suggestions
 
     def _group_activities_by_scenario(
-        self, run: List[Dict[str, Any]]
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        self, run: list[dict[str, Any]]
+    ) -> dict[str, list[dict[str, Any]]]:
         """
         Group activities by SCENARIO.
         Returns a dictionary mapping scenario names to their activities.
@@ -1292,9 +1292,9 @@ class ReportGenerator:
 
     def _generate_test_state_coverage(
         self,
-        run: List[Dict[str, Any]],
-        steady_state: Dict[str, Any],
-        experiment: Dict[str, Any],
+        run: list[dict[str, Any]],
+        steady_state: dict[str, Any],
+        experiment: dict[str, Any],
     ) -> str:
         """
         Generate Test State/Coverage metric as an initial overview.
@@ -1494,7 +1494,7 @@ class ReportGenerator:
 """
         return html
 
-    def _generate_scenario_summary(self, run: List[Dict[str, Any]]) -> str:
+    def _generate_scenario_summary(self, run: list[dict[str, Any]]) -> str:
         """
         Generate a summary of scenarios with success counts and percentages.
         """
@@ -1543,7 +1543,7 @@ class ReportGenerator:
         html += "</table>"
         return html
 
-    def _generate_tests_summary(self, run: List[Dict[str, Any]]) -> str:
+    def _generate_tests_summary(self, run: list[dict[str, Any]]) -> str:
         """
         Generate a summary of all tests run for executive report.
         """
@@ -1582,7 +1582,7 @@ class ReportGenerator:
         return html
 
     def _generate_test_category_section(
-        self, category_name: str, tests_data: Dict[str, Dict[str, Any]]
+        self, category_name: str, tests_data: dict[str, dict[str, Any]]
     ) -> str:
         """
         Generate HTML section for a test category (End-to-End Tests, Application Tests, Infrastructure Components).
@@ -1639,7 +1639,7 @@ class ReportGenerator:
                 {resilience_score:.1f}% ({score_label})
             </div>
         </div>
-        
+
         <div class="metrics">
             <div class="metric-box">
                 <div class="metric-label">Total Activities</div>
@@ -1654,7 +1654,7 @@ class ReportGenerator:
                 <div class="metric-value" style="color: #e74c3c;">{failed}</div>
             </div>
         </div>
-        
+
         <div class="activities-list">
             <strong>Activities:</strong>
 """
@@ -1678,7 +1678,7 @@ class ReportGenerator:
 
         return html
 
-    def _generate_scenario_details(self, run: List[Dict[str, Any]]) -> str:
+    def _generate_scenario_details(self, run: list[dict[str, Any]]) -> str:
         """
         Generate detailed activities grouped by SCENARIO.
         """
@@ -1740,7 +1740,7 @@ class ReportGenerator:
         return html
 
     def _generate_test_category_section(
-        self, category_name: str, tests_data: Dict[str, Dict[str, Any]]
+        self, category_name: str, tests_data: dict[str, dict[str, Any]]
     ) -> str:
         """
         Generate HTML section for a test category (End-to-End Tests, Application Tests, Infrastructure Components).
@@ -1797,7 +1797,7 @@ class ReportGenerator:
                 {resilience_score:.1f}% ({score_label})
             </div>
         </div>
-        
+
         <div class="metrics">
             <div class="metric-box">
                 <div class="metric-label">Total Activities</div>
@@ -1812,7 +1812,7 @@ class ReportGenerator:
                 <div class="metric-value" style="color: #e74c3c;">{failed}</div>
             </div>
         </div>
-        
+
         <div class="activities-list">
             <strong>Activities:</strong>
 """

@@ -12,10 +12,6 @@ Total: 8 unit tests
 """
 
 import pytest
-from datetime import datetime
-from typing import Dict
-
-from chaosgeneric.control.mcp_baseline_control import mcp_baseline_control
 from chaosgeneric.tools.baseline_loader import BaselineLoader, BaselineMetric
 
 
@@ -30,12 +26,6 @@ class TestBaselineControlDiscovery:
             "cpu_usage": mocker.MagicMock(spec=BaselineMetric),
         }
 
-        context = {
-            "baseline": {
-                "discovery_method": "by_system",
-                "system_name": "api-server",
-            }
-        }
 
         # Should call load_by_system
         result = loader_mock.load_by_system("api-server")
@@ -49,12 +39,6 @@ class TestBaselineControlDiscovery:
             "postgres_connections": mocker.MagicMock(spec=BaselineMetric),
         }
 
-        context = {
-            "baseline": {
-                "discovery_method": "by_service",
-                "service_name": "postgres",
-            }
-        }
 
         result = loader_mock.load_by_service("postgres")
         assert len(result) > 0

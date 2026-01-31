@@ -17,11 +17,10 @@ Author: Tester (QA)
 Date: January 31, 2026
 """
 
-import pytest
-from datetime import datetime, timedelta
-from typing import Dict, List
-import psycopg2
+from datetime import datetime
 
+import psycopg2
+import pytest
 
 # ============================================================================
 # TEST MARKERS & CONFIGURATION
@@ -67,7 +66,7 @@ def phase3_test_data(db_cursor, db_connection):
         db_cursor.execute(
             """
             INSERT INTO chaos_platform.baseline_metrics
-            (metric_name, service_name, database_system, mean, stdev, min_value, 
+            (metric_name, service_name, database_system, mean, stdev, min_value,
              max_value, percentile_50, percentile_95, percentile_99, percentile_999,
              upper_bound_2sigma, upper_bound_3sigma, quality_score)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -620,7 +619,7 @@ class TestViewCreation:
         """
         db_cursor.execute(
             """
-            SELECT 
+            SELECT
                 baseline_mean,
                 baseline_stdev,
                 used_sigma_threshold,

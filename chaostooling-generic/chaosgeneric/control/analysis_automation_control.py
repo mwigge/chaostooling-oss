@@ -9,9 +9,8 @@ Automatically populates analysis_log with:
 """
 
 import logging
-import json
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger("chaosgeneric.control.analysis_automation")
 
@@ -20,7 +19,7 @@ class AnalysisAutomation:
     """Automatically generates analysis and populates analysis_log."""
 
     @staticmethod
-    def detect_anomalies(baseline_validation: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def detect_anomalies(baseline_validation: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Extract detected anomalies from baseline validation.
 
@@ -46,10 +45,10 @@ class AnalysisAutomation:
 
     @staticmethod
     def perform_rca(
-        anomalies: List[Dict[str, Any]],
-        experiment_actions: List[str],
+        anomalies: list[dict[str, Any]],
+        experiment_actions: list[str],
         experiment_type: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Perform Root Cause Analysis based on anomalies and experiment actions.
 
@@ -150,10 +149,10 @@ class AnalysisAutomation:
 
     @staticmethod
     def generate_recommendations(
-        anomalies: List[Dict[str, Any]],
-        rca: Dict[str, Any],
-        baseline_validation: Dict[str, Any],
-    ) -> List[str]:
+        anomalies: list[dict[str, Any]],
+        rca: dict[str, Any],
+        baseline_validation: dict[str, Any],
+    ) -> list[str]:
         """
         Generate remediation recommendations based on findings.
 
@@ -180,11 +179,11 @@ class AnalysisAutomation:
                     )
                 elif "memory" in metric:
                     recommendations.append(
-                        f"Increase memory allocation or optimize memory usage patterns"
+                        "Increase memory allocation or optimize memory usage patterns"
                     )
                 elif "disk" in metric:
                     recommendations.append(
-                        f"Increase disk I/O capacity or implement caching strategy"
+                        "Increase disk I/O capacity or implement caching strategy"
                     )
                 elif "latency" in metric:
                     recommendations.append(
@@ -192,7 +191,7 @@ class AnalysisAutomation:
                     )
                 elif "error" in metric:
                     recommendations.append(
-                        f"Implement circuit breakers and graceful degradation"
+                        "Implement circuit breakers and graceful degradation"
                     )
 
         # Architecture recommendations
@@ -237,8 +236,8 @@ class AnalysisAutomation:
 
     @staticmethod
     def generate_dora_evidence(
-        baseline_validation: Dict[str, Any], rca: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        baseline_validation: dict[str, Any], rca: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Generate DORA (DevOps Research Assessment) evidence from analysis.
 
@@ -284,10 +283,10 @@ class AnalysisAutomation:
     def generate_analysis_report(
         run_id: int,
         service_name: str,
-        baseline_validation: Dict[str, Any],
-        experiment_actions: List[str],
+        baseline_validation: dict[str, Any],
+        experiment_actions: list[str],
         experiment_type: str = "unknown",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate comprehensive analysis report.
 
@@ -365,10 +364,10 @@ class AnalysisAutomation:
 
 
 def analyze_experiment(
-    context: Dict[str, Any],
-    baseline_validation: Dict[str, Any],
-    experiment: Dict[str, Any],
-) -> Dict[str, Any]:
+    context: dict[str, Any],
+    baseline_validation: dict[str, Any],
+    experiment: dict[str, Any],
+) -> dict[str, Any]:
     """
     Main entry point for analysis automation.
 

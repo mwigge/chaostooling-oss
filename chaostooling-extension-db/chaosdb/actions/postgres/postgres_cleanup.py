@@ -3,9 +3,8 @@ import os
 from typing import Optional
 
 import psycopg2
-
 from chaosdb.common.connection import create_postgres_connection
-from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
+from chaosdb.common.constants import DatabaseDefaults
 from chaosdb.common.validation import (
     validate_database_name,
     validate_host,

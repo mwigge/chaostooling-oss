@@ -28,16 +28,16 @@ Usage Examples:
     python baseline_manager.py query --system postgres --metric pg_commits
 """
 
-import os
-import json
 import argparse
+import json
 import logging
+import os
+import statistics
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
-from dataclasses import dataclass, asdict
-import statistics
+from typing import Optional
 
 try:
     import psycopg2
@@ -132,7 +132,7 @@ def parse_time_range(time_range: str) -> timedelta:
         raise ValueError(f"Invalid time range format: {time_range}")
 
 
-def calculate_percentile(values: List[float], percentile: float) -> float:
+def calculate_percentile(values: list[float], percentile: float) -> float:
     """Calculate percentile from list of values."""
     if not values:
         return 0.0
@@ -146,7 +146,7 @@ def calculate_percentile(values: List[float], percentile: float) -> float:
     return sorted_values[lower] * (1 - weight) + sorted_values[upper] * weight
 
 
-def calculate_statistics(values: List[float]) -> Dict[str, float]:
+def calculate_statistics(values: list[float]) -> dict[str, float]:
     """Calculate comprehensive statistics from values."""
     if not values:
         return {
@@ -203,7 +203,7 @@ class GrafanaClient:
         start_time: datetime,
         end_time: datetime,
         step: str = "60",
-    ) -> Dict:
+    ) -> dict:
         """Query a Grafana datasource for time-series data."""
         try:
             params = {
@@ -234,7 +234,7 @@ class GrafanaClient:
             logger.error(f"Grafana query failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def discover_metrics(self, labels: Dict[str, str]) -> List[str]:
+    def discover_metrics(self, labels: dict[str, str]) -> list[str]:
         """Discover metrics from Prometheus based on labels.
 
         Args:
@@ -401,7 +401,7 @@ class ChaosplatformDatabaseClient:
 
     def query_baselines(
         self, service_name: Optional[str] = None, metric_name: Optional[str] = None
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Query baselines from database."""
         if not self.conn:
             self.connect()
@@ -441,16 +441,16 @@ class GrafanaDashboardParser:
         self.dashboard_path = dashboard_path
         self.dashboard_data = self._load_dashboard()
 
-    def _load_dashboard(self) -> Dict:
+    def _load_dashboard(self) -> dict:
         """Load dashboard JSON file."""
         try:
-            with open(self.dashboard_path, "r") as f:
+            with open(self.dashboard_path) as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load dashboard {self.dashboard_path}: {e}")
             raise
 
-    def extract_metrics(self) -> List[str]:
+    def extract_metrics(self) -> list[str]:
         """Extract unique metric names from dashboard."""
         metrics = set()
 
@@ -513,7 +513,7 @@ class BaselineSyncer:
         )
         self.time_range = time_range
 
-    def sync_by_labels(self, labels: Dict[str, str]):
+    def sync_by_labels(self, labels: dict[str, str]):
         """Sync baselines for metrics matching labels.
 
         Args:
@@ -532,7 +532,7 @@ class BaselineSyncer:
         logger.info(f"Found {len(metrics)} unique metrics")
         self._process_metrics(metrics, labels)
 
-    def _process_metrics(self, metrics: List[str], labels: Dict[str, str]):
+    def _process_metrics(self, metrics: list[str], labels: dict[str, str]):
         """Process list of metrics and store baselines."""
         # Connect to database
         self.database.connect()
@@ -565,7 +565,7 @@ class BaselineSyncer:
         logger.info(f"✓ Sync complete: {success_count} success, {failed_count} failed")
 
     def _fetch_and_calculate_baseline(
-        self, metric_name: str, service_name: str, labels: Dict[str, str]
+        self, metric_name: str, service_name: str, labels: dict[str, str]
     ) -> Optional[BaselineMetric]:
         """Fetch metric data from Grafana and calculate baseline statistics."""
         logger.info(f"Processing metric: {metric_name}")
@@ -597,7 +597,7 @@ class BaselineSyncer:
                         continue
 
         if not values:
-            logger.warning(f"  ⚠ No data points found")
+            logger.warning("  ⚠ No data points found")
             return None
 
         # Calculate statistics
@@ -680,7 +680,7 @@ class BaselineValidator:
         db_port: int,
         db_user: str,
         db_password: str,
-        systems: List[str] = None,
+        systems: list[str] = None,
     ):
         """Validate baselines in database."""
         logger.info("Validating baselines in database...")
@@ -703,7 +703,7 @@ class BaselineValidator:
         database.close()
         self._print_report()
 
-    def validate_files(self, systems: List[str] = None):
+    def validate_files(self, systems: list[str] = None):
         """Validate baseline_metrics.json files."""
         logger.info("Validating baseline_metrics.json files...")
 
@@ -718,7 +718,7 @@ class BaselineValidator:
 
             # Validate JSON syntax
             try:
-                with open(baseline_file, "r") as f:
+                with open(baseline_file) as f:
                     data = json.load(f)
             except json.JSONDecodeError as e:
                 self.errors.append(f"{system}: JSON syntax error - {e}")
@@ -732,7 +732,7 @@ class BaselineValidator:
 
         self._print_report()
 
-    def _validate_baseline_record(self, baseline: Dict, system: str):
+    def _validate_baseline_record(self, baseline: dict, system: str):
         """Validate single baseline record from database."""
         metric_name = baseline.get("metric_name", "unknown")
 
@@ -766,7 +766,7 @@ class BaselineValidator:
 
         self.passed.append(f"{system}/{metric_name}: ✓")
 
-    def _validate_file_structure(self, data: Dict, system: str):
+    def _validate_file_structure(self, data: dict, system: str):
         """Validate baseline_metrics.json structure."""
         # Check top-level fields
         required_top = ["timestamp", "service_name", "phase", "datasource", "metrics"]
@@ -794,7 +794,7 @@ class BaselineValidator:
 
         self.passed.append(f"{system}: ✓ File structure valid")
 
-    def _validate_metric_data(self, metric_data: Dict, system: str, metric_name: str):
+    def _validate_metric_data(self, metric_data: dict, system: str, metric_name: str):
         """Validate single metric data."""
         required = ["query", "metric_type", "unit", "baseline"]
         for field in required:
@@ -910,7 +910,7 @@ class SteadyStateAnalyzer:
             "anomaly_thresholds": anomalies,
         }
 
-    def _collect_metrics(self) -> Dict:
+    def _collect_metrics(self) -> dict:
         """Collect metrics from Prometheus."""
         logger.info("Collecting metrics from Prometheus...")
 
@@ -937,7 +937,7 @@ class SteadyStateAnalyzer:
 
         return metrics_data
 
-    def _calculate_baselines(self, metrics_data: Dict) -> Dict:
+    def _calculate_baselines(self, metrics_data: dict) -> dict:
         """Calculate baseline statistics for each metric."""
         logger.info("Calculating metric baselines...")
 
@@ -961,7 +961,7 @@ class SteadyStateAnalyzer:
 
         return baselines
 
-    def _generate_slos(self, baselines: Dict) -> Dict:
+    def _generate_slos(self, baselines: dict) -> dict:
         """Generate SLO targets based on baselines."""
         logger.info("Generating SLO targets...")
 
@@ -992,7 +992,7 @@ class SteadyStateAnalyzer:
         logger.info(f"  ✓ Generated {len(slos)} SLO categories")
         return slos
 
-    def _calculate_anomaly_thresholds(self, baselines: Dict) -> Dict:
+    def _calculate_anomaly_thresholds(self, baselines: dict) -> dict:
         """Calculate anomaly detection thresholds."""
         logger.info("Calculating anomaly thresholds...")
 

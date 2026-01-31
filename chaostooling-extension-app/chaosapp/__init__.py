@@ -1,4 +1,4 @@
-from typing import List
+# typing imports removed - using built-in types
 
 from chaosotel import ensure_initialized, flush, get_logger, get_tracer, initialize
 
@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 
-def discover(discover_system: bool = True) -> List[dict]:
+def discover(discover_system: bool = True) -> list[dict]:
     """
     Discover capabilities from this extension.
     """

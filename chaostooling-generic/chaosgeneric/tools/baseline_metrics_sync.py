@@ -48,18 +48,18 @@ Usage:
     python baseline_metrics_sync.py --verify  # Verify all metrics in database
 """
 
-import os
-import json
 import argparse
+import json
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional
-from dataclasses import dataclass, asdict
+import os
 import statistics
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Optional
+
 import psycopg2
 import psycopg2.extras
 import requests
-from requests.auth import HTTPBasicAuth
 
 # Configure logging
 logging.basicConfig(
@@ -105,16 +105,16 @@ class GrafanaDashboardParser:
         self.dashboard_path = dashboard_path
         self.dashboard_data = self._load_dashboard()
 
-    def _load_dashboard(self) -> Dict:
+    def _load_dashboard(self) -> dict:
         """Load dashboard JSON file."""
         try:
-            with open(self.dashboard_path, "r") as f:
+            with open(self.dashboard_path) as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load dashboard {self.dashboard_path}: {e}")
             raise
 
-    def extract_metrics(self) -> List[str]:
+    def extract_metrics(self) -> list[str]:
         """Extract unique metric names from dashboard."""
         metrics = set()
 
@@ -194,7 +194,7 @@ class PrometheusMetricsValidator:
 
     def get_metric_statistics(
         self, metric_name: str, time_range: str = "24h"
-    ) -> Optional[Dict]:
+    ) -> Optional[dict]:
         """Fetch metric data and calculate statistics."""
         try:
             # Query metric values over time range
@@ -252,7 +252,7 @@ class PrometheusMetricsValidator:
             return None
 
     @staticmethod
-    def _percentile(data: List[float], percentile: float) -> float:
+    def _percentile(data: list[float], percentile: float) -> float:
         """Calculate percentile value."""
         if not data:
             return 0.0
@@ -363,7 +363,7 @@ class ChaosplatformDatabaseWriter:
                 # Insert new metric
                 cursor.execute(
                     """
-                    INSERT INTO baseline_metrics 
+                    INSERT INTO baseline_metrics
                     (metric_name, service_name, metric_type, unit, description,
                      mean, stdev, min_value, max_value,
                      percentile_50, percentile_95, percentile_99, percentile_999,
@@ -407,7 +407,7 @@ class ChaosplatformDatabaseWriter:
                 self.connection.rollback()
             return False
 
-    def get_baseline_metrics(self, service_name: str) -> List[Dict]:
+    def get_baseline_metrics(self, service_name: str) -> list[dict]:
         """Retrieve baseline metrics for a service."""
         if not self.connection:
             logger.error("Database not connected")
@@ -490,7 +490,7 @@ class BaselineMetricsSyncOrchestrator:
         },
     }
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: dict):
         self.config = config
         self.prometheus = PrometheusMetricsValidator(config["prometheus_url"])
         self.db = ChaosplatformDatabaseWriter(
@@ -500,7 +500,7 @@ class BaselineMetricsSyncOrchestrator:
             config["chaos_db_password"],
         )
 
-    def sync_system(self, system: str, dashboard_path: str) -> Tuple[int, int]:
+    def sync_system(self, system: str, dashboard_path: str) -> tuple[int, int]:
         """Sync all metrics for a database system."""
         logger.info(f"\n{'=' * 60}")
         logger.info(f"Syncing baseline metrics for {system.upper()}")
@@ -538,7 +538,7 @@ class BaselineMetricsSyncOrchestrator:
             # Validate metric exists in Prometheus
             if not self.prometheus.metric_exists(metric_name):
                 logger.warning(
-                    f"  ⚠️  Metric not found in Prometheus, using default statistics"
+                    "  ⚠️  Metric not found in Prometheus, using default statistics"
                 )
                 # Use default statistics
                 stats = self.DEFAULT_STATISTICS.get(
@@ -555,11 +555,11 @@ class BaselineMetricsSyncOrchestrator:
                     },
                 )
             else:
-                logger.info(f"  ✓ Metric found in Prometheus")
+                logger.info("  ✓ Metric found in Prometheus")
                 # Fetch actual statistics
                 stats = self.prometheus.get_metric_statistics(metric_name)
                 if stats is None:
-                    logger.warning(f"  ⚠️  Could not fetch statistics, using defaults")
+                    logger.warning("  ⚠️  Could not fetch statistics, using defaults")
                     stats = self.DEFAULT_STATISTICS.get(metric_name, {})
                 else:
                     logger.info(
@@ -591,10 +591,10 @@ class BaselineMetricsSyncOrchestrator:
             # Insert into database
             if self.db.insert_baseline_metric(baseline):
                 success_count += 1
-                logger.info(f"  ✓ Baseline metric stored in database")
+                logger.info("  ✓ Baseline metric stored in database")
             else:
                 fail_count += 1
-                logger.error(f"  ✗ Failed to store baseline metric")
+                logger.error("  ✗ Failed to store baseline metric")
 
         self.db.disconnect()
 

@@ -18,22 +18,20 @@ Usage:
     pytest tests/test_baseline_phase2.py -v --cov=chaosgeneric --cov-report=html
 """
 
-import pytest
 import json
 import logging
-from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock, patch, call
-from typing import Dict, Any
+from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 from chaosgeneric.control.mcp_baseline_control import MCPBaselineControl
 from chaosgeneric.data.chaos_db import ChaosDb
 from chaosgeneric.probes.mcp_baseline_probe import (
-    check_metric_within_baseline,
     _load_baseline_from_file,
+    check_metric_within_baseline,
     get_baseline_comparison,
 )
-from chaosgeneric.tools.baseline_loader import BaselineMetric, BaselineLoader
-
+from chaosgeneric.tools.baseline_loader import BaselineLoader, BaselineMetric
 
 # ============================================================================
 # TEST FIXTURES
@@ -1018,7 +1016,7 @@ class TestCheckMetricWithinBaseline:
             # Verify CONTEXT source was logged
             assert mock_logger.info.called
             log_calls = [str(call) for call in mock_logger.info.call_args_list]
-            source_logged = any(
+            any(
                 "CONTEXT" in str(call) or "context" in str(call) for call in log_calls
             )
             # May not log "CONTEXT" explicitly but should indicate baseline was found
@@ -1157,7 +1155,7 @@ class TestCheckMetricWithinBaseline:
         }
 
         # Call probe - it should calculate thresholds internally
-        result = check_metric_within_baseline(
+        check_metric_within_baseline(
             metric_name="postgresql_connections",
             service_name="postgres",
             threshold_sigma=2.0,
@@ -1196,7 +1194,7 @@ class TestCheckMetricWithinBaseline:
         }
 
         with patch("chaosgeneric.probes.mcp_baseline_probe.logger") as mock_logger:
-            result = check_metric_within_baseline(
+            check_metric_within_baseline(
                 metric_name="postgresql_connections",
                 service_name="postgres",
                 context=context,
@@ -1302,7 +1300,7 @@ class TestControlProbeIntegration:
 
         # Step 2: Verify baselines in context
         assert "loaded_baselines" in test_context
-        loaded = test_context["loaded_baselines"]
+        test_context["loaded_baselines"]
 
         # Step 3: Probe uses baselines from context
         result = check_metric_within_baseline(

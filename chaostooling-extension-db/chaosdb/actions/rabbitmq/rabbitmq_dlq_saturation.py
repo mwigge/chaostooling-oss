@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import pika
 from chaosotel import (
@@ -31,7 +31,7 @@ def inject_dlq_saturation(
     num_producers: int = 10,
     messages_per_producer: int = 1000,
     duration_seconds: int = 60,
-) -> Dict:
+) -> dict:
     """
     Saturate dead letter queue by sending messages that will be rejected.
     Tests system behavior when error queues are full.

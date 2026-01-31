@@ -15,14 +15,15 @@ This module implements Task 2.3 of the Baseline Metrics Integration.
 
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Optional
+
 from chaosgeneric.data.chaos_db import ChaosDb
 from chaosgeneric.tools.baseline_loader import BaselineMetric
 
 logger = logging.getLogger(__name__)
 
 
-def _get_context() -> Dict[str, Any]:
+def _get_context() -> dict[str, Any]:
     """
     Get the current chaos context.
 
@@ -49,7 +50,7 @@ def check_metric_within_baseline(
     description: str = "Metric within baseline",
     db_host: str = "localhost",
     db_port: int = 5434,
-    context: Optional[Dict[str, Any]] = None,
+    context: Optional[dict[str, Any]] = None,
 ) -> bool:
     """
     Probe that checks if a current metric is within expected baseline bounds.
@@ -188,9 +189,9 @@ def check_metric_within_baseline(
         if baseline_metric is None:
             baseline_source = "NONE"
             logger.warning(f"⚠️  NO BASELINE DATA: {metric_name}/{service_name}")
-            logger.warning(f"⚠️  No baseline found in context, database, or file")
+            logger.warning("⚠️  No baseline found in context, database, or file")
             logger.warning(
-                f"⚠️  This probe will PASS without validating actual metrics (tolerance bypass)"
+                "⚠️  This probe will PASS without validating actual metrics (tolerance bypass)"
             )
             return True
 
@@ -208,15 +209,15 @@ def check_metric_within_baseline(
         logger.info(f"Metric: {metric_name}")
         logger.info(f"Service: {service_name}")
         logger.info(f"Source: {baseline_source}")
-        logger.info(f"")
-        logger.info(f"Statistics:")
+        logger.info("")
+        logger.info("Statistics:")
         logger.info(f"  Mean: {baseline_metric.mean}")
         logger.info(f"  StDev: {baseline_metric.stdev}")
         logger.info(f"  Min: {baseline_metric.min_value}")
         logger.info(f"  Max: {baseline_metric.max_value}")
         logger.info(f"  P50: {baseline_metric.percentile_50}")
         logger.info(f"  P95: {baseline_metric.percentile_95}")
-        logger.info(f"")
+        logger.info("")
         logger.info(f"Thresholds (σ={threshold_sigma}):")
         logger.info(f"  Warning range: [{lower_bound:.2f}, {upper_bound:.2f}]")
         logger.info(f"  Critical range: [{critical_lower:.2f}, {critical_upper:.2f}]")
@@ -239,10 +240,10 @@ def check_metric_within_baseline(
 
 def _load_baseline_from_file(
     baseline_file: str, metric_name: str, service_name: str
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     """Load baseline from JSON file (fallback)."""
     try:
-        with open(baseline_file, "r") as f:
+        with open(baseline_file) as f:
             baseline_data = json.load(f)
 
         anomaly_thresholds = baseline_data.get("anomaly_thresholds", {})
@@ -272,7 +273,7 @@ def get_baseline_comparison(
     service_name: str,
     baseline_file: str,
     current_value: Optional[float] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get detailed comparison between current metric and baseline.
 
@@ -286,11 +287,11 @@ def get_baseline_comparison(
         Dict with detailed comparison analysis
     """
     try:
-        with open(baseline_file, "r") as f:
+        with open(baseline_file) as f:
             baseline_data = json.load(f)
 
         anomaly_thresholds = baseline_data.get("anomaly_thresholds", {})
-        baseline_metrics = baseline_data.get("baseline_metrics", {})
+        baseline_data.get("baseline_metrics", {})
 
         # Get metric thresholds
         if metric_name not in anomaly_thresholds:

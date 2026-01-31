@@ -6,7 +6,6 @@ import subprocess
 import time
 from typing import Optional
 
-from chaosnetwork.config import config
 from chaosotel import (
     ensure_initialized,
     flush,
@@ -15,6 +14,8 @@ from chaosotel import (
     get_tracer,
 )
 from opentelemetry.trace import StatusCode
+
+from chaosnetwork.config import config
 
 logger = logging.getLogger("chaostoolkit")
 

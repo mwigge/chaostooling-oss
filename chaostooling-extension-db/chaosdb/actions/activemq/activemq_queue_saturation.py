@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import stomp
 from chaosotel import (
@@ -28,7 +28,7 @@ def inject_queue_saturation(
     num_producers: int = 20,
     messages_per_producer: int = 1000,
     duration_seconds: int = 60,
-) -> Dict:
+) -> dict:
     """Saturate ActiveMQ queue with high message volume."""
     host = host or os.getenv("ACTIVEMQ_HOST", "localhost")
     port = port or int(os.getenv("ACTIVEMQ_PORT", "61613"))

@@ -3,7 +3,7 @@
 """MetricsCore - Unified Prometheus metrics recording interface."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from opentelemetry.sdk.metrics import MeterProvider
 
@@ -33,7 +33,7 @@ class MetricsCore:
         """Initialize MetricsCore."""
         self.meter_provider = meter_provider
         self.meter = meter_provider.get_meter(name)
-        self._instruments: Dict[str, Any] = {}
+        self._instruments: dict[str, Any] = {}
         self._metric_count = 0
         logger.info(f"MetricsCore initialized with meter: {name}")
 
@@ -44,7 +44,7 @@ class MetricsCore:
         status: str = "success",
         severity: Optional[str] = None,
         target_type: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record action duration."""
         try:
@@ -98,7 +98,7 @@ class MetricsCore:
         duration_ms: float,
         status: str = "success",
         target_type: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record probe duration."""
         try:
@@ -160,7 +160,7 @@ class MetricsCore:
         self,
         regulation: str,
         score: float,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         """Record compliance score."""
         try:
@@ -234,7 +234,7 @@ class MetricsCore:
         value: float,
         metric_type: str = "gauge",
         unit: str = "1",
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
         description: Optional[str] = None,
     ) -> None:
         """Record custom metric."""
@@ -321,7 +321,7 @@ class MetricsCore:
         db_system: str,
         db_name: Optional[str] = None,
         db_operation: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record database query latency."""
         try:
@@ -348,7 +348,7 @@ class MetricsCore:
         db_name: Optional[str] = None,
         db_operation: Optional[str] = None,
         count: int = 1,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record database query count."""
         try:
@@ -372,7 +372,7 @@ class MetricsCore:
         db_system: str,
         error_type: str,
         db_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record database error."""
         try:
@@ -396,7 +396,7 @@ class MetricsCore:
         self,
         db_system: str,
         db_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record database deadlock."""
         try:
@@ -425,7 +425,7 @@ class MetricsCore:
         db_system: str,
         lock_type: str = "wait",
         db_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record database lock event."""
         try:
@@ -450,7 +450,7 @@ class MetricsCore:
         db_system: str,
         threshold_ms: float = 1000.0,
         db_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record slow query count."""
         try:
@@ -476,7 +476,7 @@ class MetricsCore:
         db_system: str,
         utilization_percent: float,
         db_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record connection pool utilization percentage."""
         try:
@@ -502,7 +502,7 @@ class MetricsCore:
         self,
         db_system: str,
         db_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record database connection failure."""
         try:
@@ -527,7 +527,7 @@ class MetricsCore:
         db_system: str,
         db_name: Optional[str] = None,
         unit: str = "1",
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
         description: Optional[str] = None,
     ) -> None:
         """Record database gauge metric."""
@@ -561,7 +561,7 @@ class MetricsCore:
         db_system: str,
         db_name: Optional[str] = None,
         count: int = 1,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
         description: Optional[str] = None,
     ) -> None:
         """Record database counter metric."""
@@ -587,7 +587,7 @@ class MetricsCore:
         db_system: str,
         db_name: Optional[str] = None,
         unit: str = "ms",
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
         description: Optional[str] = None,
     ) -> None:
         """Record database histogram metric."""
@@ -617,7 +617,7 @@ class MetricsCore:
         mq_system: str,
         mq_destination: Optional[str] = None,
         mq_operation: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record messaging operation latency."""
         try:
@@ -644,7 +644,7 @@ class MetricsCore:
         mq_destination: Optional[str] = None,
         mq_operation: Optional[str] = None,
         count: int = 1,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record messaging operation count."""
         try:
@@ -670,7 +670,7 @@ class MetricsCore:
         error_type: str,
         mq_destination: Optional[str] = None,
         mq_operation: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record messaging error."""
         try:
@@ -696,7 +696,7 @@ class MetricsCore:
         self,
         mq_system: str,
         mq_destination: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record messaging connection failure."""
         try:
@@ -721,7 +721,7 @@ class MetricsCore:
         mq_system: str,
         mq_destination: Optional[str] = None,
         unit: str = "1",
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
         description: Optional[str] = None,
     ) -> None:
         """Record messaging gauge metric."""
@@ -755,7 +755,7 @@ class MetricsCore:
         mq_system: str,
         mq_destination: Optional[str] = None,
         count: int = 1,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
         description: Optional[str] = None,
     ) -> None:
         """Record messaging counter metric."""
@@ -781,7 +781,7 @@ class MetricsCore:
         mq_system: str,
         mq_destination: Optional[str] = None,
         unit: str = "ms",
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
         description: Optional[str] = None,
     ) -> None:
         """Record messaging histogram metric."""
@@ -810,7 +810,7 @@ class MetricsCore:
         db_operation: str,
         status: str = "successful",
         db_system: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record transaction count."""
         try:
@@ -838,7 +838,7 @@ class MetricsCore:
         self,
         db_operation: str,
         db_system: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record transaction reconnection attempt."""
         try:
@@ -860,7 +860,7 @@ class MetricsCore:
         self,
         is_integrity_ok: bool,
         db_system: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record transaction integrity check result."""
         try:
@@ -893,7 +893,7 @@ class MetricsCore:
         recovery_time_ms: float,
         recovery_type: str = "failover",
         success: bool = True,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record Mean Time To Recovery (MTTR) for a service."""
         try:
@@ -938,7 +938,7 @@ class MetricsCore:
         risk_level: Optional[str] = None,
         complexity_score: Optional[int] = None,
         systems: Optional[list] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record experiment start with metadata."""
         try:
@@ -983,7 +983,7 @@ class MetricsCore:
         risk_level: Optional[str] = None,
         complexity_score: Optional[int] = None,
         systems: Optional[list] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record experiment completion."""
         try:
@@ -1055,7 +1055,7 @@ class MetricsCore:
         experiment_title: str,
         risk_level: str,
         risk_score: Optional[float] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record experiment risk level."""
         try:
@@ -1106,7 +1106,7 @@ class MetricsCore:
         experiment_title: str,
         complexity_score: int,
         complexity_level: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record experiment complexity score."""
         try:
@@ -1139,7 +1139,7 @@ class MetricsCore:
         activity_name: str,
         status: str,
         duration_ms: Optional[float] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record individual experiment activity (action/probe/rollback)."""
         try:
@@ -1176,8 +1176,8 @@ class MetricsCore:
         self,
         experiment_id: str,
         experiment_title: str,
-        systems: List[str],
-        tags: Optional[Dict[str, str]] = None,
+        systems: list[str],
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record which systems an experiment affects."""
         try:

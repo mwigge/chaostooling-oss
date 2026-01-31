@@ -9,20 +9,20 @@ This allows seamless database integration without requiring run_id in experiment
 
 import logging
 import os
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 def collect_baseline_snapshot_with_context(
-    context: Dict[str, Any],
+    context: dict[str, Any],
     grafana_url: str,
-    metrics: List[str],
+    metrics: list[str],
     service_name: str,
     output_file: str = "./baseline_snapshot.json",
     datasource_uid: str = "prometheus",
     time_range: str = "24h",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Collect baseline metrics snapshot with automatic database storage.
 
@@ -68,14 +68,14 @@ def collect_baseline_snapshot_with_context(
 
 
 def collect_chaos_snapshot_with_context(
-    context: Dict[str, Any],
+    context: dict[str, Any],
     grafana_url: str,
-    metrics: List[str],
+    metrics: list[str],
     service_name: str,
     output_file: str = "./chaos_snapshot.json",
     datasource_uid: str = "prometheus",
     time_range: str = "5m",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Collect during-chaos metrics snapshot with automatic database storage.
 
@@ -116,14 +116,14 @@ def collect_chaos_snapshot_with_context(
 
 
 def collect_recovery_snapshot_with_context(
-    context: Dict[str, Any],
+    context: dict[str, Any],
     grafana_url: str,
-    metrics: List[str],
+    metrics: list[str],
     service_name: str,
     output_file: str = "./recovery_snapshot.json",
     datasource_uid: str = "prometheus",
     time_range: str = "5m",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Collect post-chaos/recovery metrics snapshot with automatic database storage.
 

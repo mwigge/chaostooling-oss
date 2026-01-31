@@ -17,12 +17,10 @@ Usage:
     python metrics_validation.py --format prometheus
 """
 
-import json
 import csv
-from datetime import datetime
-from typing import Dict, List, Tuple
+import json
 import time
-
+from datetime import datetime
 
 # ============================================================================
 # PROMETHEUS METRICS DEFINITIONS
@@ -166,7 +164,7 @@ class MetricsGenerator:
         return "\n".join(lines)
 
     @staticmethod
-    def generate_json_format() -> Dict:
+    def generate_json_format() -> dict:
         """Generate metrics in JSON format."""
         metrics = []
 
@@ -412,7 +410,7 @@ def main():
     print("\nMetrics documentation generated successfully!")
 
     if args.format in ["prometheus", "all"]:
-        print(f"\nPrometheus metrics can be exposed via:")
+        print("\nPrometheus metrics can be exposed via:")
         print("  - prometheus_client library")
         print("  - OTEL Prometheus exporter")
         print("  - Custom metrics endpoint")

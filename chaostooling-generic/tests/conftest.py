@@ -8,16 +8,13 @@ This module provides:
 - Test configuration and markers
 """
 
-import os
 import json
+import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Generator
-from dataclasses import asdict
 
-import pytest
 import psycopg2
+import pytest
 from psycopg2.extras import DictCursor
-
 
 # ============================================================================
 # TEST MARKERS & CONFIGURATION
@@ -48,7 +45,7 @@ def pytest_configure(config):
 
 
 @pytest.fixture(scope="session")
-def db_config() -> Dict[str, str]:
+def db_config() -> dict[str, str]:
     """Database configuration from environment or defaults."""
     return {
         "host": os.getenv("CHAOS_DB_HOST", "localhost"),
@@ -117,7 +114,7 @@ def baseline_metric_factory():
         max_val: float = 95.0,
         count: int = 1000,
         baseline_window_hours: int = 24,
-        thresholds: Dict = None,
+        thresholds: dict = None,
         sample_time: datetime = None,
         valid: bool = True,
         quality_score: float = 0.95,
@@ -158,7 +155,7 @@ def baseline_metric_factory():
 
 
 @pytest.fixture
-def sample_baselines(baseline_metric_factory) -> Dict[str, object]:
+def sample_baselines(baseline_metric_factory) -> dict[str, object]:
     """Sample baseline metrics covering various scenarios."""
     return {
         # Normal baselines
@@ -220,7 +217,7 @@ def sample_baselines(baseline_metric_factory) -> Dict[str, object]:
 
 
 @pytest.fixture
-def sample_experiment_configs() -> Dict[str, Dict]:
+def sample_experiment_configs() -> dict[str, dict]:
     """Sample chaos toolkit experiment configurations."""
     return {
         "postgres_pool_exhaustion": {
@@ -423,7 +420,7 @@ def temp_baseline_file(tmp_path):
 
 
 @pytest.fixture
-def test_audit_log_entry() -> Dict:
+def test_audit_log_entry() -> dict:
     """Sample audit log entry for testing."""
     return {
         "log_id": 1,

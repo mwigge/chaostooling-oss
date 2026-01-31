@@ -6,7 +6,7 @@ metrics/logs/traces cores.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from .calculator import calculate_complexity_score, calculate_risk_level
 from .otel import (
@@ -25,7 +25,7 @@ logger = logging.getLogger("chaosotel.control")
 _experiment_root_span = None
 _experiment_context_token = None
 _experiment_start_time = None
-_activity_infra_snapshots: Dict[str, Dict[str, Any]] = {}
+_activity_infra_snapshots: dict[str, dict[str, Any]] = {}
 
 try:
     import psutil  # type: ignore
@@ -33,7 +33,7 @@ except ImportError:  # pragma: no cover - optional dependency
     psutil = None
 
 
-def _snapshot_host_resources() -> Dict[str, float]:
+def _snapshot_host_resources() -> dict[str, float]:
     """
     Take a lightweight snapshot of host-level CPU and memory usage.
 
@@ -56,7 +56,7 @@ def _snapshot_host_resources() -> Dict[str, float]:
         return {}
 
 
-def _infer_target_type(activity: Dict[str, Any]) -> str:
+def _infer_target_type(activity: dict[str, Any]) -> str:
     """
     Best-effort inference of target type (db, network, compute, app, etc.) from activity metadata.
     """
@@ -75,7 +75,7 @@ def _infer_target_type(activity: Dict[str, Any]) -> str:
     return "unknown"
 
 
-def _init_once(config: Optional[Dict[str, Any]]) -> None:
+def _init_once(config: Optional[dict[str, Any]]) -> None:
     """Initialize chaosotel if not already initialized."""
     target_type = (config or {}).get("target_type", "unknown")
     service_version = (config or {}).get("service_version", "1.0.0")
@@ -89,7 +89,7 @@ def _init_once(config: Optional[Dict[str, Any]]) -> None:
 
 def _start_and_end_span(
     name: str,
-    attributes: Optional[Dict[str, Any]] = None,
+    attributes: Optional[dict[str, Any]] = None,
     success: bool = True,
     error: Optional[str] = None,
 ) -> None:
@@ -110,8 +110,8 @@ def _start_and_end_span(
 
 
 def _emit_risk_and_complexity_metrics(
-    experiment: Dict[str, Any],
-    tags: Dict[str, str],
+    experiment: dict[str, Any],
+    tags: dict[str, str],
 ) -> None:
     """Compute and emit risk/complexity gauges for the experiment."""
     metrics = get_metrics_core()
@@ -159,10 +159,10 @@ def _emit_risk_and_complexity_metrics(
 
 def configure_control(
     control: Any = None,
-    experiment: Optional[Dict[str, Any]] = None,
-    configuration: Optional[Dict[str, Any]] = None,
-    secrets: Optional[Dict[str, Any]] = None,
-    settings: Optional[Dict[str, Any]] = None,
+    experiment: Optional[dict[str, Any]] = None,
+    configuration: Optional[dict[str, Any]] = None,
+    secrets: Optional[dict[str, Any]] = None,
+    settings: Optional[dict[str, Any]] = None,
     **kwargs: Any,
 ) -> None:
     """
@@ -196,7 +196,7 @@ def configure_control(
 
 
 def before_experiment_control(
-    context: Any, state: Any, experiment: Dict[str, Any], **kwargs: Any
+    context: Any, state: Any, experiment: dict[str, Any], **kwargs: Any
 ) -> None:
     """Create root experiment span that stays active for the entire experiment."""
     global _experiment_root_span, _experiment_context_token, _experiment_start_time
@@ -320,7 +320,7 @@ def before_experiment_control(
 
 
 def after_experiment_control(
-    context: Any, state: Any, experiment: Dict[str, Any], **kwargs: Any
+    context: Any, state: Any, experiment: dict[str, Any], **kwargs: Any
 ) -> None:
     """End root experiment span, record experiment metrics, and flush telemetry."""
     global _experiment_root_span, _experiment_context_token, _experiment_start_time
@@ -469,7 +469,7 @@ def after_experiment_control(
 
 
 def before_hypothesis_control(
-    context: Any, state: Any, experiment: Dict[str, Any], **kwargs: Any
+    context: Any, state: Any, experiment: dict[str, Any], **kwargs: Any
 ) -> None:
     ensure_initialized()
     _start_and_end_span(
@@ -479,7 +479,7 @@ def before_hypothesis_control(
 
 
 def after_hypothesis_control(
-    context: Any, state: Any, experiment: Dict[str, Any], **kwargs: Any
+    context: Any, state: Any, experiment: dict[str, Any], **kwargs: Any
 ) -> None:
     ensure_initialized()
     _start_and_end_span(
@@ -489,7 +489,7 @@ def after_hypothesis_control(
 
 
 def before_method_control(
-    context: Any, state: Any, experiment: Dict[str, Any], **kwargs: Any
+    context: Any, state: Any, experiment: dict[str, Any], **kwargs: Any
 ) -> None:
     ensure_initialized()
     _start_and_end_span(
@@ -498,7 +498,7 @@ def before_method_control(
 
 
 def after_method_control(
-    context: Any, state: Any, experiment: Dict[str, Any], **kwargs: Any
+    context: Any, state: Any, experiment: dict[str, Any], **kwargs: Any
 ) -> None:
     ensure_initialized()
     _start_and_end_span(
@@ -507,9 +507,9 @@ def after_method_control(
 
 
 def before_activity_control(
-    context: Dict[str, Any],
+    context: dict[str, Any],
     state: Any,
-    experiment: Dict[str, Any],
+    experiment: dict[str, Any],
     **kwargs: Any,
 ) -> None:
     """Create activity span as child of root experiment span."""
@@ -601,9 +601,9 @@ def before_activity_control(
 
 
 def after_activity_control(
-    context: Dict[str, Any],
+    context: dict[str, Any],
     state: Any,
-    experiment: Dict[str, Any],
+    experiment: dict[str, Any],
     **kwargs: Any,
 ) -> None:
     """End activity span and return to parent (experiment) span."""
@@ -753,7 +753,7 @@ def after_activity_control(
 
 def cleanup_control(
     control: Any = None,
-    experiment: Optional[Dict[str, Any]] = None,
+    experiment: Optional[dict[str, Any]] = None,
     **kwargs: Any,
 ) -> None:
     """Flush telemetry after the run."""

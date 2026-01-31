@@ -17,8 +17,11 @@ from pathlib import Path
 
 import click
 
-from chaosgeneric.mcp_observability_server import create_server, stdio_server
-from chaosgeneric.mcp_observability_server import InitializationOptions
+from chaosgeneric.mcp_observability_server import (
+    InitializationOptions,
+    create_server,
+    stdio_server,
+)
 from chaosgeneric.steady_state_analyzer import create_steady_state_analyzer
 
 logger = logging.getLogger(__name__)

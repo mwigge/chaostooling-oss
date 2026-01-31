@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
@@ -32,7 +32,7 @@ def inject_row_contention(
     num_threads: int = 10,
     duration_seconds: int = 60,
     table_name: str = "chaos_test_table",
-) -> Dict:
+) -> dict:
     """Inject Cassandra row contention by concurrent operations on same partition."""
     # Handle string input from Chaos Toolkit configuration
     if port is not None:

@@ -8,7 +8,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 logger = logging.getLogger("chaostooling_reporting.experiment_index")
 
@@ -29,11 +29,11 @@ class ExperimentIndex:
         self._index = self._load_index()
         logger.info(f"ExperimentIndex initialized: {self.index_file}")
 
-    def _load_index(self) -> Dict[str, Any]:
+    def _load_index(self) -> dict[str, Any]:
         """Load index from file or create new one."""
         if self.index_file.exists():
             try:
-                with open(self.index_file, "r") as f:
+                with open(self.index_file) as f:
                     return json.load(f)
             except Exception as e:
                 logger.warning(f"Failed to load index, creating new: {e}")
@@ -60,14 +60,14 @@ class ExperimentIndex:
         status: str,
         start_time: datetime,
         end_time: datetime,
-        report_paths: Optional[Dict[str, str]] = None,
+        report_paths: Optional[dict[str, str]] = None,
         dashboard_uid: Optional[str] = None,
         dashboard_url: Optional[str] = None,
-        systems: Optional[List[str]] = None,
+        systems: Optional[list[str]] = None,
         risk_level: Optional[str] = None,
         complexity_score: Optional[int] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Register a completed experiment in the index.
@@ -113,7 +113,7 @@ class ExperimentIndex:
         self._save_index()
         logger.info(f"Registered experiment: {experiment_id} ({title})")
 
-    def get_experiment(self, experiment_id: str) -> Optional[Dict[str, Any]]:
+    def get_experiment(self, experiment_id: str) -> Optional[dict[str, Any]]:
         """
         Get single experiment details.
 
@@ -131,11 +131,11 @@ class ExperimentIndex:
         system: Optional[str] = None,
         risk_level: Optional[str] = None,
         tag: Optional[str] = None,
-        date_range: Optional[Tuple[datetime, datetime]] = None,
+        date_range: Optional[tuple[datetime, datetime]] = None,
         title_contains: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Query experiments with optional filters.
 
@@ -213,7 +213,7 @@ class ExperimentIndex:
         """
         return len(self.get_experiments(status=status, system=system, limit=10000))
 
-    def get_systems(self) -> List[str]:
+    def get_systems(self) -> list[str]:
         """
         Get list of all unique systems across experiments.
 
@@ -225,7 +225,7 @@ class ExperimentIndex:
             systems.update(exp.get("systems", []))
         return sorted(list(systems))
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get aggregate statistics across all experiments.
 
@@ -275,7 +275,7 @@ class ExperimentIndex:
             "risk_distribution": risk_dist,
         }
 
-    def export_for_grafana(self) -> List[Dict[str, Any]]:
+    def export_for_grafana(self) -> list[dict[str, Any]]:
         """
         Export index in Grafana JSON datasource compatible format.
 

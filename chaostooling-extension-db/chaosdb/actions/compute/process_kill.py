@@ -2,7 +2,6 @@
 
 import os
 import signal
-from typing import Dict
 
 import psutil
 from chaosotel import (
@@ -17,7 +16,7 @@ from opentelemetry.trace import StatusCode
 
 def kill_process_by_name(
     process_name: str, signal_type: str = "SIGTERM", timeout_seconds: int = 10
-) -> Dict:
+) -> dict:
     """
     Kill a process by name for disaster recovery testing.
 
@@ -154,7 +153,7 @@ def kill_process_by_name(
 
 def kill_process_by_pid(
     pid: int, signal_type: str = "SIGTERM", timeout_seconds: int = 10
-) -> Dict:
+) -> dict:
     """
     Kill a process by PID for disaster recovery testing.
 

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Optional, cast
 
 
 class ComplianceCore:
@@ -57,11 +57,11 @@ class ComplianceCore:
             if violations:
                 self.violations.extend(violations)
 
-    def check_violations(self, regulation: str, action_entry: Dict) -> List[str]:
+    def check_violations(self, regulation: str, action_entry: dict) -> list[str]:
         """Check if action violates regulatory rules"""
         violations = []
         rules_dict = self.REGULATORY_RULES.get(regulation, {})
-        rules: Dict[str, Any] = cast(Dict[str, Any], rules_dict)
+        rules: dict[str, Any] = cast(dict[str, Any], rules_dict)
 
         if "max_action_duration_ms" in rules:
             if action_entry["duration_ms"] > rules["max_action_duration_ms"]:
@@ -79,7 +79,7 @@ class ComplianceCore:
 
         return violations
 
-    def generate_report(self) -> Dict:
+    def generate_report(self) -> dict:
         """Generate compliance report"""
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),

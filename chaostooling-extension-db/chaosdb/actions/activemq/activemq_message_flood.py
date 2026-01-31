@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import stomp
 from chaosotel import (
@@ -31,7 +31,7 @@ def inject_message_flood(
     num_producers: int = 10,
     messages_per_producer: int = 1000,
     duration_seconds: int = 60,
-) -> Dict:
+) -> dict:
     """Flood ActiveMQ queue with high volume of messages."""
     # Handle string input from Chaos Toolkit configuration
     if port is not None:

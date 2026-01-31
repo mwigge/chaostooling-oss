@@ -6,10 +6,10 @@ from experiment JSON files and integrating with BaselineLoader.
 """
 
 import json
-import pytest
 from pathlib import Path
-from typing import Dict, List, Any
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
+
+import pytest
 
 # Note: BaselineLoader and ChaosDb are optional dependencies
 # These tests focus on baseline_config JSON structure and parsing
@@ -34,7 +34,7 @@ class TestBaselineConfigLoading:
     def sample_experiment_data(self):
         """Load sample experiment JSON."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             return json.load(f)
 
     @pytest.fixture
@@ -186,7 +186,7 @@ class TestBaselineConfigParsing:
     def test_parse_metrics_to_baseline_metric_dict(self):
         """Test converting metrics from baseline_config to dict format."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -206,7 +206,7 @@ class TestBaselineConfigParsing:
     def test_parse_metrics_to_service_lookup(self):
         """Test creating service -> metrics lookup from baseline_config."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -227,7 +227,7 @@ class TestBaselineConfigParsing:
     def test_convert_baseline_stats_to_numeric_dict(self):
         """Test converting baseline statistics to numeric dictionary."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -246,7 +246,7 @@ class TestBaselineConfigParsing:
     def test_normalize_metric_names_from_baseline_config(self):
         """Test normalizing metric names from baseline_config."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -269,7 +269,7 @@ class TestBaselineConfigValidation:
     def test_validate_metric_completeness(self):
         """Test that all metrics have required fields."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[1]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -294,7 +294,7 @@ class TestBaselineConfigValidation:
     def test_validate_threshold_bounds(self):
         """Test threshold configuration bounds validity."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[1]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -314,7 +314,7 @@ class TestBaselineConfigValidation:
     def test_validate_metric_quality_score(self):
         """Test metric quality scores are valid."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -330,7 +330,7 @@ class TestBaselineConfigValidation:
     def test_validate_percentile_ordering(self):
         """Test percentile values are properly ordered."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -350,14 +350,14 @@ class TestBaselineConfigValidation:
     def test_validate_probe_references(self):
         """Test that metrics reference valid probes."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
 
         # Get probe names from steady-state-hypothesis
         ssh = data.get("steady-state-hypothesis", {})
-        probe_names = {p.get("name") for p in ssh.get("probes", [])}
+        {p.get("name") for p in ssh.get("probes", [])}
 
         # Each metric should reference existing probes
         for metric in bc.get("metrics", []):
@@ -374,7 +374,7 @@ class TestBaselineConfigIntegrationWithLoader:
     def test_loader_can_consume_baseline_config_metrics(self):
         """Test that loader-like systems can work with baseline_config metrics."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -392,7 +392,7 @@ class TestBaselineConfigIntegrationWithLoader:
     def test_loader_maps_baseline_config_to_internal_format(self):
         """Test converting baseline_config format to internal metric format."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[1]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -421,7 +421,7 @@ class TestBaselineConfigIntegrationWithLoader:
     def test_baseline_config_discovery_methods(self):
         """Test that baseline_config supports BaselineLoader discovery methods."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -442,7 +442,7 @@ class TestBaselineConfigCaching:
     def test_baseline_config_cache_structure(self):
         """Test that baseline_config can be cached effectively."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -466,7 +466,7 @@ class TestBaselineConfigCaching:
     def test_baseline_config_lookup_by_metric_id(self):
         """Test efficient lookup of metrics by ID."""
         filepath = POSTGRES_EXPERIMENTS_DIR / SAMPLE_EXPERIMENTS[1]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]

@@ -15,7 +15,7 @@ import inspect
 import json
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -797,9 +797,9 @@ def get_kafka_producer(bootstrap_servers: Optional[str] = None) -> Any:
 
 def trace_kafka_produce(
     topic: str,
-    value: Dict[str, Any],
+    value: dict[str, Any],
     bootstrap_servers: Optional[str] = None,
-    additional_attributes: Optional[Dict[str, Any]] = None,
+    additional_attributes: Optional[dict[str, Any]] = None,
     **kwargs,
 ) -> bool:
     """
@@ -1083,7 +1083,7 @@ def trace_activemq_send(
     body: str,
     host: Optional[str] = None,
     port: Optional[int] = None,
-    additional_attributes: Optional[Dict[str, Any]] = None,
+    additional_attributes: Optional[dict[str, Any]] = None,
     **kwargs,
 ) -> bool:
     """
@@ -1358,7 +1358,7 @@ class TraceCore:
     # ========================================================================
 
     def create_span(
-        self, name: str, attributes: Optional[Dict[str, Any]] = None
+        self, name: str, attributes: Optional[dict[str, Any]] = None
     ) -> Any:
         """Create a new span."""
         try:
@@ -1374,7 +1374,7 @@ class TraceCore:
             _handle_trace_error("create span", e)
             return None
 
-    def start_span(self, name: str, attributes: Optional[Dict[str, Any]] = None) -> Any:
+    def start_span(self, name: str, attributes: Optional[dict[str, Any]] = None) -> Any:
         """Start a span manually."""
         try:
             span = self.tracer.start_span(name)
@@ -1399,7 +1399,7 @@ class TraceCore:
         except Exception as e:
             _handle_trace_error("set attribute", e)
 
-    def set_attributes(self, span: Any, attributes: Dict[str, Any]) -> None:
+    def set_attributes(self, span: Any, attributes: dict[str, Any]) -> None:
         """Set multiple attributes on span."""
         try:
             if span and attributes:
@@ -1414,7 +1414,7 @@ class TraceCore:
     # ========================================================================
 
     def add_event(
-        self, span: Any, name: str, attributes: Optional[Dict[str, Any]] = None
+        self, span: Any, name: str, attributes: Optional[dict[str, Any]] = None
     ) -> None:
         """Add event to span."""
         try:
@@ -1484,7 +1484,7 @@ class TraceCore:
             _handle_trace_error("get current span", e)
             return None
 
-    def get_span_context(self, span: Optional[Any] = None) -> Dict[str, Any]:
+    def get_span_context(self, span: Optional[Any] = None) -> dict[str, Any]:
         """Get span context (trace_id, span_id)."""
         try:
             target_span = span or self.get_current_span()
@@ -1517,7 +1517,7 @@ class TraceCore:
     # CONTEXT MANAGERS
     # ========================================================================
 
-    def span_context(self, name: str, attributes: Optional[Dict[str, Any]] = None):
+    def span_context(self, name: str, attributes: Optional[dict[str, Any]] = None):
         """Context manager for span creation."""
         try:
             span = self.create_span(name, attributes)

@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
 from kafka import KafkaConsumer
@@ -21,7 +21,7 @@ def inject_rebalancing_storm(
     num_consumers: int = 10,
     rebalance_interval_seconds: int = 5,
     duration_seconds: int = 60,
-) -> Dict:
+) -> dict:
     """
     Inject consumer group rebalancing storm by rapidly adding/removing consumers.
     Forces frequent rebalancing to test system stability during rebalancing.

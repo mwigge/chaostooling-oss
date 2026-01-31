@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 from chaosotel import ensure_initialized, flush, get_metrics_core, get_tracer
 from kafka import KafkaProducer
@@ -21,7 +21,7 @@ def inject_dlq_saturation(
     num_producers: int = 10,
     messages_per_producer: int = 1000,
     duration_seconds: int = 60,
-) -> Dict:
+) -> dict:
     """
     Saturate dead letter queue by sending messages that will be rejected.
     Tests system behavior when error queues are full.

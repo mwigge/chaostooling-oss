@@ -5,16 +5,15 @@ Chaos Toolkit control hooks for automated report generation and dashboard genera
 import json
 import logging
 import os
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
-from chaostooling_reporting.report_generator import ReportGenerator
 from chaostooling_reporting.dashboard_generator import (
     DashboardGenerator,
     extract_systems_from_experiment,
     extract_timestamps_from_journal,
 )
+from chaostooling_reporting.report_generator import ReportGenerator
 
 logger = logging.getLogger("chaostooling_reporting")
 
@@ -22,10 +21,10 @@ __all__ = ["configure_control", "load_control", "unload_control"]
 
 
 def configure_control(
-    experiment: Dict[str, Any],
-    configuration: Dict[str, Any],
+    experiment: dict[str, Any],
+    configuration: dict[str, Any],
     **kwargs: Any,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Configure the reporting control.
 
@@ -69,10 +68,10 @@ def configure_control(
 
 
 def load_control(
-    experiment: Dict[str, Any],
-    configuration: Dict[str, Any],
+    experiment: dict[str, Any],
+    configuration: dict[str, Any],
     **kwargs: Any,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Load the reporting control.
 
@@ -157,8 +156,8 @@ def load_control(
 
 
 def unload_control(
-    experiment: Dict[str, Any],
-    configuration: Dict[str, Any],
+    experiment: dict[str, Any],
+    configuration: dict[str, Any],
     **kwargs: Any,
 ) -> None:
     """
@@ -174,7 +173,7 @@ def unload_control(
 def after_experiment_control(
     context: Any,
     state: Any,
-    experiment: Dict[str, Any],
+    experiment: dict[str, Any],
     **kwargs: Any,
 ) -> None:
     """
@@ -253,7 +252,7 @@ def after_experiment_control(
 
         if journal_path and journal_path.exists():
             try:
-                with open(journal_path, "r") as f:
+                with open(journal_path) as f:
                     journal = json.load(f)
                 logger.info(f"Loaded journal from {journal_path}")
             except Exception as e:

@@ -10,11 +10,11 @@ Coverage targets:
 - Type validation
 """
 
-import pytest
-from datetime import datetime, timedelta
-from dataclasses import asdict
 import json
+from dataclasses import asdict
+from datetime import datetime
 
+import pytest
 from chaosgeneric.tools.baseline_loader import BaselineMetric
 
 

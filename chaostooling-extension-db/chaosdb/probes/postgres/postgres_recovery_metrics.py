@@ -1,8 +1,8 @@
+import logging
 import time
 from typing import Optional
 
 from chaosdb.probes.postgres.postgres_connectivity import probe_postgres_connectivity
-import logging
 
 logger = logging.getLogger(__name__)
 

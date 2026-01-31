@@ -12,13 +12,7 @@ Total: 12 E2E tests
 """
 
 import pytest
-import json
-from datetime import datetime
-from typing import Dict
-
 from chaosgeneric.tools.baseline_loader import BaselineLoader
-from chaosgeneric.control.mcp_baseline_control import mcp_baseline_control
-
 
 # ============================================================================
 # E2E WORKFLOW TESTS
@@ -63,7 +57,6 @@ class TestEndToEndWorkflow:
         assert isinstance(validation, dict)
 
         # 3. Create mappings
-        experiment_run_id = 1001
         for metric_name, metric in baselines.items():
             assert metric is not None
 
@@ -287,7 +280,7 @@ class TestRealWorldScenarios:
         self, db_cursor, sample_experiment_configs
     ):
         """Test baseline integration for postgres pool exhaustion experiment."""
-        experiment = sample_experiment_configs["postgres_pool_exhaustion"]
+        sample_experiment_configs["postgres_pool_exhaustion"]
 
         loader = BaselineLoader()
         baselines = loader.load_by_service("postgres")
@@ -299,7 +292,7 @@ class TestRealWorldScenarios:
     @pytest.mark.slow
     def test_cpu_stress_test_scenario(self, sample_experiment_configs):
         """Test baseline integration for CPU stress test."""
-        experiment = sample_experiment_configs["cpu_stress_test"]
+        sample_experiment_configs["cpu_stress_test"]
 
         loader = BaselineLoader()
         baselines = loader.load_by_system("api-server")

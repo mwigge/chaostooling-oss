@@ -71,9 +71,9 @@ def verify_traces_exported(
 
     logger.error(f"No traces found for service {service_name} in Tempo")
     logger.info(
-        f"Note: Service name should match OTEL_SERVICE_NAME environment variable"
+        "Note: Service name should match OTEL_SERVICE_NAME environment variable"
     )
     logger.info(
-        f"Note: Traces may take time to appear after experiment actions complete"
+        "Note: Traces may take time to appear after experiment actions complete"
     )
     return False

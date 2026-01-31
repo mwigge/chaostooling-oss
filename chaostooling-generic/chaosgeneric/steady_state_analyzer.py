@@ -19,12 +19,10 @@ This module analyzes historical observability data to establish:
 Used to initialize the chaos platform and detect deviations during experiments.
 """
 
-import json
 import logging
+import statistics
 import warnings
 from datetime import datetime, timedelta
-from typing import Optional, Dict, List, Tuple
-import statistics
 
 import requests
 
@@ -66,7 +64,7 @@ class SteadyStateAnalyzer:
             days=analysis_period_days
         )
 
-    def analyze(self) -> Dict:
+    def analyze(self) -> dict:
         """
         Execute full steady state analysis.
 
@@ -86,7 +84,7 @@ class SteadyStateAnalyzer:
         # Phase 1: Collect and normalize data
         metrics_data = self._collect_metrics()
         trace_data = self._collect_traces()
-        log_data = self._collect_logs()
+        self._collect_logs()
 
         # Phase 2: Calculate baselines
         baselines = self._calculate_baselines(metrics_data)
@@ -110,7 +108,7 @@ class SteadyStateAnalyzer:
             },
         }
 
-    def _collect_metrics(self) -> Dict:
+    def _collect_metrics(self) -> dict:
         """Collect raw metrics from Prometheus"""
         logger.info("Collecting metrics from Prometheus...")
 
@@ -139,7 +137,7 @@ class SteadyStateAnalyzer:
 
         return collected
 
-    def _collect_traces(self) -> Dict:
+    def _collect_traces(self) -> dict:
         """Collect trace data from Tempo"""
         logger.info("Collecting traces from Tempo...")
 
@@ -161,7 +159,7 @@ class SteadyStateAnalyzer:
             logger.warning(f"  ✗ Error collecting traces: {e}")
             return {"traces": []}
 
-    def _collect_logs(self) -> Dict:
+    def _collect_logs(self) -> dict:
         """Collect logs from Loki"""
         logger.info("Collecting logs from Loki...")
 
@@ -178,13 +176,13 @@ class SteadyStateAnalyzer:
             )
             response.raise_for_status()
             logs = response.json()
-            logger.info(f"  ✓ Collected logs from Loki")
+            logger.info("  ✓ Collected logs from Loki")
             return logs
         except Exception as e:
             logger.warning(f"  ✗ Error collecting logs: {e}")
             return {"data": {"result": []}}
 
-    def _calculate_baselines(self, metrics_data: Dict) -> Dict:
+    def _calculate_baselines(self, metrics_data: dict) -> dict:
         """
         Calculate baseline statistics for each metric and service.
 
@@ -228,7 +226,7 @@ class SteadyStateAnalyzer:
 
         return baselines
 
-    def _generate_slos(self, baselines: Dict) -> Dict:
+    def _generate_slos(self, baselines: dict) -> dict:
         """Generate SLO targets based on baselines"""
         logger.info("Generating SLO targets...")
 
@@ -274,7 +272,7 @@ class SteadyStateAnalyzer:
         logger.info(f"  ✓ Generated SLOs for {len(slos)} categories")
         return slos
 
-    def _analyze_service_topology(self, trace_data: Dict) -> Dict:
+    def _analyze_service_topology(self, trace_data: dict) -> dict:
         """
         Analyze service topology from traces.
 
@@ -289,7 +287,7 @@ class SteadyStateAnalyzer:
         service_latencies = {}  # Latencies per hop
 
         for trace in trace_data.get("traces", []):
-            trace_id = trace.get("traceID", "unknown")
+            trace.get("traceID", "unknown")
             # This would need full trace parsing
             # For now, simplified version
 
@@ -307,7 +305,7 @@ class SteadyStateAnalyzer:
         logger.info(f"  ✓ Identified {len(graph['nodes'])} services")
         return graph
 
-    def _calculate_anomaly_thresholds(self, baselines: Dict) -> Dict:
+    def _calculate_anomaly_thresholds(self, baselines: dict) -> dict:
         """
         Calculate dynamic anomaly detection thresholds.
 
@@ -335,8 +333,8 @@ class SteadyStateAnalyzer:
         return thresholds
 
     def _generate_report(
-        self, baselines: Dict, slos: Dict, topology: Dict, thresholds: Dict
-    ) -> Dict:
+        self, baselines: dict, slos: dict, topology: dict, thresholds: dict
+    ) -> dict:
         """Generate human-readable analysis report"""
 
         return {
@@ -351,7 +349,7 @@ class SteadyStateAnalyzer:
             "data_completeness": self._estimate_data_quality(baselines),
         }
 
-    def _extract_key_findings(self, baselines: Dict, topology: Dict) -> List[str]:
+    def _extract_key_findings(self, baselines: dict, topology: dict) -> list[str]:
         """Extract key findings from analysis"""
         findings = []
 
@@ -390,7 +388,7 @@ class SteadyStateAnalyzer:
 
         return findings
 
-    def _generate_recommendations(self, baselines: Dict, topology: Dict) -> List[str]:
+    def _generate_recommendations(self, baselines: dict, topology: dict) -> list[str]:
         """Generate improvement recommendations"""
         recommendations = []
 
@@ -413,7 +411,7 @@ class SteadyStateAnalyzer:
 
         return recommendations
 
-    def _estimate_data_quality(self, baselines: Dict) -> Dict:
+    def _estimate_data_quality(self, baselines: dict) -> dict:
         """Estimate quality of collected data"""
         total_metrics = sum(
             sum(1 for _ in services.values()) for services in baselines.values()
@@ -427,7 +425,7 @@ class SteadyStateAnalyzer:
             "recommended_analysis_period": "14 days minimum",
         }
 
-    def _query_prometheus_range(self, query: str) -> Dict:
+    def _query_prometheus_range(self, query: str) -> dict:
         """Query Prometheus range query"""
         try:
             response = requests.get(
@@ -447,7 +445,7 @@ class SteadyStateAnalyzer:
             return {"status": "error"}
 
     @staticmethod
-    def _percentile(data: List[float], percentile: int) -> float:
+    def _percentile(data: list[float], percentile: int) -> float:
         """Calculate percentile of a dataset"""
         sorted_data = sorted(data)
         index = (percentile / 100) * len(sorted_data)
@@ -457,13 +455,13 @@ class SteadyStateAnalyzer:
             return sorted_data[int(index)]
 
     @staticmethod
-    def _identify_critical_paths(service_calls: Dict) -> List[List[str]]:
+    def _identify_critical_paths(service_calls: dict) -> list[list[str]]:
         """Identify critical paths through service topology"""
         # Simplified: return empty for now
         return []
 
     @staticmethod
-    def _identify_spofs(service_calls: Dict) -> List[str]:
+    def _identify_spofs(service_calls: dict) -> list[str]:
         """Identify single points of failure"""
         # Simplified: return empty for now
         return []

@@ -9,16 +9,16 @@ Lifecycle hooks:
 - after_experiment_control(): Display experiment overview/results table
 """
 
-import json
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any
+
 from chaosgeneric.data.chaos_db import ChaosDb
 
 logger = logging.getLogger(__name__)
 
 
-def before_experiment_display(context: Dict[str, Any], **kwargs) -> None:
+def before_experiment_display(context: dict[str, Any], **kwargs) -> None:
     """
     Display database steady-state baseline metrics as ASCII table before experiment starts.
 
@@ -44,7 +44,7 @@ def before_experiment_display(context: Dict[str, Any], **kwargs) -> None:
         # Get all baseline metrics for all services
         try:
             result = db.session.execute("""
-                SELECT 
+                SELECT
                     service_name,
                     metric_name,
                     mean,
@@ -87,7 +87,7 @@ def before_experiment_display(context: Dict[str, Any], **kwargs) -> None:
         pass
 
 
-def after_experiment_display(context: Dict[str, Any], **kwargs) -> None:
+def after_experiment_display(context: dict[str, Any], **kwargs) -> None:
     """
     Display experiment overview and results as ASCII table after experiment completes.
 
@@ -117,7 +117,7 @@ def after_experiment_display(context: Dict[str, Any], **kwargs) -> None:
         try:
             result = db.session.execute(
                 """
-                SELECT 
+                SELECT
                     run_id,
                     experiment_name,
                     start_timestamp,
@@ -278,7 +278,7 @@ def _display_metric_snapshots_table(db: ChaosDb, run_id: str) -> None:
     try:
         result = db.session.execute(
             """
-            SELECT 
+            SELECT
                 snapshot_phase,
                 COUNT(*) as metric_count,
                 MIN(snapshot_timestamp) as first_snapshot,
@@ -317,7 +317,7 @@ def _display_metric_snapshots_table(db: ChaosDb, run_id: str) -> None:
 
 
 # Control hook functions (called by Chaos Toolkit)
-def start_database_display(context: Dict[str, Any], **kwargs) -> None:
+def start_database_display(context: dict[str, Any], **kwargs) -> None:
     """
     Chaos Toolkit before_experiment_control hook.
     Displays baseline/steady-state metrics.
@@ -325,7 +325,7 @@ def start_database_display(context: Dict[str, Any], **kwargs) -> None:
     before_experiment_display(context, **kwargs)
 
 
-def stop_database_display(context: Dict[str, Any], **kwargs) -> None:
+def stop_database_display(context: dict[str, Any], **kwargs) -> None:
     """
     Chaos Toolkit after_experiment_control hook.
     Displays experiment overview and results.

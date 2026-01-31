@@ -13,11 +13,11 @@ Architecture:
     Risk Score ← Comparison and analysis
 """
 
-import json
 import logging
-from typing import Dict, Any, Optional, List
+from datetime import datetime
+from typing import Any, Optional
+
 import requests
-from datetime import datetime, timedelta
 
 logger = logging.getLogger("chaosotel.probes.risk_score")
 
@@ -48,7 +48,7 @@ class GrafanaMetricsClient:
             self.headers["Authorization"] = f"Bearer {api_key}"
         self.headers["Content-Type"] = "application/json"
 
-    def list_datasources(self) -> List[Dict[str, Any]]:
+    def list_datasources(self) -> list[dict[str, Any]]:
         """
         List all available datasources in Grafana.
 
@@ -65,7 +65,7 @@ class GrafanaMetricsClient:
             logger.warning(f"Failed to list Grafana datasources: {e}")
         return []
 
-    def get_datasource_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_datasource_by_name(self, name: str) -> Optional[dict[str, Any]]:
         """
         Get datasource by name.
 
@@ -156,7 +156,7 @@ class GrafanaMetricsClient:
         return None
 
 
-def calculate_manual_risk_score(experiment_data: Dict[str, Any]) -> Dict[str, Any]:
+def calculate_manual_risk_score(experiment_data: dict[str, Any]) -> dict[str, Any]:
     """
     Calculate risk score based on manual assessment.
 
@@ -217,7 +217,7 @@ def calculate_manual_risk_score(experiment_data: Dict[str, Any]) -> Dict[str, An
 
 def calculate_grafana_metrics_risk_score(
     service_name: str, grafana_url: str = "http://grafana:3000", api_key: str = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Calculate risk score based on Grafana metrics from any datasource.
 
@@ -328,10 +328,10 @@ def calculate_grafana_metrics_risk_score(
 
 def analyze_risk_score_mismatch(
     service_name: str,
-    experiment_data: Dict[str, Any],
+    experiment_data: dict[str, Any],
     grafana_url: str = "http://grafana:3000",
     api_key: str = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analyze the difference between manual and Grafana metrics risk scores.
 
@@ -464,7 +464,7 @@ def analyze_risk_score_mismatch(
 
 def probe_risk_score(
     service_name: str, grafana_url: str = "http://grafana:3000", api_key: str = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Lightweight probe to get current risk score from Grafana metrics.
 

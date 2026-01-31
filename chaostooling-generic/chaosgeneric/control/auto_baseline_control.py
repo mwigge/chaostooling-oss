@@ -26,20 +26,18 @@ Typical usage in experiment JSON:
 This ensures every experiment has a baseline reference without manual setup.
 """
 
+import json
 import logging
 import os
-import sys
 import subprocess
-import json
-from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 from chaoslib.exceptions import ChaosException
 
 logger = logging.getLogger(__name__)
 
 
-def on_experiment_start(context: Dict[str, Any] = None, **kwargs) -> None:
+def on_experiment_start(context: dict[str, Any] = None, **kwargs) -> None:
     """
     Before-experiment hook: Check if baseline exists, run if missing.
 
@@ -117,7 +115,7 @@ def _check_baseline_exists(service_name: str, baseline_file: str = None) -> bool
     # Check file first
     if baseline_file and os.path.exists(baseline_file):
         try:
-            with open(baseline_file, "r") as f:
+            with open(baseline_file) as f:
                 data = json.load(f)
                 if data and isinstance(data, dict) and data.get("metrics"):
                     logger.debug(f"✓ Found baseline file: {baseline_file}")
@@ -159,7 +157,7 @@ def _check_baseline_exists(service_name: str, baseline_file: str = None) -> bool
     return False
 
 
-def _run_baseline_collection(context: Dict[str, Any]) -> bool:
+def _run_baseline_collection(context: dict[str, Any]) -> bool:
     """
     Run baseline collection experiment.
 
@@ -203,7 +201,7 @@ def _run_baseline_collection(context: Dict[str, Any]) -> bool:
         return False
 
 
-def _find_baseline_experiment(context: Dict[str, Any]) -> str:
+def _find_baseline_experiment(context: dict[str, Any]) -> str:
     """
     Find baseline collection experiment file.
 

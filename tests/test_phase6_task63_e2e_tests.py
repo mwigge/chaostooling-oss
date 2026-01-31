@@ -7,14 +7,12 @@ experiment execution.
 """
 
 import json
-import pytest
-from pathlib import Path
-from typing import Dict, List, Any
-from unittest.mock import Mock, patch, MagicMock, call
-import tempfile
 
 # Adjust import path based on actual structure
 import sys
+from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -32,7 +30,7 @@ class TestE2EExperimentWithBaseline:
     def sample_experiment(self):
         """Load a sample experiment with baseline_config."""
         filepath = POSTGRES_EXPERIMENTS_DIR / "test-postgres-cache-miss.json"
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             return json.load(f)
 
     def test_e2e_load_experiment_with_baseline_config(self, sample_experiment):
@@ -99,7 +97,7 @@ class TestE2EBaselineDiscovery:
     def sample_experiment(self):
         """Load a sample experiment."""
         filepath = POSTGRES_EXPERIMENTS_DIR / "test-postgres-lock-storm.json"
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             return json.load(f)
 
     def test_e2e_discover_baselines_for_experiment(self, sample_experiment):
@@ -156,7 +154,7 @@ class TestE2EMetricValidation:
     def sample_experiment(self):
         """Load a sample experiment."""
         filepath = POSTGRES_EXPERIMENTS_DIR / "test-postgres-query-saturation.json"
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             return json.load(f)
 
     def test_e2e_validate_metric_against_baseline(self, sample_experiment):
@@ -220,7 +218,7 @@ class TestE2EMetricValidation:
         bc = sample_experiment["baseline_config"]
 
         for metric in bc.get("metrics", []):
-            stats = metric.get("baseline_statistics", {})
+            metric.get("baseline_statistics", {})
             thresholds = metric.get("threshold_config", {})
             anomaly = metric.get("anomaly_detection", {})
 
@@ -241,7 +239,7 @@ class TestE2EMultiMetricValidation:
         """Load all postgres experiments."""
         experiments = {}
         for filepath in POSTGRES_EXPERIMENTS_DIR.glob("test-*.json"):
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 experiments[filepath.name] = json.load(f)
         return experiments
 
@@ -303,7 +301,7 @@ class TestE2EProbeExecution:
     def sample_experiment(self):
         """Load a sample experiment."""
         filepath = POSTGRES_EXPERIMENTS_DIR / "test-postgres-replication-lag.json"
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             return json.load(f)
 
     def test_e2e_probe_reads_metric_from_baseline_config(self, sample_experiment):
@@ -393,7 +391,7 @@ class TestE2EErrorConditions:
         ssh = data["steady-state-hypothesis"]
 
         # Check if all probe references are valid
-        valid_metrics = {m["metric_name"] for m in bc.get("metrics", [])}
+        {m["metric_name"] for m in bc.get("metrics", [])}
 
         for probe in ssh.get("probes", []):
             # In real scenario, probe would validate its metrics exist
@@ -443,7 +441,7 @@ class TestE2EComprehensiveWorkflow:
     def test_e2e_complete_baseline_experiment_workflow(self):
         """Test complete workflow: load, discover, validate, execute."""
         filepath = POSTGRES_EXPERIMENTS_DIR / "test-postgres-cache-miss.json"
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             experiment = json.load(f)
 
         # Step 1: Load experiment
@@ -476,14 +474,14 @@ class TestE2EComprehensiveWorkflow:
         filepath = POSTGRES_EXPERIMENTS_DIR / "test-postgres-lock-storm.json"
 
         # Initial load
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             experiment_initial = json.load(f)
 
         bc_initial = experiment_initial.get("baseline_config", {})
         metrics_initial = bc_initial.get("metrics", [])
 
         # Simulate experiment run (reload same file)
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             experiment_final = json.load(f)
 
         bc_final = experiment_final.get("baseline_config", {})
@@ -511,7 +509,7 @@ class TestE2EPerformanceUnderLoad:
 
         for filepath in POSTGRES_EXPERIMENTS_DIR.glob("*.json"):
             total_experiments += 1
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             bc = data.get("baseline_config", {})
@@ -527,7 +525,7 @@ class TestE2EPerformanceUnderLoad:
     def test_e2e_metric_validation_performance(self):
         """Test performance of metric validation at runtime."""
         filepath = POSTGRES_EXPERIMENTS_DIR / "test-postgres-pool-exhaustion.json"
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             experiment = json.load(f)
 
         bc = experiment.get("baseline_config", {})

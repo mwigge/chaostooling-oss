@@ -12,11 +12,9 @@ Tests validate:
 """
 
 import json
-import os
-import pytest
 from pathlib import Path
-from typing import Dict, List, Any, Set
 
+import pytest
 
 # Test data directory
 POSTGRES_EXPERIMENTS_DIR = (
@@ -86,7 +84,7 @@ class TestBaselineConfigJSON:
         """Verify all experiment files contain valid JSON."""
         for filename in TARGET_EXPERIMENTS:
             filepath = POSTGRES_EXPERIMENTS_DIR / filename
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 # This will raise if JSON is invalid
                 json.load(f)
 
@@ -94,7 +92,7 @@ class TestBaselineConfigJSON:
         """Verify baseline_config section exists in all files."""
         for filename in TARGET_EXPERIMENTS:
             filepath = POSTGRES_EXPERIMENTS_DIR / filename
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             assert "baseline_config" in data, f"Missing baseline_config in {filename}"
@@ -106,7 +104,7 @@ class TestBaselineConfigJSON:
         """Verify baseline_config exists (placement may vary in JSON structure)."""
         for filename in TARGET_EXPERIMENTS:
             filepath = POSTGRES_EXPERIMENTS_DIR / filename
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             # Verify baseline_config exists at top level
@@ -126,7 +124,7 @@ class TestBaselineConfigStructure:
     def test_metadata_section(self, filename):
         """Verify metadata section exists and has required fields."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -145,7 +143,7 @@ class TestBaselineConfigStructure:
     def test_discovery_section(self, filename):
         """Verify discovery section exists and has required fields."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -168,7 +166,7 @@ class TestBaselineConfigStructure:
     def test_default_thresholds_section(self, filename):
         """Verify default_thresholds section with valid values."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -195,7 +193,7 @@ class TestBaselineConfigStructure:
     def test_data_validation_section(self, filename):
         """Verify data_validation section."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -220,7 +218,7 @@ class TestMetricsValidation:
     def test_metrics_array_exists(self, filename):
         """Verify metrics array exists and is not empty."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -232,7 +230,7 @@ class TestMetricsValidation:
     def test_metrics_expected_count(self, filename):
         """Verify reasonable number of metrics per experiment."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -247,7 +245,7 @@ class TestMetricsValidation:
     def test_metric_required_fields(self, filename):
         """Verify each metric has required fields."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -275,7 +273,7 @@ class TestMetricsValidation:
     def test_baseline_statistics_validity(self, filename):
         """Verify baseline_statistics have valid numeric values."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -316,7 +314,7 @@ class TestMetricsValidation:
     def test_threshold_config_validity(self, filename):
         """Verify threshold_config has valid bounds."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -347,7 +345,7 @@ class TestMetricsValidation:
     def test_anomaly_detection_config(self, filename):
         """Verify anomaly_detection configuration."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -376,11 +374,11 @@ class TestMetricsProbesCorrespondence:
     def test_metrics_referenced_by_probes(self, filename):
         """Verify baseline_config metrics are used by probes."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
-        metrics = {m["metric_name"] for m in bc.get("metrics", [])}
+        {m["metric_name"] for m in bc.get("metrics", [])}
 
         # Extract probe names from steady-state-hypothesis
         ssh = data.get("steady-state-hypothesis", {})
@@ -405,7 +403,7 @@ class TestMetricsProbesCorrespondence:
     def test_expected_metrics_present(self, filename):
         """Verify metrics are present for each experiment (with naming tolerance)."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -424,7 +422,7 @@ class TestIntegrationWithBaselineManager:
     def test_config_format_compatible_with_manager(self, filename):
         """Verify baseline_config format is compatible with BaselineManager."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -446,7 +444,7 @@ class TestIntegrationWithBaselineManager:
     def test_metric_ids_unique(self, filename):
         """Verify metric IDs are unique within experiment."""
         filepath = POSTGRES_EXPERIMENTS_DIR / filename
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         bc = data["baseline_config"]
@@ -462,7 +460,7 @@ class TestIntegrationWithBaselineManager:
 
         for filename in TARGET_EXPERIMENTS:
             filepath = POSTGRES_EXPERIMENTS_DIR / filename
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             bc = data["baseline_config"]
@@ -492,7 +490,7 @@ class TestPhase5Completeness:
         """Verify all target experiments have baseline_config."""
         for filename in TARGET_EXPERIMENTS:
             filepath = POSTGRES_EXPERIMENTS_DIR / filename
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             assert "baseline_config" in data, f"{filename} missing baseline_config"
@@ -505,7 +503,7 @@ class TestPhase5Completeness:
         # All files should have valid, complete baseline_config sections
         for filename in TARGET_EXPERIMENTS:
             filepath = POSTGRES_EXPERIMENTS_DIR / filename
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             bc = data.get("baseline_config", {})
@@ -531,7 +529,7 @@ class TestPhase5Completeness:
         for filename in TARGET_EXPERIMENTS:
             filepath = POSTGRES_EXPERIMENTS_DIR / filename
             try:
-                with open(filepath, "r") as f:
+                with open(filepath) as f:
                     data = json.load(f)
 
                 # Verify key sections exist
@@ -555,7 +553,7 @@ class TestPhase5Completeness:
             except json.JSONDecodeError as e:
                 invalid_files.append(f"{filename}: JSON error - {e}")
 
-        assert not invalid_files, f"Invalid experiment files:\n" + "\n".join(
+        assert not invalid_files, "Invalid experiment files:\n" + "\n".join(
             invalid_files
         )
 
@@ -566,7 +564,7 @@ class TestPhase5Completeness:
         completed = 0
         for filename in TARGET_EXPERIMENTS:
             filepath = POSTGRES_EXPERIMENTS_DIR / filename
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
             if "baseline_config" in data and data["baseline_config"].get("metrics"):
                 completed += 1

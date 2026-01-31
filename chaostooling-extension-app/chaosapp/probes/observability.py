@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict
+from typing import Any
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -36,7 +36,7 @@ def ensure_table_exists():
         conn.close()
 
 
-def log_metric(metric_name: str, value: float, tags: Dict[str, Any] = None) -> bool:
+def log_metric(metric_name: str, value: float, tags: dict[str, Any] = None) -> bool:
     """
     Log a metric to the PostgreSQL database.
     """

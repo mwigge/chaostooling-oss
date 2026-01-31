@@ -24,8 +24,8 @@ def verify_logs_exported(
         f'{{service_namespace="{service_namespace}"}}',
         f'{{namespace="{service_namespace}"}}',
         f'{{service_namespace=~".*{service_namespace}.*"}}',  # Partial match
-        f'{{service_name=~".+"}}',  # Fallback: any service_name
-        f"{{}}",  # Last resort: any logs
+        '{service_name=~".+"}',  # Fallback: any service_name
+        "{}",  # Last resort: any logs
     ]
 
     for query in queries:
@@ -52,7 +52,7 @@ def verify_logs_exported(
                                 f"Logs found with query: {query} ({len(results)} streams)"
                             )
                             # If we found logs with a generic query, log available labels
-                            if query == f"{{}}":
+                            if query == "{}":
                                 logger.info(
                                     "Found logs in Loki, but namespace label may not match"
                                 )
@@ -73,10 +73,8 @@ def verify_logs_exported(
         f"No logs found for namespace {service_namespace} in Loki (tried multiple label formats)"
     )
     logger.info(
-        f"Note: Namespace should match OTEL_SERVICE_NAMESPACE environment variable"
+        "Note: Namespace should match OTEL_SERVICE_NAMESPACE environment variable"
     )
-    logger.info(f"Note: Logs may take time to appear after experiment actions complete")
-    logger.info(
-        f"Note: Check OTEL Collector configuration for log label transformation"
-    )
+    logger.info("Note: Logs may take time to appear after experiment actions complete")
+    logger.info("Note: Check OTEL Collector configuration for log label transformation")
     return False

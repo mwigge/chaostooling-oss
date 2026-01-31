@@ -2,12 +2,12 @@ import logging
 import os
 
 import redis
-from flask import Flask, jsonify, request
-from opentelemetry.instrumentation.flask import FlaskInstrumentor
-from pymongo import MongoClient
 
 # Import from chaosotel for auto-instrumentation
 from chaosotel import initialize
+from flask import Flask, jsonify, request
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from pymongo import MongoClient
 
 # Setup OpenTelemetry with auto-instrumentation
 service_name = os.getenv("OTEL_SERVICE_NAME", "inventory-service")

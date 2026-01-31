@@ -89,7 +89,7 @@ class BaselineMetricsValidator:
     def validate_json_syntax(self, file_path):
         """Validate JSON syntax"""
         try:
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 json.load(f)
             return True, None
         except json.JSONDecodeError as e:
@@ -220,7 +220,7 @@ class BaselineMetricsValidator:
 
         # Load and validate structure
         try:
-            with open(baseline_file, "r") as f:
+            with open(baseline_file) as f:
                 data = json.load(f)
         except Exception as e:
             self.errors.append(f"{db_name}: Failed to load JSON: {str(e)}")

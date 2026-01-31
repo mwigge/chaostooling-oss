@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import pyodbc
 from chaosotel import (
@@ -29,7 +29,7 @@ def inject_connection_pool_exhaustion(
     num_connections: int = 100,
     hold_duration_seconds: int = 60,
     leak_connections: bool = False,
-) -> Dict:
+) -> dict:
     """Exhaust MSSQL connection pool."""
     host = host or os.getenv("MSSQL_HOST", "localhost")
     port = port or int(os.getenv("MSSQL_PORT", "1433"))

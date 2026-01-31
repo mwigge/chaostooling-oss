@@ -2,19 +2,18 @@
 
 import logging
 import os
-from typing import Optional, Tuple, Union
+from typing import Optional
 
 import mysql.connector
 import psycopg2
-from mysql.connector import MySQLConnection
-from psycopg2.extensions import connection
-
 from chaosdb.common.constants import ConnectionDefaults, DatabaseDefaults
 from chaosdb.common.validation import (
     validate_database_name,
     validate_host,
     validate_port,
 )
+from mysql.connector import MySQLConnection
+from psycopg2.extensions import connection
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ def get_postgres_connection_params(
     database: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
-) -> Tuple[str, int, str, str, str]:
+) -> tuple[str, int, str, str, str]:
     """
     Get validated PostgreSQL connection parameters.
 
@@ -126,7 +125,7 @@ def get_mysql_connection_params(
     database: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
-) -> Tuple[str, int, str, str, str]:
+) -> tuple[str, int, str, str, str]:
     """
     Get validated MySQL connection parameters.
 

@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import pyodbc
 from chaosotel import (
@@ -29,7 +29,7 @@ def inject_lock_storm(
     num_threads: int = 10,
     duration_seconds: int = 60,
     table_name: str = "chaos_test_table",
-) -> Dict:
+) -> dict:
     """Inject MSSQL lock storm."""
     host = host or os.getenv("MSSQL_HOST", "localhost")
     port = port or int(os.getenv("MSSQL_PORT", "1433"))

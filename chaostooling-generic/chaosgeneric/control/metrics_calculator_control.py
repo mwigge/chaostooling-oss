@@ -18,7 +18,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from chaosgeneric.data.chaos_db import ChaosDb
 
@@ -32,7 +32,7 @@ class MetricsCalculator:
         """Initialize with optional database connection."""
         self.db = db
 
-    def calculate_risk_score(self, experiment: Dict[str, Any]) -> int:
+    def calculate_risk_score(self, experiment: dict[str, Any]) -> int:
         """
         Calculate risk score based on experiment configuration.
 
@@ -76,7 +76,7 @@ class MetricsCalculator:
 
         return min(score, 255)
 
-    def calculate_complexity_score(self, experiment: Dict[str, Any]) -> int:
+    def calculate_complexity_score(self, experiment: dict[str, Any]) -> int:
         """
         Calculate complexity score based on experiment structure.
 
@@ -122,7 +122,7 @@ class MetricsCalculator:
 
         return min(score, 255)
 
-    def calculate_test_score(self, metrics: List[str]) -> int:
+    def calculate_test_score(self, metrics: list[str]) -> int:
         """
         Calculate test score based on metrics being tested.
 
@@ -190,7 +190,7 @@ class MetricsCalculator:
         else:
             return "critical"
 
-    def extract_test_metrics(self, experiment: Dict[str, Any]) -> List[Dict[str, str]]:
+    def extract_test_metrics(self, experiment: dict[str, Any]) -> list[dict[str, str]]:
         """
         Extract metrics being tested from experiment JSON.
 
@@ -264,9 +264,9 @@ class MetricsCalculator:
 
         return metrics
 
-    def _determine_probe_criticality(self, probe: Dict[str, Any]) -> str:
+    def _determine_probe_criticality(self, probe: dict[str, Any]) -> str:
         """Determine criticality of a probe based on tolerance/description."""
-        tolerance = probe.get("tolerance", False)
+        probe.get("tolerance", False)
         description = probe.get("description", "").lower()
 
         if "error" in description or "fail" in description:
@@ -294,7 +294,7 @@ class MetricsCalculator:
     def save_experiment_metrics(
         self,
         run_id: str,
-        experiment: Dict[str, Any],
+        experiment: dict[str, Any],
         risk_score: int,
         complexity_score: int,
         test_score: int,
@@ -386,7 +386,7 @@ def configure_control():
 # These are the proper hooks into the ChaosToolkit lifecycle
 
 
-def before_experiment_start(context: Dict[str, Any], **kwargs) -> None:
+def before_experiment_start(context: dict[str, Any], **kwargs) -> None:
     """
     Entry point called by ChaosToolkit before experiment starts.
 

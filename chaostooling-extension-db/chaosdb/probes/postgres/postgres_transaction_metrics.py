@@ -1,9 +1,9 @@
+import logging
 from typing import Optional
 
 from chaosdb.probes.postgres.postgres_slow_transactions_status import (
     probe_slow_transactions_status,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 

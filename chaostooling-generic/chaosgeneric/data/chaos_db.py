@@ -17,10 +17,11 @@ Replaces JSON file I/O with PostgreSQL for:
 
 import json
 import logging
-import psycopg2
-from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple
 from contextlib import contextmanager
+from datetime import datetime
+from typing import Any, Optional
+
+import psycopg2
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ class ChaosDb:
             with self._get_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT 1")
-                    logger.info(f"✓ Connected to chaos_platform database")
+                    logger.info("✓ Connected to chaos_platform database")
                     return True
         except Exception as e:
             logger.error(f"Failed to connect to database: {str(e)}")
@@ -108,7 +109,7 @@ class ChaosDb:
     # ========================================================================
 
     def save_baseline_metrics(
-        self, service_name: str, baseline_data: Dict[str, Any]
+        self, service_name: str, baseline_data: dict[str, Any]
     ) -> int:
         """
         Save baseline metrics from SteadyStateAnalyzer.
@@ -192,7 +193,7 @@ class ChaosDb:
             logger.error(f"Failed to save baselines: {str(e)}")
             raise
 
-    def save_slo_targets(self, service_name: str, slo_data: Dict[str, Any]) -> None:
+    def save_slo_targets(self, service_name: str, slo_data: dict[str, Any]) -> None:
         """
         Save SLO targets from SteadyStateAnalyzer.
 
@@ -245,7 +246,7 @@ class ChaosDb:
             logger.error(f"Failed to save SLO targets: {str(e)}")
             raise
 
-    def get_baseline_metrics(self, service_name: str) -> Dict[str, Any]:
+    def get_baseline_metrics(self, service_name: str) -> dict[str, Any]:
         """
         Retrieve latest baseline metrics for a service.
 
@@ -472,7 +473,7 @@ class ChaosDb:
                             cur.execute(
                                 """
                                 INSERT INTO chaos_platform.experiments (
-                                    experiment_id, experiment_name, service_id, 
+                                    experiment_id, experiment_name, service_id,
                                     description, chaos_scenario, status
                                 ) VALUES (%s, %s, %s, %s, %s, %s)
                             """,
@@ -691,7 +692,7 @@ class ChaosDb:
     # ========================================================================
 
     def save_metric_snapshot(
-        self, run_id: int, service_name: str, phase: str, metrics: Dict[str, Any]
+        self, run_id: int, service_name: str, phase: str, metrics: dict[str, Any]
     ) -> int:
         """
         Save metric snapshot during experiment phase.
@@ -748,8 +749,8 @@ class ChaosDb:
             raise
 
     def save_baseline_metrics(
-        self, service_name: str, metrics: Dict[str, Any]
-    ) -> List[int]:
+        self, service_name: str, metrics: dict[str, Any]
+    ) -> list[int]:
         """
         Save baseline metrics (steady state analysis).
         Called during baseline collection to establish reference points.
@@ -864,7 +865,7 @@ class ChaosDb:
     # ========================================================================
 
     def save_experiment_analysis(
-        self, run_id: int, analysis_data: Dict[str, Any]
+        self, run_id: int, analysis_data: dict[str, Any]
     ) -> int:
         """
         Save experiment analysis (RCA, recommendations, compliance).
@@ -944,7 +945,7 @@ class ChaosDb:
     # COMPLIANCE & REPORTING
     # ========================================================================
 
-    def get_compliance_report(self, days: int = 30) -> Dict[str, Any]:
+    def get_compliance_report(self, days: int = 30) -> dict[str, Any]:
         """
         Get compliance summary for last N days.
 
@@ -990,7 +991,7 @@ class ChaosDb:
         entity_type: Optional[str] = None,
         entity_id: Optional[int] = None,
         days: int = 30,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get audit trail for compliance evidence.
 
@@ -1050,7 +1051,7 @@ class ChaosDb:
     # BASELINE LOADER METHODS (Task 1.2-1.5)
     # ========================================================================
 
-    def get_baselines_for_system(self, system: str) -> List[Dict[str, Any]]:
+    def get_baselines_for_system(self, system: str) -> list[dict[str, Any]]:
         """
         Retrieve all baseline metrics for a system/environment.
 
@@ -1065,7 +1066,7 @@ class ChaosDb:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT 
+                        SELECT
                             bm.baseline_id,
                             bm.metric_name,
                             s.service_name,
@@ -1101,7 +1102,7 @@ class ChaosDb:
             logger.error(f"Failed to get baselines for system '{system}': {str(e)}")
             raise
 
-    def get_baselines_for_service(self, service_name: str) -> List[Dict[str, Any]]:
+    def get_baselines_for_service(self, service_name: str) -> list[dict[str, Any]]:
         """
         Retrieve all baseline metrics for a specific service.
 
@@ -1116,7 +1117,7 @@ class ChaosDb:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT 
+                        SELECT
                             bm.baseline_id,
                             bm.metric_name,
                             s.service_name,
@@ -1155,8 +1156,8 @@ class ChaosDb:
             raise
 
     def get_baselines_by_metrics(
-        self, metric_names: List[str], service_name: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, metric_names: list[str], service_name: Optional[str] = None
+    ) -> list[dict[str, Any]]:
         """
         Retrieve specific baseline metrics by name.
 
@@ -1171,7 +1172,7 @@ class ChaosDb:
             with self._get_connection() as conn:
                 with conn.cursor() as cur:
                     query = """
-                        SELECT 
+                        SELECT
                             bm.baseline_id,
                             bm.metric_name,
                             s.service_name,
@@ -1215,8 +1216,8 @@ class ChaosDb:
             raise
 
     def get_baselines_by_labels(
-        self, labels: Dict[str, str], match_all: bool = True
-    ) -> List[Dict[str, Any]]:
+        self, labels: dict[str, str], match_all: bool = True
+    ) -> list[dict[str, Any]]:
         """
         Retrieve baseline metrics matching Grafana labels.
 
@@ -1236,7 +1237,7 @@ class ChaosDb:
             with self._get_connection() as conn:
                 with conn.cursor() as cur:
                     query = """
-                        SELECT 
+                        SELECT
                             bm.baseline_id,
                             bm.metric_name,
                             s.service_name,
@@ -1384,7 +1385,7 @@ class ChaosDb:
 
     def get_baseline_by_metric_and_service(
         self, metric_name: str, service_name: str
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """
         Get baseline for specific metric and service.
 
@@ -1402,7 +1403,7 @@ class ChaosDb:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT 
+                        SELECT
                             baseline_id as metric_id,
                             metric_name,
                             service_name,
@@ -1414,7 +1415,7 @@ class ChaosDb:
                             p50 as percentile_50,
                             p95 as percentile_95,
                             p99 as percentile_99,
-                            p999 as percentile_999,
+                            COALESCE(p999, p99) as percentile_999,
                             upper_bound_2sigma,
                             upper_bound_3sigma,
                             version as baseline_version_id,
@@ -1483,7 +1484,7 @@ class ChaosDb:
         action: str,
         entity_type: str,
         entity_id: int,
-        details: Dict[str, Any],
+        details: dict[str, Any],
     ) -> None:
         """Log audit trail entry."""
         cur.execute(

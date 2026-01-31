@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import redis
 from chaosotel import (
@@ -27,7 +27,7 @@ def inject_slow_operations(
     num_threads: int = 5,
     duration_seconds: int = 60,
     operation_delay_ms: int = 5000,
-) -> Dict:
+) -> dict:
     """Inject slow Redis operations."""
     host = host or os.getenv("REDIS_HOST", "localhost")
     port = port or int(os.getenv("REDIS_PORT", "6379"))

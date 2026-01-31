@@ -12,8 +12,10 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
+
 import requests
+
 from chaosgeneric.data.chaos_db import ChaosDb
 
 logger = logging.getLogger(__name__)
@@ -24,7 +26,7 @@ def _query_grafana(
     query: str,
     datasource_uid: str = "prometheus",
     time_range: str = "5m",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Query Grafana's datasource-agnostic API.
     Works with Prometheus, Mimir, Loki, Tempo, or any Grafana datasource.
@@ -94,7 +96,7 @@ def _query_grafana(
 
 def collect_baseline_snapshot(
     grafana_url: str,
-    metrics: List[str],
+    metrics: list[str],
     service_name: str,
     output_file: str,
     datasource_uid: str = "prometheus",
@@ -103,7 +105,7 @@ def collect_baseline_snapshot(
     phase: str = "pre_chaos",
     db_host: str = "localhost",
     db_port: int = 5434,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Collect a snapshot of metrics from Grafana (datasource-agnostic).
     Works with Prometheus, Mimir, Loki, Tempo, or any Grafana datasource.
@@ -228,7 +230,7 @@ def collect_baseline_snapshot(
                     db.save_baseline_metrics(
                         service_name=service_name, metrics=baseline_metrics
                     )
-                    logger.info(f"[OK] Baseline metrics saved to database")
+                    logger.info("[OK] Baseline metrics saved to database")
                 else:
                     # For regular phases (pre/during/post chaos), save as metric snapshots
                     db.save_metric_snapshot(
@@ -265,7 +267,7 @@ def collect_baseline_snapshot(
             "timestamp": snapshot["timestamp"],
             "phase": phase,
             "metrics_collected": len(snapshot["metrics"]),
-            "output": f"Snapshot saved",
+            "output": "Snapshot saved",
         }
 
     except Exception as e:
@@ -279,7 +281,7 @@ def collect_trace_snapshot(
     output_file: str,
     datasource_uid: str = "tempo",
     time_range: str = "1h",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Collect traces for service via Grafana's datasource-agnostic API.
     Works with Tempo, Jaeger, or any Grafana trace datasource.
@@ -340,7 +342,7 @@ def collect_log_snapshot(
     output_file: str,
     datasource_uid: str = "loki",
     time_range: str = "1h",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Collect logs for service via Grafana's datasource-agnostic API.
     Works with Loki, Elasticsearch, Datadog, or any Grafana log datasource.

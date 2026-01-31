@@ -16,7 +16,7 @@ All decorators automatically use MetricsCore, LogCore, TraceCore, ComplianceCore
 import functools
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 from chaosotel.otel import (
     ensure_initialized,
@@ -39,7 +39,7 @@ def instrument_action(
     target_type: Optional[str] = None,
     severity: str = "medium",
     record_result: bool = False,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
 ) -> Callable:
     """
     Decorator to automatically instrument chaos actions.
@@ -178,7 +178,7 @@ def instrument_probe(
     name: str,
     target_type: Optional[str] = None,
     record_args: bool = False,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
 ) -> Callable:
     """
     Decorator to automatically instrument probes.
@@ -297,7 +297,7 @@ def instrument_probe(
 def instrument_rollback(
     name: str,
     target_type: Optional[str] = None,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
 ) -> Callable:
     """
     Decorator to instrument recovery/rollback actions.
@@ -469,7 +469,7 @@ def record_metric(
 # ============================================================================
 
 
-def track_compliance(regulations: List[str]) -> Callable:
+def track_compliance(regulations: list[str]) -> Callable:
     """
     Decorator to track compliance violations.
 
@@ -605,7 +605,7 @@ class instrumented_section:
             check_integrity()
     """
 
-    def __init__(self, name: str, tags: Optional[Dict[str, str]] = None):
+    def __init__(self, name: str, tags: Optional[dict[str, str]] = None):
         """
         Initialize instrumented section.
 

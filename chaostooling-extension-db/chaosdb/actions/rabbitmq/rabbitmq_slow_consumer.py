@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 import pika
 from chaosotel import (
@@ -30,7 +30,7 @@ def inject_slow_consumer(
     num_consumers: int = 5,
     duration_seconds: int = 60,
     consume_delay_ms: int = 5000,
-) -> Dict:
+) -> dict:
     """Inject slow RabbitMQ consumers to create message backlog."""
     host = host or os.getenv("RABBITMQ_HOST", "localhost")
     port = port or int(os.getenv("RABBITMQ_PORT", "5672"))

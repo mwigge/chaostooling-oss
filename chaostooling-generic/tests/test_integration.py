@@ -14,13 +14,10 @@ Coverage targets:
 Total: 25 integration tests
 """
 
+from datetime import datetime
+
 import pytest
-from datetime import datetime, timedelta
-from typing import Dict
-
 from chaosgeneric.tools.baseline_loader import BaselineLoader
-from chaosgeneric.control.mcp_baseline_control import mcp_baseline_control
-
 
 # ============================================================================
 # DATABASE CONNECTIVITY TESTS (5 tests)
@@ -286,7 +283,7 @@ class TestBaselineDiscoveryIntegration:
     def test_multiple_discovery_methods(self, db_cursor, db_connection):
         """Test all 4 discovery methods in sequence."""
         try:
-            loader = BaselineLoader(db_client=None)
+            BaselineLoader(db_client=None)
 
             # All 4 methods should work
             methods = [
@@ -307,7 +304,6 @@ class TestBaselineDiscoveryIntegration:
         """Test that discovery returns BaselineMetric objects."""
         try:
             loader = BaselineLoader(db_client=None)
-            from chaosgeneric.tools.baseline_loader import BaselineMetric
 
             # Result should be Dict[str, BaselineMetric]
             assert loader is not None
