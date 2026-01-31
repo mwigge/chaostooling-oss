@@ -1,0 +1,73 @@
+# GitHub CODEOWNERS - Define quality responsibility by agent role
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Quality Control Framework & CI/CD
+/docs_local/projects/chaostooling-generic/03-team-coordination/ @orchestrator
+/.github/ @orchestrator
+/pyproject.toml @orchestrator
+/CLAUDE_local.md @orchestrator
+
+# Core Baseline Metrics Framework (CODER responsibility)
+/chaostooling-generic/chaosgeneric/tools/baseline_manager.py @coder
+/chaostooling-generic/chaosgeneric/tools/baseline_manager_phase*.py @coder
+/chaostooling-generic/chaosgeneric/tools/baseline_metrics_*.py @coder
+/chaostooling-generic/chaosgeneric/tools/validate_baseline_metrics.py @coder
+/chaostooling-generic/chaosgeneric/control/ @coder
+/chaostooling-generic/chaosgeneric/data/chaos_db.py @coder @reviewer
+
+# Baseline Analysis Engine (CODER responsibility)
+/chaostooling-generic/chaosgeneric/analysis/ @coder
+/chaostooling-generic/chaosgeneric/discovery/ @coder
+/chaostooling-generic/chaosgeneric/probes/ @coder
+
+# MCP Server (CODER responsibility)
+/chaostooling-generic/chaosgeneric/mcp_*.py @coder
+
+# Testing Suite (TESTER responsibility)
+/chaostooling-generic/tests/ @tester
+/chaostooling-generic/chaosgeneric/tests/ @tester
+/tests/ @tester
+
+# Security & Access Control (REVIEWER responsibility)
+/chaostooling-generic/chaosgeneric/data/ @reviewer
+/chaostooling-generic/chaosgeneric/security/ @reviewer
+/chaostooling-generic/chaosgeneric/auth/ @reviewer
+**/access_control.py @reviewer
+**/permissions.py @reviewer
+**/security.py @reviewer
+
+# Observability & OTEL (CODER responsibility)
+/chaostooling-generic/chaosgeneric/observability/ @coder
+/chaostooling-otel/ @coder
+/docs_local/projects/chaostooling-generic/06-observability/ @indexer
+
+# Database Extensions (CODER responsibility)
+/chaostooling-extension-db/ @coder
+/chaostooling-extension-compute/ @coder
+/chaostooling-extension-network/ @coder
+/chaostooling-extension-app/ @coder
+
+# Reporting Module (CODER responsibility)
+/chaostooling-reporting/ @coder
+
+# Documentation (INDEXER responsibility)
+/docs_local/ @indexer
+/README.md @indexer
+*.md @indexer
+/docs/ @indexer
+/docs_local/projects/chaostooling-generic/01-project-overview/ @indexer
+/docs_local/projects/chaostooling-generic/02-architecture-design/ @indexer
+/docs_local/projects/chaostooling-generic/03-team-coordination/ @orchestrator
+/docs_local/projects/chaostooling-generic/04-testing-suite/ @indexer @tester
+/docs_local/projects/chaostooling-generic/05-documentation-guides/ @indexer
+/docs_local/projects/chaostooling-generic/07-deployment/ @indexer
+/docs_local/projects/chaostooling-generic/08-historical-archive/ @indexer
+
+# Demo & Examples (CODER responsibility)
+/chaostooling-demo/ @coder
+/chaostooling-experiments/ @coder
+
+# Release Notes & Versioning (ORCHESTRATOR responsibility)
+/RELEASE_NOTES*.md @orchestrator
+/CHANGELOG.md @orchestrator
+/VERSION @orchestrator

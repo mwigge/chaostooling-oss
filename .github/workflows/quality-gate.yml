@@ -1,0 +1,250 @@
+name: Quality Gate Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - 'coder/*'
+      - 'tester/*'
+      - 'reviewer/*'
+      - 'indexer/*'
+      - 'orchestrator/*'
+  pull_request:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: '3.9'
+  PIP_CACHE_DIR: ~/.cache/pip
+
+jobs:
+  code-quality:
+    name: Code Quality Gate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Full history for better analysis
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install ruff mypy
+
+      - name: Ruff check (Linting)
+        run: |
+          echo "📝 Running Ruff linting checks..."
+          ruff check . --statistics
+        if: always()
+
+      - name: Ruff format check
+        run: |
+          echo "📝 Checking code formatting..."
+          ruff format --check .
+        if: always()
+
+      - name: MyPy type check
+        run: |
+          echo "🔍 Running MyPy type checking..."
+          mypy chaostooling-generic/ --config-file pyproject.toml
+        if: always()
+
+  security:
+    name: Security Gate
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install bandit
+
+      - name: Bandit security scan
+        run: |
+          echo "🔐 Running Bandit security scan..."
+          bandit -r chaostooling-generic/ -ll -f json -o bandit-report.json || true
+          echo ""
+          echo "Security Scan Complete"
+        if: always()
+
+      - name: Check for HIGH severity issues
+        run: |
+          echo "🔍 Checking for HIGH severity issues..."
+          if grep -q '"severity": "HIGH"' bandit-report.json 2>/dev/null; then
+            echo "❌ HIGH severity security issues found!"
+            echo ""
+            grep -B5 -A5 '"severity": "HIGH"' bandit-report.json || true
+            exit 1
+          else
+            echo "✅ No HIGH severity security issues found"
+          fi
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v3
+        with:
+          name: bandit-report
+          path: bandit-report.json
+        if: always()
+
+  testing:
+    name: Testing Gate
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest pytest-cov
+
+      - name: PyTest with coverage
+        run: |
+          echo "🧪 Running PyTest with coverage analysis..."
+          pytest tests/ chaostooling-generic/tests/ -v \
+            --cov=chaostooling-generic \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=95 \
+            --tb=short
+        if: always()
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: true
+        if: always()
+
+  final-check:
+    name: Final Quality Check ✅
+    runs-on: ubuntu-latest
+    needs: [code-quality, security, testing]
+    if: always()
+    steps:
+      - name: Check all gates passed
+        run: |
+          echo "🎯 Quality Gate Summary"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          CODE_QUALITY="${{ needs.code-quality.result }}"
+          SECURITY="${{ needs.security.result }}"
+          TESTING="${{ needs.testing.result }}"
+          
+          echo "Code Quality: $CODE_QUALITY"
+          echo "Security:     $SECURITY"
+          echo "Testing:      $TESTING"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          if [ "$CODE_QUALITY" != "success" ] || \
+             [ "$SECURITY" != "success" ] || \
+             [ "$TESTING" != "success" ]; then
+            echo ""
+            echo "❌ Quality gates FAILED!"
+            echo ""
+            if [ "$CODE_QUALITY" != "success" ]; then
+              echo "   • Code Quality Gate: FAILED"
+              echo "     Fix: Run ruff check --fix . && ruff format ."
+            fi
+            if [ "$SECURITY" != "success" ]; then
+              echo "   • Security Gate: FAILED"
+              echo "     Fix: Review bandit report and fix vulnerabilities"
+            fi
+            if [ "$TESTING" != "success" ]; then
+              echo "   • Testing Gate: FAILED"
+              echo "     Fix: Fix failing tests or add missing coverage"
+            fi
+            exit 1
+          else
+            echo ""
+            echo "✅ All quality gates PASSED!"
+            echo ""
+            echo "🎉 Ready to merge!"
+          fi
+
+  notify:
+    name: Notify Build Status
+    runs-on: ubuntu-latest
+    needs: [code-quality, security, testing, final-check]
+    if: always()
+    steps:
+      - name: Determine status
+        run: |
+          if [ "${{ needs.final-check.result }}" = "success" ]; then
+            echo "✅ BUILD SUCCESSFUL - All quality gates passed"
+            echo "status=success" >> $GITHUB_ENV
+          else
+            echo "❌ BUILD FAILED - Quality gate check failed"
+            echo "status=failure" >> $GITHUB_ENV
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const status = process.env.status;
+            const codeQuality = '${{ needs.code-quality.result }}';
+            const security = '${{ needs.security.result }}';
+            const testing = '${{ needs.testing.result }}';
+            
+            let comment = '## Quality Gate Report\n\n';
+            comment += `| Gate | Status |\n`;
+            comment += `|------|--------|\n`;
+            comment += `| Code Quality | ${codeQuality === 'success' ? '✅ Pass' : '❌ Fail'} |\n`;
+            comment += `| Security | ${security === 'success' ? '✅ Pass' : '❌ Fail'} |\n`;
+            comment += `| Testing | ${testing === 'success' ? '✅ Pass' : '❌ Fail'} |\n\n`;
+            
+            if (status === 'failure') {
+              comment += '### 🚀 Next Steps\n';
+              if (codeQuality !== 'success') {
+                comment += '- Fix code quality issues: `ruff check --fix . && ruff format .`\n';
+              }
+              if (security !== 'success') {
+                comment += '- Review and fix security vulnerabilities (check Bandit report)\n';
+              }
+              if (testing !== 'success') {
+                comment += '- Fix failing tests or add missing coverage (target: 95%+)\n';
+              }
+            } else {
+              comment += '### ✅ All Checks Passed!\n';
+              comment += 'This PR is ready for code review and merging.';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
