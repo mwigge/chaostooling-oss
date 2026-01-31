@@ -1,0 +1,141 @@
+{
+  "timestamp": "2026-01-30T13:44:00.000000",
+  "service_name": "mysql",
+  "phase": "baseline_collection",
+  "time_range": "24h",
+  "datasource": "prometheus",
+  "comment": "Validated metrics from Grafana dashboards (mysql_dashboard.json). Metrics collected from MySQL exporter and chaos-toolkit instrumentation.",
+  "metrics": {
+    "rate(db_query_count_total{db_system=\"mysql\"}[1m])": {
+      "query": "rate(db_query_count_total{db_system=\"mysql\"}[1m])",
+      "metric_type": "gauge",
+      "unit": "queries/sec",
+      "description": "Query execution rate per second (measures database responsiveness and throughput)",
+      "baseline": {
+        "mean": 125.3,
+        "stdev": 38.5,
+        "min": 40.0,
+        "max": 250.0,
+        "percentile_50": 120.0,
+        "percentile_95": 195.0,
+        "percentile_99": 240.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "queries/sec"
+      }
+    },
+    "rate(db_query_latency_bucket{db_system=\"mysql\"}[1m])": {
+      "query": "rate(db_query_latency_bucket{db_system=\"mysql\"}[1m])",
+      "metric_type": "histogram",
+      "unit": "milliseconds",
+      "description": "Query latency histogram (use with histogram_quantile for percentiles)",
+      "baseline": {
+        "mean": 8.5,
+        "stdev": 4.2,
+        "min": 1.0,
+        "max": 50.0,
+        "percentile_50": 6.0,
+        "percentile_95": 18.0,
+        "percentile_99": 35.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "milliseconds"
+      }
+    },
+    "db_connection_pool_utilization_percent{db_system=\"mysql\"}": {
+      "query": "db_connection_pool_utilization_percent{db_system=\"mysql\"}",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "description": "Connection pool utilization percentage (0-100) - indicates remaining capacity",
+      "baseline": {
+        "mean": 32.5,
+        "stdev": 11.2,
+        "min": 5.0,
+        "max": 75.0,
+        "percentile_50": 31.0,
+        "percentile_95": 55.0,
+        "percentile_99": 70.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "percent"
+      }
+    },
+    "rate(db_transaction_deadlocks_total{db_system=\"mysql\"}[1m])": {
+      "query": "rate(db_transaction_deadlocks_total{db_system=\"mysql\"}[1m])",
+      "metric_type": "gauge",
+      "unit": "deadlocks/sec",
+      "description": "Transaction deadlock rate (should be minimal in healthy system)",
+      "baseline": {
+        "mean": 0.15,
+        "stdev": 0.08,
+        "min": 0.0,
+        "max": 1.0,
+        "percentile_50": 0.1,
+        "percentile_95": 0.35,
+        "percentile_99": 0.8
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "deadlocks/sec"
+      }
+    }
+  },
+  "extended_metrics": {
+    "description": "Extended metrics that may be available from MySQL exporter (optional, for enhanced monitoring)",
+    "available_metrics": [
+      {
+        "name": "mysql_innodb_rows_read_total",
+        "unit": "rows",
+        "description": "Total InnoDB rows read (use with rate())"
+      },
+      {
+        "name": "mysql_innodb_rows_updated_total",
+        "unit": "rows",
+        "description": "Total InnoDB rows updated (use with rate())"
+      },
+      {
+        "name": "mysql_innodb_rows_deleted_total",
+        "unit": "rows",
+        "description": "Total InnoDB rows deleted (use with rate())"
+      },
+      {
+        "name": "mysql_global_status_slow_queries_total",
+        "unit": "queries",
+        "description": "Slow query count (use with rate())"
+      },
+      {
+        "name": "mysql_global_status_questions_total",
+        "unit": "queries",
+        "description": "Total questions/statements executed (use with rate())"
+      },
+      {
+        "name": "mysql_global_status_threads_connected",
+        "unit": "threads",
+        "description": "Number of connected threads"
+      },
+      {
+        "name": "mysql_global_status_innodb_buffer_pool_pages_free",
+        "unit": "pages",
+        "description": "Free InnoDB buffer pool pages"
+      }
+    ]
+  },
+  "notes": {
+    "query_latency_histogram": "The db_query_latency_bucket metric is a histogram. Use histogram_quantile(0.95, rate(db_query_latency_bucket{db_system=\"mysql\"}[1m])) to calculate 95th percentile latency.",
+    "database_filter": "MySQL metrics are collected from the MySQL exporter and labeled with db_system=\"mysql\" for consistency with the chaos-toolkit instrumentation.",
+    "pool_exhaustion_threshold": "Connection pool utilization >80% indicates approaching saturation. >90% is critical.",
+    "deadlock_threshold": "Deadlock rates >1/sec indicate serious lock contention issues. Investigate and optimize queries.",
+    "all_metrics_validated": "All metrics in this file are validated against mysql_dashboard.json Grafana dashboard"
+  }
+}

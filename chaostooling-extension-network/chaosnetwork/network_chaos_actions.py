@@ -21,12 +21,13 @@ logger = logging.getLogger("chaosnetwork")
 
 class NetworkChaosError(Exception):
     """Base exception for network chaos errors."""
+
     pass
 
 
 class LinuxNetworkChaos:
     """Linux-based network chaos using tc (traffic control) and iptables."""
-    
+
     @staticmethod
     def _ensure_tc() -> None:
         """Ensure tc is installed."""
@@ -36,234 +37,255 @@ class LinuxNetworkChaos:
             raise NetworkChaosError(
                 "tc not found. Install with: apt-get install iproute2"
             )
-    
+
     @staticmethod
     def _get_interface(interface: Optional[str] = None) -> str:
         """Get network interface, default to eth0 or first available."""
         if interface:
             return interface
-        
+
         # Try common interface names
         for iface in ["eth0", "en0", "wlan0", "ens0"]:
             try:
                 subprocess.run(
-                    ["ip", "link", "show", iface],
-                    capture_output=True,
-                    check=True
+                    ["ip", "link", "show", iface], capture_output=True, check=True
                 )
                 return iface
             except:
                 continue
-        
+
         raise NetworkChaosError("Could not detect network interface")
-    
+
     @staticmethod
     def inject_latency(
         latency_ms: int = 100,
         jitter_ms: int = 10,
         duration_seconds: int = 60,
-        interface: Optional[str] = None
+        interface: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Inject network latency using tc (qdisc).
-        
+
         Args:
             latency_ms: Latency in milliseconds
             jitter_ms: Jitter variation in milliseconds
             duration_seconds: Duration of injection
             interface: Network interface (auto-detect if None)
-        
+
         Returns:
             Dict with injection metrics
         """
         try:
             LinuxNetworkChaos._ensure_tc()
             interface = LinuxNetworkChaos._get_interface(interface)
-            
+
             # Create qdisc with netem (network emulation)
             cmd = [
-                "tc", "qdisc", "add", "dev", interface, "root", "netem",
-                "delay", f"{latency_ms}ms",
-                f"{jitter_ms}ms"
+                "tc",
+                "qdisc",
+                "add",
+                "dev",
+                interface,
+                "root",
+                "netem",
+                "delay",
+                f"{latency_ms}ms",
+                f"{jitter_ms}ms",
             ]
-            
-            logger.info(f"Injecting {latency_ms}ms latency (±{jitter_ms}ms) on {interface}")
+
+            logger.info(
+                f"Injecting {latency_ms}ms latency (±{jitter_ms}ms) on {interface}"
+            )
             subprocess.run(cmd, check=True, capture_output=True)
-            
+
             # Wait for duration
             time.sleep(duration_seconds)
-            
+
             # Remove qdisc
             subprocess.run(
                 ["tc", "qdisc", "del", "dev", interface, "root"],
                 check=True,
-                capture_output=True
+                capture_output=True,
             )
-            
+
             logger.info(f"Latency injection completed on {interface}")
-            
+
             return {
                 "status": "completed",
                 "interface": interface,
                 "latency_ms": latency_ms,
                 "jitter_ms": jitter_ms,
-                "duration_seconds": duration_seconds
+                "duration_seconds": duration_seconds,
             }
         except Exception as e:
             # Cleanup on error
             try:
                 subprocess.run(
                     ["tc", "qdisc", "del", "dev", interface, "root"],
-                    capture_output=True
+                    capture_output=True,
                 )
             except:
                 pass
-            
+
             logger.error(f"Latency injection failed: {e}")
             raise NetworkChaosError(f"Latency injection failed: {e}")
-    
+
     @staticmethod
     def inject_packet_loss(
         loss_percent: float = 5.0,
         duration_seconds: int = 60,
-        interface: Optional[str] = None
+        interface: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Inject packet loss using tc.
-        
+
         Args:
             loss_percent: Percentage of packets to drop (0-100)
             duration_seconds: Duration of injection
             interface: Network interface
-        
+
         Returns:
             Dict with injection metrics
         """
         try:
             LinuxNetworkChaos._ensure_tc()
             interface = LinuxNetworkChaos._get_interface(interface)
-            
+
             if loss_percent < 0 or loss_percent > 100:
                 raise NetworkChaosError("Loss percent must be 0-100")
-            
+
             # Create qdisc with packet loss
             cmd = [
-                "tc", "qdisc", "add", "dev", interface, "root", "netem",
-                "loss", f"{loss_percent}%"
+                "tc",
+                "qdisc",
+                "add",
+                "dev",
+                interface,
+                "root",
+                "netem",
+                "loss",
+                f"{loss_percent}%",
             ]
-            
+
             logger.info(f"Injecting {loss_percent}% packet loss on {interface}")
             subprocess.run(cmd, check=True, capture_output=True)
-            
+
             # Wait for duration
             time.sleep(duration_seconds)
-            
+
             # Remove qdisc
             subprocess.run(
                 ["tc", "qdisc", "del", "dev", interface, "root"],
                 check=True,
-                capture_output=True
+                capture_output=True,
             )
-            
+
             logger.info(f"Packet loss injection completed on {interface}")
-            
+
             return {
                 "status": "completed",
                 "interface": interface,
                 "loss_percent": loss_percent,
-                "duration_seconds": duration_seconds
+                "duration_seconds": duration_seconds,
             }
         except Exception as e:
             # Cleanup on error
             try:
                 subprocess.run(
                     ["tc", "qdisc", "del", "dev", interface, "root"],
-                    capture_output=True
+                    capture_output=True,
                 )
             except:
                 pass
-            
+
             logger.error(f"Packet loss injection failed: {e}")
             raise NetworkChaosError(f"Packet loss injection failed: {e}")
-    
+
     @staticmethod
     def limit_bandwidth(
-        rate_mbps: int = 10,
-        duration_seconds: int = 60,
-        interface: Optional[str] = None
+        rate_mbps: int = 10, duration_seconds: int = 60, interface: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Limit bandwidth using tc.
-        
+
         Args:
             rate_mbps: Bandwidth limit in Mbps
             duration_seconds: Duration of limitation
             interface: Network interface
-        
+
         Returns:
             Dict with injection metrics
         """
         try:
             LinuxNetworkChaos._ensure_tc()
             interface = LinuxNetworkChaos._get_interface(interface)
-            
+
             if rate_mbps <= 0:
                 raise NetworkChaosError("Rate must be positive")
-            
+
             rate_kbps = rate_mbps * 1000
-            
+
             # Create qdisc with rate limiting
             cmd = [
-                "tc", "qdisc", "add", "dev", interface, "root", "tbf",
-                "rate", f"{rate_kbps}kbit",
-                "burst", f"{rate_kbps}kbit",
-                "latency", "400ms"
+                "tc",
+                "qdisc",
+                "add",
+                "dev",
+                interface,
+                "root",
+                "tbf",
+                "rate",
+                f"{rate_kbps}kbit",
+                "burst",
+                f"{rate_kbps}kbit",
+                "latency",
+                "400ms",
             ]
-            
+
             logger.info(f"Limiting bandwidth to {rate_mbps}Mbps on {interface}")
             subprocess.run(cmd, check=True, capture_output=True)
-            
+
             # Wait for duration
             time.sleep(duration_seconds)
-            
+
             # Remove qdisc
             subprocess.run(
                 ["tc", "qdisc", "del", "dev", interface, "root"],
                 check=True,
-                capture_output=True
+                capture_output=True,
             )
-            
+
             logger.info(f"Bandwidth limitation completed on {interface}")
-            
+
             return {
                 "status": "completed",
                 "interface": interface,
                 "rate_mbps": rate_mbps,
-                "duration_seconds": duration_seconds
+                "duration_seconds": duration_seconds,
             }
         except Exception as e:
             # Cleanup on error
             try:
                 subprocess.run(
                     ["tc", "qdisc", "del", "dev", interface, "root"],
-                    capture_output=True
+                    capture_output=True,
                 )
             except:
                 pass
-            
+
             logger.error(f"Bandwidth limitation failed: {e}")
             raise NetworkChaosError(f"Bandwidth limitation failed: {e}")
 
 
 class WindowsNetworkChaos:
     """Windows-based network chaos using netsh or built-in tools."""
-    
+
     @staticmethod
     def inject_latency(
         latency_ms: int = 100,
         jitter_ms: int = 10,
         duration_seconds: int = 60,
-        interface: Optional[str] = None
+        interface: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Inject latency on Windows using NetLimiter or netsh.
@@ -282,33 +304,33 @@ class WindowsNetworkChaos:
                 Write-Error "NetLimiter not installed or admin privileges required"
             }}
             """
-            
+
             logger.info(f"Injecting {latency_ms}ms latency on Windows")
-            
+
             process = subprocess.Popen(
                 ["powershell", "-Command", ps_script],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
-            
+
             stdout, stderr = process.communicate(timeout=duration_seconds + 10)
-            
+
             return {
                 "status": "completed",
                 "latency_ms": latency_ms,
                 "jitter_ms": jitter_ms,
                 "duration_seconds": duration_seconds,
-                "exit_code": process.returncode
+                "exit_code": process.returncode,
             }
         except Exception as e:
             logger.error(f"Latency injection failed: {e}")
             raise NetworkChaosError(f"Latency injection failed: {e}")
-    
+
     @staticmethod
     def inject_packet_loss(
         loss_percent: float = 5.0,
         duration_seconds: int = 60,
-        interface: Optional[str] = None
+        interface: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Inject packet loss on Windows.
@@ -326,32 +348,30 @@ class WindowsNetworkChaos:
                 Write-Error "NetLimiter not installed or admin privileges required"
             }}
             """
-            
+
             logger.info(f"Injecting {loss_percent}% packet loss on Windows")
-            
+
             process = subprocess.Popen(
                 ["powershell", "-Command", ps_script],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
-            
+
             stdout, stderr = process.communicate(timeout=duration_seconds + 10)
-            
+
             return {
                 "status": "completed",
                 "loss_percent": loss_percent,
                 "duration_seconds": duration_seconds,
-                "exit_code": process.returncode
+                "exit_code": process.returncode,
             }
         except Exception as e:
             logger.error(f"Packet loss injection failed: {e}")
             raise NetworkChaosError(f"Packet loss injection failed: {e}")
-    
+
     @staticmethod
     def limit_bandwidth(
-        rate_mbps: int = 10,
-        duration_seconds: int = 60,
-        interface: Optional[str] = None
+        rate_mbps: int = 10, duration_seconds: int = 60, interface: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Limit bandwidth on Windows.
@@ -369,22 +389,22 @@ class WindowsNetworkChaos:
                 Write-Error "NetLimiter not installed or admin privileges required"
             }}
             """
-            
+
             logger.info(f"Limiting bandwidth to {rate_mbps}Mbps on Windows")
-            
+
             process = subprocess.Popen(
                 ["powershell", "-Command", ps_script],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
-            
+
             stdout, stderr = process.communicate(timeout=duration_seconds + 10)
-            
+
             return {
                 "status": "completed",
                 "rate_mbps": rate_mbps,
                 "duration_seconds": duration_seconds,
-                "exit_code": process.returncode
+                "exit_code": process.returncode,
             }
         except Exception as e:
             logger.error(f"Bandwidth limitation failed: {e}")
@@ -406,15 +426,16 @@ def get_network_chaos() -> LinuxNetworkChaos or WindowsNetworkChaos:
 # Chaos Toolkit Actions (callable from experiments)
 # ============================================================================
 
+
 def inject_latency(
     latency_ms: int = 100,
     jitter_ms: int = 10,
     duration_seconds: int = 60,
-    interface: Optional[str] = None
+    interface: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Inject network latency.
-    
+
     Usage in experiment:
         {
             "type": "action",
@@ -441,11 +462,11 @@ def inject_latency(
 def inject_packet_loss(
     loss_percent: float = 5.0,
     duration_seconds: int = 60,
-    interface: Optional[str] = None
+    interface: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Inject packet loss.
-    
+
     Usage in experiment:
         {
             "type": "action",
@@ -461,7 +482,9 @@ def inject_packet_loss(
             }
         }
     """
-    logger.info(f"[NETWORK] Injecting {loss_percent}% packet loss for {duration_seconds}s")
+    logger.info(
+        f"[NETWORK] Injecting {loss_percent}% packet loss for {duration_seconds}s"
+    )
     chaos = get_network_chaos()
     result = chaos.inject_packet_loss(loss_percent, duration_seconds, interface)
     logger.info(f"[NETWORK] Packet loss injection completed")
@@ -469,13 +492,11 @@ def inject_packet_loss(
 
 
 def limit_bandwidth(
-    rate_mbps: int = 10,
-    duration_seconds: int = 60,
-    interface: Optional[str] = None
+    rate_mbps: int = 10, duration_seconds: int = 60, interface: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Limit network bandwidth.
-    
+
     Usage in experiment:
         {
             "type": "action",
@@ -491,7 +512,9 @@ def limit_bandwidth(
             }
         }
     """
-    logger.info(f"[NETWORK] Limiting bandwidth to {rate_mbps}Mbps for {duration_seconds}s")
+    logger.info(
+        f"[NETWORK] Limiting bandwidth to {rate_mbps}Mbps for {duration_seconds}s"
+    )
     chaos = get_network_chaos()
     result = chaos.limit_bandwidth(rate_mbps, duration_seconds, interface)
     logger.info(f"[NETWORK] Bandwidth limitation completed")

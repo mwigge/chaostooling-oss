@@ -9,6 +9,13 @@
   ],
   "controls": [
     {
+      "name": "experiment-orchestrator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.experiment_orchestrator_control"
+      }
+    },
+    {
       "name": "env-loader",
       "provider": {
         "type": "python",
@@ -16,7 +23,25 @@
       }
     },
     {
-      "name": "chaosotel",
+      "name": "database-storage",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_storage_control"
+      }
+    },
+    {
+      "name": "database-display",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_display_control",
+        "arguments": {
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}"
+        }
+      }
+    },
+    {
+      "name": "opentelemetry",
       "provider": {
         "type": "python",
         "module": "chaosotel.control"
@@ -28,9 +53,26 @@
         "type": "python",
         "module": "chaostooling_reporting.control"
       }
+    },
+    {
+      "name": "metrics-calculator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.metrics_calculator_control"
+      }
     }
   ],
   "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "postgres-vacuum-delay-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
     "postgres_host": {
       "type": "env",
       "key": "POSTGRES_HOST",
@@ -55,31 +97,165 @@
       "type": "env",
       "key": "POSTGRES_PASSWORD",
       "default": "postgres"
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
     }
+  },
+  "baseline_config": {
+    "metadata": {
+      "version": "1.0",
+      "created": "2026-01-31",
+      "service": "postgres",
+      "description": "Baseline metrics configuration for postgres vacuum delay chaos experiment"
+    },
+    "discovery": {
+      "method": "system",
+      "system_id": "postgres",
+      "service_name": "postgres"
+    },
+    "default_thresholds": {
+      "sigma_threshold": 2.0,
+      "critical_sigma": 3.0,
+      "enable_anomaly_detection": true,
+      "anomaly_method": "zscore"
+    },
+    "data_validation": {
+      "max_age_days": 30,
+      "min_quality_score": 75,
+      "require_statistical_significance": true
+    },
+    "metrics": [
+      {
+        "metric_id": 8001,
+        "metric_name": "rate(pg_stat_database_vacuum_count[5m])",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 2.8,
+          "stddev_value": 0.85,
+          "min_value": 0.5,
+          "max_value": 6.2,
+          "percentile_50": 2.6,
+          "percentile_95": 4.5,
+          "percentile_99": 5.8,
+          "quality_score": 90
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 1.1,
+          "warning_upper": 4.5,
+          "critical_lower": 0.25,
+          "critical_upper": 5.35
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-vacuum-frequency"],
+        "notes": "Rate of vacuum operations per minute. Decreases when vacuum is delayed or starved."
+      },
+      {
+        "metric_id": 8002,
+        "metric_name": "pg_stat_progress_vacuum_heap_scanned_bytes",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 5200000.0,
+          "stddev_value": 1800000.0,
+          "min_value": 500000.0,
+          "max_value": 12500000.0,
+          "percentile_50": 4900000.0,
+          "percentile_95": 8800000.0,
+          "percentile_99": 10700000.0,
+          "quality_score": 88
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 1600000.0,
+          "warning_upper": 8800000.0,
+          "critical_lower": -200000.0,
+          "critical_upper": 10600000.0
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.88
+        },
+        "status": "active",
+        "used_in_probes": ["check-vacuum-progress"],
+        "notes": "Heap scanned during vacuum operations. Reflects vacuum starvation when low."
+      },
+      {
+        "metric_id": 8003,
+        "metric_name": "rate(pg_stat_database_analyze_count[5m])",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 1.2,
+          "stddev_value": 0.45,
+          "min_value": 0.1,
+          "max_value": 3.8,
+          "percentile_50": 1.1,
+          "percentile_95": 2.1,
+          "percentile_99": 2.9,
+          "quality_score": 87
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 0.3,
+          "warning_upper": 2.1,
+          "critical_lower": -0.15,
+          "critical_upper": 2.55
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.89
+        },
+        "status": "active",
+        "used_in_probes": ["check-analyze-rate"],
+        "notes": "Rate of analyze operations per minute. Correlates with vacuum activity."
+      }
+    ]
   },
   "steady-state-hypothesis": {
     "title": "Dead Tuples are low",
     "probes": [
       {
         "type": "probe",
-        "name": "check-dead-tuples",
-        "tolerance": {
-          "type": "range",
-          "range": [
-            0,
-            1000
-          ]
-        },
+        "name": "check-vacuum-frequency",
+        "tolerance": true,
         "provider": {
           "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_system_metrics",
-          "func": "collect_postgres_system_metrics",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
           "arguments": {
-            "host": "${postgres_host}",
-            "port": "${postgres_port}",
-            "database": "${postgres_db}",
-            "user": "${postgres_user}",
-            "password": "${postgres_password}"
+            "metric_name": "increase(postgresql_table_vacuum_count_total[5m])",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Vacuum frequency within 2-sigma of baseline",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "pauses": {

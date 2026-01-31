@@ -1,4 +1,12 @@
 """
+DEPRECATED: This module has been merged into baseline_manager.py
+
+Please use baseline_manager.py instead:
+    python tools/baseline_manager.py analyze --period 14d --output-dir ./analysis
+
+This file is kept for backward compatibility and will be removed in a future release.
+
+Legacy documentation:
 Steady State Analyzer - Step 1 of Chaos Engineering Workflow
 
 This module analyzes historical observability data to establish:
@@ -13,6 +21,7 @@ Used to initialize the chaos platform and detect deviations during experiments.
 
 import json
 import logging
+import warnings
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Tuple
 import statistics
@@ -21,11 +30,18 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+# Show deprecation warning
+warnings.warn(
+    "steady_state_analyzer.py is deprecated. Use 'tools/baseline_manager.py analyze' instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 
 class SteadyStateAnalyzer:
     """
     Analyze historical data to define system steady state.
-    
+
     This is Step 1 of the chaos engineering workflow.
     Outputs:
     - baseline_metrics.json (per-service metric statistics)
@@ -46,14 +62,14 @@ class SteadyStateAnalyzer:
         self.loki_url = loki_url
         self.analysis_period_days = analysis_period_days
         self.analysis_end_time = datetime.utcnow()
-        self.analysis_start_time = (
-            self.analysis_end_time - timedelta(days=analysis_period_days)
+        self.analysis_start_time = self.analysis_end_time - timedelta(
+            days=analysis_period_days
         )
 
     def analyze(self) -> Dict:
         """
         Execute full steady state analysis.
-        
+
         Returns:
             Dictionary containing:
             - baseline_metrics
@@ -65,9 +81,7 @@ class SteadyStateAnalyzer:
         logger.info(
             f"Starting steady state analysis for {self.analysis_period_days} days"
         )
-        logger.info(
-            f"Period: {self.analysis_start_time} to {self.analysis_end_time}"
-        )
+        logger.info(f"Period: {self.analysis_start_time} to {self.analysis_end_time}")
 
         # Phase 1: Collect and normalize data
         metrics_data = self._collect_metrics()
@@ -81,9 +95,7 @@ class SteadyStateAnalyzer:
         anomaly_thresholds = self._calculate_anomaly_thresholds(baselines)
 
         # Phase 3: Generate report
-        report = self._generate_report(
-            baselines, slos, topology, anomaly_thresholds
-        )
+        report = self._generate_report(baselines, slos, topology, anomaly_thresholds)
 
         return {
             "baseline_metrics": baselines,
@@ -175,7 +187,7 @@ class SteadyStateAnalyzer:
     def _calculate_baselines(self, metrics_data: Dict) -> Dict:
         """
         Calculate baseline statistics for each metric and service.
-        
+
         For each metric:
         - Mean (μ)
         - Standard deviation (σ)
@@ -201,9 +213,7 @@ class SteadyStateAnalyzer:
                             "mean": statistics.mean(values),
                             "median": statistics.median(values),
                             "stdev": (
-                                statistics.stdev(values)
-                                if len(values) > 1
-                                else 0
+                                statistics.stdev(values) if len(values) > 1 else 0
                             ),
                             "min": min(values),
                             "max": max(values),
@@ -267,7 +277,7 @@ class SteadyStateAnalyzer:
     def _analyze_service_topology(self, trace_data: Dict) -> Dict:
         """
         Analyze service topology from traces.
-        
+
         Identifies:
         - Service call graph
         - Critical paths
@@ -300,7 +310,7 @@ class SteadyStateAnalyzer:
     def _calculate_anomaly_thresholds(self, baselines: Dict) -> Dict:
         """
         Calculate dynamic anomaly detection thresholds.
-        
+
         Using: mean ± (2 * stdev) for each metric
         """
         logger.info("Calculating anomaly thresholds...")
@@ -380,9 +390,7 @@ class SteadyStateAnalyzer:
 
         return findings
 
-    def _generate_recommendations(
-        self, baselines: Dict, topology: Dict
-    ) -> List[str]:
+    def _generate_recommendations(self, baselines: Dict, topology: Dict) -> List[str]:
         """Generate improvement recommendations"""
         recommendations = []
 
@@ -408,8 +416,7 @@ class SteadyStateAnalyzer:
     def _estimate_data_quality(self, baselines: Dict) -> Dict:
         """Estimate quality of collected data"""
         total_metrics = sum(
-            sum(1 for _ in services.values())
-            for services in baselines.values()
+            sum(1 for _ in services.values()) for services in baselines.values()
         )
 
         return {

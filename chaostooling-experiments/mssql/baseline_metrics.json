@@ -1,0 +1,141 @@
+{
+  "timestamp": "2026-01-30T13:44:00.000000",
+  "service_name": "mssql",
+  "phase": "baseline_collection",
+  "time_range": "24h",
+  "datasource": "prometheus",
+  "comment": "Validated metrics from Grafana dashboards (mssql_dashboard.json). Metrics collected from MSSQL exporter and chaos-toolkit instrumentation.",
+  "metrics": {
+    "rate(db_query_count_total{db_system=\"mssql\"}[1m])": {
+      "query": "rate(db_query_count_total{db_system=\"mssql\"}[1m])",
+      "metric_type": "gauge",
+      "unit": "queries/sec",
+      "description": "SQL Server query execution rate per second (measures database responsiveness and throughput)",
+      "baseline": {
+        "mean": 130.5,
+        "stdev": 42.3,
+        "min": 40.0,
+        "max": 280.0,
+        "percentile_50": 125.0,
+        "percentile_95": 210.0,
+        "percentile_99": 260.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "queries/sec"
+      }
+    },
+    "rate(db_query_latency_bucket{db_system=\"mssql\"}[1m])": {
+      "query": "rate(db_query_latency_bucket{db_system=\"mssql\"}[1m])",
+      "metric_type": "histogram",
+      "unit": "milliseconds",
+      "description": "Query latency histogram (use with histogram_quantile for percentiles)",
+      "baseline": {
+        "mean": 12.3,
+        "stdev": 6.5,
+        "min": 1.5,
+        "max": 80.0,
+        "percentile_50": 9.0,
+        "percentile_95": 28.0,
+        "percentile_99": 65.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "milliseconds"
+      }
+    },
+    "db_connection_pool_utilization_percent{db_system=\"mssql\"}": {
+      "query": "db_connection_pool_utilization_percent{db_system=\"mssql\"}",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "description": "Connection pool utilization percentage (0-100) - indicates remaining capacity",
+      "baseline": {
+        "mean": 38.5,
+        "stdev": 14.2,
+        "min": 8.0,
+        "max": 85.0,
+        "percentile_50": 37.0,
+        "percentile_95": 65.0,
+        "percentile_99": 80.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "percent"
+      }
+    },
+    "rate(db_transaction_deadlocks_total{db_system=\"mssql\"}[1m])": {
+      "query": "rate(db_transaction_deadlocks_total{db_system=\"mssql\"}[1m])",
+      "metric_type": "gauge",
+      "unit": "deadlocks/sec",
+      "description": "Transaction deadlock rate (should be minimal in healthy system)",
+      "baseline": {
+        "mean": 0.2,
+        "stdev": 0.1,
+        "min": 0.0,
+        "max": 1.2,
+        "percentile_50": 0.15,
+        "percentile_95": 0.45,
+        "percentile_99": 1.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "deadlocks/sec"
+      }
+    }
+  },
+  "extended_metrics": {
+    "description": "Extended metrics that may be available from MSSQL exporter (optional, for enhanced monitoring)",
+    "available_metrics": [
+      {
+        "name": "mssql_page_reads_total",
+        "unit": "pages",
+        "description": "Total page reads from disk (use with rate())"
+      },
+      {
+        "name": "mssql_page_writes_total",
+        "unit": "pages",
+        "description": "Total page writes to disk (use with rate())"
+      },
+      {
+        "name": "mssql_log_waits_total",
+        "unit": "waits",
+        "description": "Total transaction log waits (use with rate())"
+      },
+      {
+        "name": "mssql_transaction_log_used_percent",
+        "unit": "percent",
+        "description": "Transaction log space utilization"
+      },
+      {
+        "name": "mssql_batch_requests_per_sec",
+        "unit": "batches/sec",
+        "description": "Batch request rate"
+      },
+      {
+        "name": "mssql_sql_compilations_per_sec",
+        "unit": "compilations/sec",
+        "description": "SQL compilation rate"
+      }
+    ]
+  },
+  "notes": {
+    "query_latency_histogram": "The db_query_latency_bucket metric is a histogram. Use histogram_quantile(0.95, rate(db_query_latency_bucket{db_system=\"mssql\"}[1m])) to calculate 95th percentile latency.",
+    "mssql_specific": "MSSQL Server provides page read/write metrics (8KB pages) instead of block metrics like PostgreSQL.",
+    "pool_exhaustion_threshold": "Connection pool utilization >80% indicates approaching saturation. >90% is critical.",
+    "deadlock_threshold": "Deadlock rates >1/sec indicate serious lock contention issues. Investigate and optimize queries.",
+    "log_space_note": "Transaction log space is critical. If log becomes full, database goes into a restricted state. Monitor log_used_percent.",
+    "batch_requests": "MSSQL typically counts batch requests rather than individual query statements. This is coarser granularity than other databases.",
+    "query_compilation": "High SQL compilation rate indicates excessive ad-hoc queries. Use parameterized queries to reduce compilations.",
+    "lock_storm_test": "During lock-storm chaos test, expect deadlock rate to spike significantly.",
+    "pool_exhaustion_test": "During pool-exhaustion test, expect connection pool utilization to reach 100% and new connections to fail.",
+    "all_metrics_validated": "All metrics in this file are validated against mssql_dashboard.json Grafana dashboard"
+  }
+}

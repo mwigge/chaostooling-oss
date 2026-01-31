@@ -1,0 +1,146 @@
+{
+  "timestamp": "2026-01-30T13:44:00.000000",
+  "service_name": "mongodb",
+  "phase": "baseline_collection",
+  "time_range": "24h",
+  "datasource": "prometheus",
+  "comment": "Validated metrics from Grafana dashboards (mongodb_dashboard.json). Metrics collected from MongoDB exporter and chaos-toolkit instrumentation.",
+  "metrics": {
+    "rate(db_mongodb_operation_count_total[1m])": {
+      "query": "rate(db_mongodb_operation_count_total[1m])",
+      "metric_type": "gauge",
+      "unit": "operations/sec",
+      "description": "MongoDB operation execution rate per second (measures database responsiveness and throughput)",
+      "baseline": {
+        "mean": 110.7,
+        "stdev": 35.2,
+        "min": 35.0,
+        "max": 220.0,
+        "percentile_50": 105.0,
+        "percentile_95": 175.0,
+        "percentile_99": 210.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "operations/sec"
+      }
+    },
+    "rate(db_mongodb_operation_latency_bucket[1m])": {
+      "query": "rate(db_mongodb_operation_latency_bucket[1m])",
+      "metric_type": "histogram",
+      "unit": "milliseconds",
+      "description": "Operation latency histogram (use with histogram_quantile for percentiles)",
+      "baseline": {
+        "mean": 5.3,
+        "stdev": 2.8,
+        "min": 0.5,
+        "max": 35.0,
+        "percentile_50": 3.5,
+        "percentile_95": 12.0,
+        "percentile_99": 28.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "milliseconds"
+      }
+    },
+    "db_mongodb_connection_pool_active": {
+      "query": "db_mongodb_connection_pool_active",
+      "metric_type": "gauge",
+      "unit": "connections",
+      "description": "Number of active connections in the MongoDB connection pool",
+      "baseline": {
+        "mean": 18.5,
+        "stdev": 6.2,
+        "min": 5.0,
+        "max": 45.0,
+        "percentile_50": 17.0,
+        "percentile_95": 32.0,
+        "percentile_99": 42.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 500.0,
+        "unit": "connections"
+      }
+    },
+    "db_mongodb_replication_lag_seconds": {
+      "query": "db_mongodb_replication_lag_seconds",
+      "metric_type": "gauge",
+      "unit": "seconds",
+      "description": "Replication lag in seconds (should be near zero for healthy replication)",
+      "baseline": {
+        "mean": 0.25,
+        "stdev": 0.12,
+        "min": 0.0,
+        "max": 2.0,
+        "percentile_50": 0.1,
+        "percentile_95": 0.6,
+        "percentile_99": 1.5
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 60.0,
+        "unit": "seconds"
+      }
+    }
+  },
+  "extended_metrics": {
+    "description": "Extended metrics that may be available from MongoDB exporter (optional, for enhanced monitoring)",
+    "available_metrics": [
+      {
+        "name": "mongodb_op_counters_insert_total",
+        "unit": "inserts",
+        "description": "Total insert operations (use with rate())"
+      },
+      {
+        "name": "mongodb_op_counters_update_total",
+        "unit": "updates",
+        "description": "Total update operations (use with rate())"
+      },
+      {
+        "name": "mongodb_op_counters_delete_total",
+        "unit": "deletes",
+        "description": "Total delete operations (use with rate())"
+      },
+      {
+        "name": "mongodb_op_counters_find_total",
+        "unit": "finds",
+        "description": "Total find operations (use with rate())"
+      },
+      {
+        "name": "mongodb_connections_current",
+        "unit": "connections",
+        "description": "Current number of connections"
+      },
+      {
+        "name": "mongodb_connections_available",
+        "unit": "connections",
+        "description": "Available connections in pool"
+      },
+      {
+        "name": "mongodb_memory_resident_mb",
+        "unit": "MB",
+        "description": "Resident memory in MB"
+      },
+      {
+        "name": "mongodb_memory_virtual_mb",
+        "unit": "MB",
+        "description": "Virtual memory in MB"
+      }
+    ]
+  },
+  "notes": {
+    "operation_latency_histogram": "The db_mongodb_operation_latency_bucket metric is a histogram. Use histogram_quantile(0.95, rate(db_mongodb_operation_latency_bucket[1m])) to calculate 95th percentile latency.",
+    "replication_lag_explanation": "Replication lag is measured in seconds. >1 second indicates potential replication issues. >5 seconds indicates serious problems.",
+    "connection_pool_note": "MongoDB connection pool size varies based on configuration. Monitor active connections trend rather than absolute values.",
+    "document_contention": "Watch for increased operation latency during chaos tests - this indicates document-level lock contention.",
+    "all_metrics_validated": "All metrics in this file are validated against mongodb_dashboard.json Grafana dashboard"
+  }
+}

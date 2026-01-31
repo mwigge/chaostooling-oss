@@ -7,30 +7,17 @@
     "cache",
     "performance"
   ],
-  "controls": [
-    {
-      "name": "env-loader",
-      "provider": {
-        "type": "python",
-        "module": "chaosgeneric.control.env_loader_control"
-      }
-    },
-    {
-      "name": "chaosotel",
-      "provider": {
-        "type": "python",
-        "module": "chaosotel.control"
-      }
-    },
-    {
-      "name": "reporting",
-      "provider": {
-        "type": "python",
-        "module": "chaostooling_reporting.control"
-      }
-    }
-  ],
   "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "postgres-cache-miss-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
     "postgres_host": {
       "type": "env",
       "key": "POSTGRES_HOST",
@@ -55,31 +42,186 @@
       "type": "env",
       "key": "POSTGRES_PASSWORD",
       "default": "postgres"
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
     }
+  },
+  "controls": [
+    {
+      "name": "experiment-orchestrator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.experiment_orchestrator_control"
+      }
+    },
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "database-storage",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_storage_control"
+      }
+    },
+    {
+      "name": "database-display",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_display_control",
+        "arguments": {
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}"
+        }
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "metrics-calculator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.metrics_calculator_control"
+      }
+    }
+  ],
+  "baseline_config": {
+    "metadata": {
+      "version": "1.0",
+      "created": "2026-01-31",
+      "service": "postgres",
+      "description": "Baseline metrics configuration for postgres cache miss chaos experiment"
+    },
+    "discovery": {
+      "method": "system",
+      "system_id": "postgres",
+      "service_name": "postgres"
+    },
+    "default_thresholds": {
+      "sigma_threshold": 2.0,
+      "critical_sigma": 3.0,
+      "enable_anomaly_detection": true,
+      "anomaly_method": "zscore"
+    },
+    "data_validation": {
+      "max_age_days": 30,
+      "min_quality_score": 75,
+      "require_statistical_significance": true
+    },
+    "metrics": [
+      {
+        "metric_id": 1001,
+        "metric_name": "rate(postgresql_blocks_read_total[5m])",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 45.5,
+          "stddev_value": 8.2,
+          "min_value": 10.5,
+          "max_value": 95.3,
+          "percentile_50": 44.1,
+          "percentile_95": 80.5,
+          "percentile_99": 92.1,
+          "quality_score": 95
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 29.1,
+          "warning_upper": 61.9,
+          "critical_lower": 20.9,
+          "critical_upper": 70.1
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-block-read-rate"],
+        "notes": "Measures disk I/O activity for cache effectiveness. Increases significantly on cache misses."
+      },
+      {
+        "metric_id": 1002,
+        "metric_name": "pg_stat_database_cache_ratio",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 92.3,
+          "stddev_value": 2.8,
+          "min_value": 85.2,
+          "max_value": 98.1,
+          "percentile_50": 92.8,
+          "percentile_95": 97.2,
+          "percentile_99": 98.6,
+          "quality_score": 98
+        },
+        "threshold_config": {
+          "sigma_threshold": 1.5,
+          "critical_sigma": 2.5,
+          "warning_lower": 88.1,
+          "warning_upper": 96.5,
+          "critical_lower": 84.7,
+          "critical_upper": 99.9
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.95
+        },
+        "status": "active",
+        "used_in_probes": ["check-cache-ratio"],
+        "notes": "Cache hit ratio as percentage. High precision for cache effectiveness monitoring."
+      }
+    ]
   },
   "steady-state-hypothesis": {
     "title": "Cache Hit Ratio is high",
     "probes": [
       {
         "type": "probe",
-        "name": "check-cache-hit-ratio",
-        "tolerance": {
-          "type": "range",
-          "range": [
-            0.9,
-            1.0
-          ]
-        },
+        "name": "check-block-read-rate",
+        "tolerance": true,
         "provider": {
           "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_system_metrics",
-          "func": "collect_postgres_system_metrics",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
           "arguments": {
-            "host": "${postgres_host}",
-            "port": "${postgres_port}",
-            "database": "${postgres_db}",
-            "user": "${postgres_user}",
-            "password": "${postgres_password}"
+            "metric_name": "rate(postgresql_blocks_read_total[5m])",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Block read rate within 2-sigma of baseline (increases on cache misses)",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "pauses": {

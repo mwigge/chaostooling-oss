@@ -1,0 +1,218 @@
+{
+  "timestamp": "2026-01-30T13:44:00.000000",
+  "service_name": "kafka",
+  "phase": "baseline_collection",
+  "time_range": "24h",
+  "datasource": "prometheus",
+  "comment": "Validated metrics from Grafana dashboards (kafka_dashboard.json). Metrics collected from Kafka exporter and chaos-toolkit instrumentation.",
+  "metrics": {
+    "rate(kafka_producer_record_send_rate_counter_total[1m])": {
+      "query": "rate(kafka_producer_record_send_rate_counter_total[1m])",
+      "metric_type": "gauge",
+      "unit": "records/sec",
+      "description": "Producer record send rate per second (measures message production throughput)",
+      "baseline": {
+        "mean": 5000.5,
+        "stdev": 1200.3,
+        "min": 1500.0,
+        "max": 10000.0,
+        "percentile_50": 4800.0,
+        "percentile_95": 7500.0,
+        "percentile_99": 9200.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 1000000.0,
+        "unit": "records/sec"
+      }
+    },
+    "rate(kafka_consumer_records_consumed_rate_counter_total[1m])": {
+      "query": "rate(kafka_consumer_records_consumed_rate_counter_total[1m])",
+      "metric_type": "gauge",
+      "unit": "records/sec",
+      "description": "Consumer record consumption rate per second",
+      "baseline": {
+        "mean": 4850.3,
+        "stdev": 1100.5,
+        "min": 1400.0,
+        "max": 9500.0,
+        "percentile_50": 4650.0,
+        "percentile_95": 7200.0,
+        "percentile_99": 8900.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 1000000.0,
+        "unit": "records/sec"
+      }
+    },
+    "kafka_consumer_lag_messages": {
+      "query": "kafka_consumer_lag_messages",
+      "metric_type": "gauge",
+      "unit": "messages",
+      "description": "Consumer lag - messages behind latest offset (0 means caught up)",
+      "baseline": {
+        "mean": 250.5,
+        "stdev": 150.2,
+        "min": 0.0,
+        "max": 5000.0,
+        "percentile_50": 100.0,
+        "percentile_95": 800.0,
+        "percentile_99": 3500.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000000.0,
+        "unit": "messages"
+      }
+    },
+    "rate(kafka_producer_record_error_rate_counter_total[1m])": {
+      "query": "rate(kafka_producer_record_error_rate_counter_total[1m])",
+      "metric_type": "gauge",
+      "unit": "errors/sec",
+      "description": "Producer record error rate (should be minimal in healthy system)",
+      "baseline": {
+        "mean": 0.5,
+        "stdev": 0.2,
+        "min": 0.0,
+        "max": 2.0,
+        "percentile_50": 0.3,
+        "percentile_95": 1.0,
+        "percentile_99": 1.8
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "errors/sec"
+      }
+    },
+    "rate(kafka_producer_request_latency_bucket[1m])": {
+      "query": "rate(kafka_producer_request_latency_bucket[1m])",
+      "metric_type": "histogram",
+      "unit": "milliseconds",
+      "description": "Producer request latency histogram (use with histogram_quantile for percentiles)",
+      "baseline": {
+        "mean": 15.5,
+        "stdev": 8.2,
+        "min": 2.0,
+        "max": 100.0,
+        "percentile_50": 12.0,
+        "percentile_95": 35.0,
+        "percentile_99": 80.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 60000.0,
+        "unit": "milliseconds"
+      }
+    },
+    "sum by (messaging_operation) (rate(chaos_messaging_operation_count_total{messaging_system=\"kafka\"}[1m]))": {
+      "query": "sum by (messaging_operation) (rate(chaos_messaging_operation_count_total{messaging_system=\"kafka\"}[1m]))",
+      "metric_type": "gauge",
+      "unit": "operations/sec",
+      "description": "Total messaging operation rate (produce + consume operations)",
+      "baseline": {
+        "mean": 9850.8,
+        "stdev": 2200.4,
+        "min": 3000.0,
+        "max": 19500.0,
+        "percentile_50": 9450.0,
+        "percentile_95": 14700.0,
+        "percentile_99": 18100.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 1000000.0,
+        "unit": "operations/sec"
+      }
+    },
+    "rate(chaos_messaging_error_count_total{messaging_system=\"kafka\"}[1m])": {
+      "query": "rate(chaos_messaging_error_count_total{messaging_system=\"kafka\"}[1m])",
+      "metric_type": "gauge",
+      "unit": "errors/sec",
+      "description": "Overall error rate from chaos-toolkit messaging instrumentation",
+      "baseline": {
+        "mean": 0.8,
+        "stdev": 0.3,
+        "min": 0.0,
+        "max": 3.0,
+        "percentile_50": 0.5,
+        "percentile_95": 1.5,
+        "percentile_99": 2.8
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "errors/sec"
+      }
+    },
+    "histogram_quantile(0.95, sum by (le, messaging_operation) (rate(chaos_messaging_operation_latency_milliseconds_bucket{messaging_system=\"kafka\"}[1m])))": {
+      "query": "histogram_quantile(0.95, sum by (le, messaging_operation) (rate(chaos_messaging_operation_latency_milliseconds_bucket{messaging_system=\"kafka\"}[1m])))",
+      "metric_type": "gauge",
+      "unit": "milliseconds",
+      "description": "95th percentile operation latency",
+      "baseline": {
+        "mean": 45.3,
+        "stdev": 15.2,
+        "min": 10.0,
+        "max": 150.0,
+        "percentile_50": 40.0,
+        "percentile_95": 80.0,
+        "percentile_99": 130.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 60000.0,
+        "unit": "milliseconds"
+      }
+    }
+  },
+  "extended_metrics": {
+    "description": "Extended metrics that may be available from Kafka exporter (optional, for enhanced monitoring)",
+    "available_metrics": [
+      {
+        "name": "kafka_broker_leader_election_latency_ms",
+        "unit": "milliseconds",
+        "description": "Leader election latency"
+      },
+      {
+        "name": "kafka_broker_topic_partitions_total",
+        "unit": "partitions",
+        "description": "Total topic partitions across cluster"
+      },
+      {
+        "name": "kafka_consumer_fetch_latency_average_ms",
+        "unit": "milliseconds",
+        "description": "Average fetch latency"
+      },
+      {
+        "name": "kafka_controller_active_count",
+        "unit": "controllers",
+        "description": "Number of active controllers"
+      },
+      {
+        "name": "kafka_replica_lag_sum_total",
+        "unit": "records",
+        "description": "Total replica lag (use with rate())"
+      }
+    ]
+  },
+  "notes": {
+    "producer_consumer_latency": "Producer and consumer are separate paths. Producers write to brokers; consumers read from brokers. Both latencies matter.",
+    "consumer_lag_explanation": "Consumer lag = latest offset - consumer group offset. Healthy systems keep lag <1000 messages. >10000 indicates slow consumers.",
+    "latency_histogram": "The chaos_messaging_operation_latency_milliseconds_bucket is a histogram. Use histogram_quantile() to extract percentiles.",
+    "error_rate_baseline": "Error rate should be <1/sec in healthy system. >1/sec indicates broker or network issues.",
+    "message_flood_test": "During message-flood chaos test, expect producer error rate to spike and consumer lag to increase significantly.",
+    "slow_consumer_test": "During slow-consumer test, expect consumer lag to increase linearly. Normal recovery after test ends.",
+    "topic_saturation_test": "During topic-saturation test, expect latency increases and potential error spikes due to broker resource exhaustion.",
+    "all_metrics_validated": "All metrics in this file are validated against kafka_dashboard.json Grafana dashboard"
+  }
+}

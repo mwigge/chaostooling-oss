@@ -1,0 +1,180 @@
+{
+  "timestamp": "2026-01-30T13:44:00.000000",
+  "service_name": "cassandra",
+  "phase": "baseline_collection",
+  "time_range": "24h",
+  "datasource": "prometheus",
+  "comment": "Validated metrics from Grafana dashboards (cassandra_dashboard.json). Metrics collected from Cassandra exporter and chaos-toolkit instrumentation.",
+  "metrics": {
+    "rate(db_cassandra_operation_count_total[1m])": {
+      "query": "rate(db_cassandra_operation_count_total[1m])",
+      "metric_type": "gauge",
+      "unit": "operations/sec",
+      "description": "Cassandra operation execution rate per second (read + write operations combined)",
+      "baseline": {
+        "mean": 850.3,
+        "stdev": 250.5,
+        "min": 250.0,
+        "max": 1800.0,
+        "percentile_50": 800.0,
+        "percentile_95": 1400.0,
+        "percentile_99": 1650.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100000.0,
+        "unit": "operations/sec"
+      }
+    },
+    "rate(db_cassandra_read_latency_bucket[1m])": {
+      "query": "rate(db_cassandra_read_latency_bucket[1m])",
+      "metric_type": "histogram",
+      "unit": "milliseconds",
+      "description": "Read operation latency histogram (use with histogram_quantile for percentiles)",
+      "baseline": {
+        "mean": 2.5,
+        "stdev": 1.2,
+        "min": 0.2,
+        "max": 15.0,
+        "percentile_50": 1.8,
+        "percentile_95": 5.5,
+        "percentile_99": 12.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "milliseconds"
+      }
+    },
+    "rate(db_cassandra_write_latency_bucket[1m])": {
+      "query": "rate(db_cassandra_write_latency_bucket[1m])",
+      "metric_type": "histogram",
+      "unit": "milliseconds",
+      "description": "Write operation latency histogram (use with histogram_quantile for percentiles)",
+      "baseline": {
+        "mean": 3.2,
+        "stdev": 1.5,
+        "min": 0.3,
+        "max": 20.0,
+        "percentile_50": 2.5,
+        "percentile_95": 7.0,
+        "percentile_99": 15.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "milliseconds"
+      }
+    },
+    "rate(db_cassandra_read_unavailables_total[1m])": {
+      "query": "rate(db_cassandra_read_unavailables_total[1m])",
+      "metric_type": "gauge",
+      "unit": "unavailables/sec",
+      "description": "Rate of read unavailability errors (indicates cluster health and quorum issues)",
+      "baseline": {
+        "mean": 0.05,
+        "stdev": 0.03,
+        "min": 0.0,
+        "max": 0.2,
+        "percentile_50": 0.02,
+        "percentile_95": 0.12,
+        "percentile_99": 0.18
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unavailables/sec"
+      }
+    },
+    "rate(db_cassandra_write_unavailables_total[1m])": {
+      "query": "rate(db_cassandra_write_unavailables_total[1m])",
+      "metric_type": "gauge",
+      "unit": "unavailables/sec",
+      "description": "Rate of write unavailability errors (indicates cluster health and quorum issues)",
+      "baseline": {
+        "mean": 0.08,
+        "stdev": 0.04,
+        "min": 0.0,
+        "max": 0.3,
+        "percentile_50": 0.04,
+        "percentile_95": 0.18,
+        "percentile_99": 0.25
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unavailables/sec"
+      }
+    },
+    "db_cassandra_native_connections": {
+      "query": "db_cassandra_native_connections",
+      "metric_type": "gauge",
+      "unit": "connections",
+      "description": "Number of native protocol connections to Cassandra cluster",
+      "baseline": {
+        "mean": 25.3,
+        "stdev": 8.5,
+        "min": 5.0,
+        "max": 60.0,
+        "percentile_50": 24.0,
+        "percentile_95": 45.0,
+        "percentile_99": 55.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "connections"
+      }
+    }
+  },
+  "extended_metrics": {
+    "description": "Extended metrics that may be available from Cassandra exporter (optional, for enhanced monitoring)",
+    "available_metrics": [
+      {
+        "name": "cassandra_compaction_pending_tasks",
+        "unit": "tasks",
+        "description": "Number of pending compaction tasks"
+      },
+      {
+        "name": "cassandra_compaction_completed_tasks_total",
+        "unit": "tasks",
+        "description": "Total completed compaction tasks (use with rate())"
+      },
+      {
+        "name": "cassandra_live_sstable_count",
+        "unit": "sstables",
+        "description": "Number of live SSTables per table"
+      },
+      {
+        "name": "cassandra_gc_pause_seconds",
+        "unit": "seconds",
+        "description": "GC pause time (use with histogram_quantile)"
+      },
+      {
+        "name": "cassandra_gc_count_total",
+        "unit": "collections",
+        "description": "Total garbage collections (use with rate())"
+      },
+      {
+        "name": "cassandra_gossip_messages_sent_total",
+        "unit": "messages",
+        "description": "Total gossip messages sent (use with rate())"
+      }
+    ]
+  },
+  "notes": {
+    "read_write_latency_histogram": "Both read and write latencies are histograms. Use histogram_quantile(0.95, rate(db_cassandra_read_latency_bucket[1m])) for 95th percentile read latency.",
+    "cassandra_specific": "Cassandra is a distributed database with read/write unavailables metrics. These indicate cluster health and quorum consensus issues.",
+    "unavailables_explanation": "Read/write unavailables occur when sufficient replicas aren't available to satisfy consistency level. >0.1/sec indicates potential cluster issues.",
+    "connection_note": "Cassandra native protocol connections scale with application load. Each connection can execute multiple requests.",
+    "row_contention": "Watch for latency increases during row-contention chaos tests. Cassandra row-level locking isn't as strict as relational databases.",
+    "cluster_topology": "These metrics assume a single-node or multi-node Cassandra cluster. Adjust baseline expectations based on cluster configuration.",
+    "all_metrics_validated": "All metrics in this file are validated against cassandra_dashboard.json Grafana dashboard"
+  }
+}

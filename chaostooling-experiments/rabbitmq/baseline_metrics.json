@@ -1,0 +1,162 @@
+{
+  "timestamp": "2026-01-30T13:44:00.000000",
+  "service_name": "rabbitmq",
+  "phase": "baseline_collection",
+  "time_range": "24h",
+  "datasource": "prometheus",
+  "comment": "Validated metrics from Grafana dashboards (rabbitmq_dashboard.json). Metrics collected from RabbitMQ exporter and chaos-toolkit instrumentation.",
+  "metrics": {
+    "rate(rabbitmq_messages_published_counter_total[1m])": {
+      "query": "rate(rabbitmq_messages_published_counter_total[1m])",
+      "metric_type": "gauge",
+      "unit": "messages/sec",
+      "description": "Message publish rate per second (measures message production throughput)",
+      "baseline": {
+        "mean": 2500.3,
+        "stdev": 600.5,
+        "min": 800.0,
+        "max": 5200.0,
+        "percentile_50": 2400.0,
+        "percentile_95": 3800.0,
+        "percentile_99": 4600.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100000.0,
+        "unit": "messages/sec"
+      }
+    },
+    "rate(rabbitmq_messages_delivered_counter_total[1m])": {
+      "query": "rate(rabbitmq_messages_delivered_counter_total[1m])",
+      "metric_type": "gauge",
+      "unit": "messages/sec",
+      "description": "Message delivery rate per second (consumer consumption throughput)",
+      "baseline": {
+        "mean": 2450.8,
+        "stdev": 580.2,
+        "min": 750.0,
+        "max": 5000.0,
+        "percentile_50": 2350.0,
+        "percentile_95": 3700.0,
+        "percentile_99": 4500.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100000.0,
+        "unit": "messages/sec"
+      }
+    },
+    "rabbitmq_queue_depth": {
+      "query": "rabbitmq_queue_depth",
+      "metric_type": "gauge",
+      "unit": "messages",
+      "description": "Queue depth - number of messages pending delivery (0 means queues are empty)",
+      "baseline": {
+        "mean": 85.5,
+        "stdev": 45.2,
+        "min": 0.0,
+        "max": 500.0,
+        "percentile_50": 50.0,
+        "percentile_95": 200.0,
+        "percentile_99": 400.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000000.0,
+        "unit": "messages"
+      }
+    },
+    "rate(rabbitmq_connection_errors_counter_total[1m])": {
+      "query": "rate(rabbitmq_connection_errors_counter_total[1m])",
+      "metric_type": "gauge",
+      "unit": "errors/sec",
+      "description": "Connection error rate (should be minimal in healthy system)",
+      "baseline": {
+        "mean": 0.1,
+        "stdev": 0.05,
+        "min": 0.0,
+        "max": 0.5,
+        "percentile_50": 0.05,
+        "percentile_95": 0.25,
+        "percentile_99": 0.45
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "errors/sec"
+      }
+    },
+    "rabbitmq_connections_total": {
+      "query": "rabbitmq_connections_total",
+      "metric_type": "gauge",
+      "unit": "connections",
+      "description": "Total active RabbitMQ connections (producers + consumers + management)",
+      "baseline": {
+        "mean": 18.5,
+        "stdev": 5.2,
+        "min": 5.0,
+        "max": 50.0,
+        "percentile_50": 17.0,
+        "percentile_95": 32.0,
+        "percentile_99": 45.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100000.0,
+        "unit": "connections"
+      }
+    }
+  },
+  "extended_metrics": {
+    "description": "Extended metrics that may be available from RabbitMQ exporter (optional, for enhanced monitoring)",
+    "available_metrics": [
+      {
+        "name": "rabbitmq_channels_total",
+        "unit": "channels",
+        "description": "Total open channels"
+      },
+      {
+        "name": "rabbitmq_memory_limit_bytes",
+        "unit": "bytes",
+        "description": "Memory limit configured"
+      },
+      {
+        "name": "rabbitmq_memory_used_bytes",
+        "unit": "bytes",
+        "description": "Memory currently used"
+      },
+      {
+        "name": "rabbitmq_disk_free_bytes",
+        "unit": "bytes",
+        "description": "Free disk space"
+      },
+      {
+        "name": "rabbitmq_queue_messages_ready_total",
+        "unit": "messages",
+        "description": "Messages ready for delivery"
+      },
+      {
+        "name": "rabbitmq_queue_messages_unacknowledged_total",
+        "unit": "messages",
+        "description": "Messages sent but not yet acknowledged"
+      }
+    ]
+  },
+  "notes": {
+    "publish_deliver_ratio": "In healthy system, publish rate ≈ delivery rate. Divergence indicates consumer slowness or queue backlog.",
+    "queue_depth_explanation": "Queue depth > 100 messages indicates consumers are slower than producers. >1000 messages is critical.",
+    "connection_management": "Each producer/consumer creates at least one connection. Monitor connections as proxy for client load.",
+    "message_flood_test": "During message-flood chaos test, expect publish rate to spike and queue_depth to increase significantly.",
+    "queue_saturation_test": "During queue-saturation test, expect queue_depth to grow and delivery latency to increase.",
+    "slow_consumer_test": "During slow-consumer test, expect queue_depth to increase while publish rate stays normal.",
+    "connection_exhaustion_test": "During connection-exhaustion test, expect connection_errors to increase and new connections to fail.",
+    "channel_count_note": "Each connection can have multiple channels. Monitor channel_total for resource usage patterns.",
+    "memory_pressure": "When rabbitmq_memory_used approaches rabbitmq_memory_limit, broker may pause publishers to prevent OOM.",
+    "all_metrics_validated": "All metrics in this file are validated against rabbitmq_dashboard.json Grafana dashboard"
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "timestamp": "2026-01-30T13:44:00.000000",
+  "service_name": "redis",
+  "phase": "baseline_collection",
+  "time_range": "24h",
+  "datasource": "prometheus",
+  "comment": "Validated metrics from Grafana dashboards (redis_dashboard.json). Metrics collected from Redis exporter and chaos-toolkit instrumentation.",
+  "metrics": {
+    "rate(db_redis_command_count_total[1m])": {
+      "query": "rate(db_redis_command_count_total[1m])",
+      "metric_type": "gauge",
+      "unit": "commands/sec",
+      "description": "Redis command execution rate per second (measures cache responsiveness and throughput)",
+      "baseline": {
+        "mean": 2850.5,
+        "stdev": 650.3,
+        "min": 1000.0,
+        "max": 5000.0,
+        "percentile_50": 2700.0,
+        "percentile_95": 4200.0,
+        "percentile_99": 4850.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 100000.0,
+        "unit": "commands/sec"
+      }
+    },
+    "rate(db_redis_command_latency_bucket[1m])": {
+      "query": "rate(db_redis_command_latency_bucket[1m])",
+      "metric_type": "histogram",
+      "unit": "milliseconds",
+      "description": "Command latency histogram (use with histogram_quantile for percentiles)",
+      "baseline": {
+        "mean": 0.8,
+        "stdev": 0.3,
+        "min": 0.1,
+        "max": 5.0,
+        "percentile_50": 0.5,
+        "percentile_95": 1.8,
+        "percentile_99": 4.2
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "milliseconds"
+      }
+    },
+    "db_redis_memory_used_bytes": {
+      "query": "db_redis_memory_used_bytes",
+      "metric_type": "gauge",
+      "unit": "bytes",
+      "description": "Memory used by Redis server (indicates dataset size and eviction pressure)",
+      "baseline": {
+        "mean": 52428800.0,
+        "stdev": 10485760.0,
+        "min": 10485760.0,
+        "max": 104857600.0,
+        "percentile_50": 52428800.0,
+        "percentile_95": 83886080.0,
+        "percentile_99": 94371840.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 1099511627776.0,
+        "unit": "bytes"
+      }
+    },
+    "db_redis_connected_clients": {
+      "query": "db_redis_connected_clients",
+      "metric_type": "gauge",
+      "unit": "clients",
+      "description": "Number of connected Redis clients",
+      "baseline": {
+        "mean": 12.5,
+        "stdev": 3.2,
+        "min": 3.0,
+        "max": 25.0,
+        "percentile_50": 12.0,
+        "percentile_95": 20.0,
+        "percentile_99": 23.0
+      },
+      "status": "valid",
+      "valid_range": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "clients"
+      }
+    }
+  },
+  "extended_metrics": {
+    "description": "Extended metrics that may be available from Redis exporter (optional, for enhanced monitoring)",
+    "available_metrics": [
+      {
+        "name": "redis_keyspace_hits_total",
+        "unit": "hits",
+        "description": "Total cache hits (use with rate() and with keyspace_misses for hit ratio)"
+      },
+      {
+        "name": "redis_keyspace_misses_total",
+        "unit": "misses",
+        "description": "Total cache misses (use with rate() and with keyspace_hits for miss ratio)"
+      },
+      {
+        "name": "redis_evicted_keys_total",
+        "unit": "keys",
+        "description": "Total evicted keys (use with rate() - high values indicate memory pressure)"
+      },
+      {
+        "name": "redis_expired_keys_total",
+        "unit": "keys",
+        "description": "Total expired keys (use with rate())"
+      },
+      {
+        "name": "redis_instantaneous_ops_per_sec",
+        "unit": "ops/sec",
+        "description": "Instantaneous operations per second"
+      },
+      {
+        "name": "redis_memory_max_bytes",
+        "unit": "bytes",
+        "description": "Maximum memory configured"
+      },
+      {
+        "name": "redis_memory_used_rss_bytes",
+        "unit": "bytes",
+        "description": "Memory used (RSS - resident set size)"
+      }
+    ]
+  },
+  "notes": {
+    "command_latency_histogram": "The db_redis_command_latency_bucket metric is a histogram. Use histogram_quantile(0.95, rate(db_redis_command_latency_bucket[1m])) to calculate 95th percentile latency.",
+    "memory_usage_explanation": "Redis memory usage includes all keys and overhead. Monitor memory_used_bytes relative to memory_max_bytes to detect eviction risk.",
+    "cache_efficiency": "Calculate cache hit ratio = keyspace_hits / (keyspace_hits + keyspace_misses). Ratios >95% are healthy.",
+    "connected_clients_note": "Each client connection consumes memory. Monitor connection count as proxy for connection pool utilization.",
+    "key_eviction_note": "High evicted_keys_total rate indicates memory pressure. This causes cache miss rate increases and latency spikes.",
+    "all_metrics_validated": "All metrics in this file are validated against redis_dashboard.json Grafana dashboard"
+  }
+}

@@ -37,14 +37,49 @@
       "type": "env",
       "key": "POSTGRES_PASSWORD",
       "default": "postgres"
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
     }
   },
   "controls": [
+    {
+      "name": "experiment-orchestrator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.experiment_orchestrator_control"
+      }
+    },
     {
       "name": "env-loader",
       "provider": {
         "type": "python",
         "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "database-storage",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_storage_control"
+      }
+    },
+    {
+      "name": "database-display",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_display_control",
+        "arguments": {
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}"
+        }
       }
     },
     {
@@ -60,8 +95,143 @@
         "type": "python",
         "module": "chaostooling_reporting.control"
       }
+    },
+    {
+      "name": "metrics-calculator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.metrics_calculator_control"
+      }
     }
   ],
+  "baseline_config": {
+    "metadata": {
+      "version": "1.0",
+      "created": "2026-01-31",
+      "service": "postgres",
+      "description": "Baseline metrics configuration for postgres query saturation chaos experiment"
+    },
+    "discovery": {
+      "method": "system",
+      "system_id": "postgres",
+      "service_name": "postgres"
+    },
+    "default_thresholds": {
+      "sigma_threshold": 2.0,
+      "critical_sigma": 3.0,
+      "enable_anomaly_detection": true,
+      "anomaly_method": "zscore"
+    },
+    "data_validation": {
+      "max_age_days": 30,
+      "min_quality_score": 75,
+      "require_statistical_significance": true
+    },
+    "metrics": [
+      {
+        "metric_id": 4001,
+        "metric_name": "rate(postgresql_commits_total[5m])",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 150.3,
+          "stddev_value": 22.5,
+          "min_value": 45.2,
+          "max_value": 285.6,
+          "percentile_50": 148.1,
+          "percentile_95": 195.8,
+          "percentile_99": 240.3,
+          "quality_score": 96
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 105.3,
+          "warning_upper": 195.3,
+          "critical_lower": 82.8,
+          "critical_upper": 217.8
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-commit-rate"],
+        "notes": "Transaction commit rate. Decreases under saturation due to contention."
+      },
+      {
+        "metric_id": 4002,
+        "metric_name": "pg_stat_activity_count",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 14.8,
+          "stddev_value": 3.6,
+          "min_value": 4.0,
+          "max_value": 31.2,
+          "percentile_50": 14.2,
+          "percentile_95": 22.6,
+          "percentile_99": 28.1,
+          "quality_score": 94
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 7.6,
+          "warning_upper": 22.0,
+          "critical_lower": 4.0,
+          "critical_upper": 25.6
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-query-count"],
+        "notes": "Number of active queries. Indicator of query saturation level."
+      },
+      {
+        "metric_id": 4003,
+        "metric_name": "rate(pg_stat_database_tup_returned[5m])",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 8500.2,
+          "stddev_value": 1200.5,
+          "min_value": 2000.0,
+          "max_value": 15800.3,
+          "percentile_50": 8300.1,
+          "percentile_95": 10950.7,
+          "percentile_99": 13200.1,
+          "quality_score": 95
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 6099.2,
+          "warning_upper": 10901.2,
+          "critical_lower": 4898.7,
+          "critical_upper": 12101.7
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-tuples-returned"],
+        "notes": "Rate of tuples returned from queries. Reflects query execution efficiency."
+      }
+    ]
+  },
   "steady-state-hypothesis": {
     "title": "Database is accessible with acceptable query latency and backend load",
     "probes": [
@@ -70,14 +240,16 @@
         "type": "probe",
         "provider": {
           "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_connectivity",
-          "func": "probe_postgres_connectivity",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
           "arguments": {
-            "host": "${postgres_host}",
-            "port": "${postgres_port}",
-            "database": "${postgres_db}",
-            "user": "${postgres_user}",
-            "password": "${postgres_password}"
+            "metric_name": "rate(postgresql_commits_total[5m])",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "PostgreSQL connectivity",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "tolerance": true
@@ -90,11 +262,13 @@
           "module": "chaosgeneric.probes.mcp_baseline_probe",
           "func": "check_metric_within_baseline",
           "arguments": {
-            "metric_name": "pg_query_duration_milliseconds",
+            "metric_name": "rate(chaos_db_query_latency_milliseconds_sum{db_system=\"postgresql\"}[5m])",
             "service_name": "postgres",
             "baseline_file": "postgres/baseline_metrics.json",
-            "threshold_sigma": 1.5,
-            "description": "Query latency p95 within 1.5-sigma of baseline"
+            "threshold_sigma": 2.0,
+            "description": "Query latency within 2-sigma of baseline",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "tolerance": true
@@ -107,7 +281,7 @@
           "module": "chaosgeneric.probes.mcp_baseline_probe",
           "func": "check_metric_within_baseline",
           "arguments": {
-            "metric_name": "pg_slow_queries_count",
+            "metric_name": "chaos_db_query_latency_milliseconds_sum{db_system=\"postgresql\"}",
             "service_name": "postgres",
             "baseline_file": "postgres/baseline_metrics.json",
             "threshold_sigma": 2.0,
@@ -117,18 +291,20 @@
         "tolerance": true
       },
       {
-        "name": "active-backends",
+        "name": "query-rate",
         "type": "probe",
         "provider": {
           "type": "python",
           "module": "chaosgeneric.probes.mcp_baseline_probe",
           "func": "check_metric_within_baseline",
           "arguments": {
-            "metric_name": "pg_stat_activity_count",
+            "metric_name": "rate(chaos_db_query_count_total{db_system=\"postgresql\"}[1m])",
             "service_name": "postgres",
             "baseline_file": "postgres/baseline_metrics.json",
             "threshold_sigma": 2.0,
-            "description": "Active backends within 2-sigma of baseline"
+            "description": "Query rate within 2-sigma of baseline",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "tolerance": true

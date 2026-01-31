@@ -69,7 +69,7 @@ def mcp_server(
     grafana_token: str,
 ):
     """Start MCP server for observability stack integration"""
-    
+
     # Set environment variables
     os.environ["PROMETHEUS_URL"] = prometheus_url
     os.environ["TEMPO_URL"] = tempo_url
@@ -135,7 +135,7 @@ def analyze(
     output_dir: str,
 ):
     """Run steady state analysis on observability data"""
-    
+
     click.echo("Starting Steady State Analysis...")
     click.echo(f"  Period: {period_days} days")
     click.echo(f"  Output: {output_dir}")
@@ -151,9 +151,7 @@ def analyze(
         )
 
         # Run analysis
-        with click.progressbar(
-            length=4, label="Analyzing"
-        ) as bar:
+        with click.progressbar(length=4, label="Analyzing") as bar:
             bar.update(1)
             results = analyzer.analyze()
             bar.update(3)
@@ -211,10 +209,7 @@ def analyze(
             f"  Critical paths: "
             f"{results['analysis_report']['summary']['critical_paths']}"
         )
-        click.echo(
-            f"  SPOFs: "
-            f"{results['analysis_report']['summary']['spofs']}"
-        )
+        click.echo(f"  SPOFs: {results['analysis_report']['summary']['spofs']}")
         click.echo()
         click.echo("Key Findings:")
         for finding in results["analysis_report"]["key_findings"]:
@@ -246,23 +241,23 @@ def analyze(
 )
 def baseline(prometheus_url: str, output_file: str):
     """Generate baseline metrics file"""
-    
+
     click.echo("Generating baseline metrics...")
-    
+
     try:
         analyzer = create_steady_state_analyzer(
             prometheus_url=prometheus_url,
             analysis_period_days=14,
         )
-        
+
         metrics = analyzer._collect_metrics()
         baselines = analyzer._calculate_baselines(metrics)
-        
+
         with open(output_file, "w") as f:
             json.dump(baselines, f, indent=2)
-        
+
         click.echo(f"✓ Baseline saved to {output_file}")
-        
+
     except Exception as e:
         click.echo(f"✗ Failed: {e}", err=True)
         sys.exit(1)

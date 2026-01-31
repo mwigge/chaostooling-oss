@@ -37,14 +37,49 @@
       "type": "env",
       "key": "POSTGRES_PASSWORD",
       "default": "postgres"
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
     }
   },
   "controls": [
+    {
+      "name": "experiment-orchestrator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.experiment_orchestrator_control"
+      }
+    },
     {
       "name": "env-loader",
       "provider": {
         "type": "python",
         "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "database-storage",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_storage_control"
+      }
+    },
+    {
+      "name": "database-display",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_display_control",
+        "arguments": {
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}"
+        }
       }
     },
     {
@@ -60,8 +95,143 @@
         "type": "python",
         "module": "chaostooling_reporting.control"
       }
+    },
+    {
+      "name": "metrics-calculator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.metrics_calculator_control"
+      }
     }
   ],
+  "baseline_config": {
+    "metadata": {
+      "version": "1.0",
+      "created": "2026-01-31",
+      "service": "postgres",
+      "description": "Baseline metrics configuration for postgres slow transactions chaos experiment"
+    },
+    "discovery": {
+      "method": "system",
+      "system_id": "postgres",
+      "service_name": "postgres"
+    },
+    "default_thresholds": {
+      "sigma_threshold": 2.0,
+      "critical_sigma": 3.0,
+      "enable_anomaly_detection": true,
+      "anomaly_method": "zscore"
+    },
+    "data_validation": {
+      "max_age_days": 30,
+      "min_quality_score": 75,
+      "require_statistical_significance": true
+    },
+    "metrics": [
+      {
+        "metric_id": 6001,
+        "metric_name": "pg_slow_queries_total",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 35.2,
+          "stddev_value": 8.5,
+          "min_value": 5.0,
+          "max_value": 72.1,
+          "percentile_50": 33.8,
+          "percentile_95": 53.6,
+          "percentile_99": 65.3,
+          "quality_score": 93
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 18.2,
+          "warning_upper": 52.2,
+          "critical_lower": 9.7,
+          "critical_upper": 60.7
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-slow-queries"],
+        "notes": "Cumulative count of slow queries (>1 second). Increases with slow transaction injection."
+      },
+      {
+        "metric_id": 6002,
+        "metric_name": "rate(postgresql_query_time_total[5m])",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 520.5,
+          "stddev_value": 125.8,
+          "min_value": 120.0,
+          "max_value": 1250.3,
+          "percentile_50": 510.2,
+          "percentile_95": 760.1,
+          "percentile_99": 950.6,
+          "quality_score": 95
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.5,
+          "critical_sigma": 3.5,
+          "warning_lower": 206.5,
+          "warning_upper": 834.5,
+          "critical_lower": 80.7,
+          "critical_upper": 960.3
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.91
+        },
+        "status": "active",
+        "used_in_probes": ["check-query-time"],
+        "notes": "Rate of total query execution time in milliseconds. Sensitive to slow transactions."
+      },
+      {
+        "metric_id": 6003,
+        "metric_name": "pg_stat_statements_mean_time",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 45.3,
+          "stddev_value": 12.1,
+          "min_value": 10.0,
+          "max_value": 150.8,
+          "percentile_50": 42.6,
+          "percentile_95": 70.5,
+          "percentile_99": 95.2,
+          "quality_score": 92
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 21.1,
+          "warning_upper": 69.5,
+          "critical_lower": 8.9,
+          "critical_upper": 81.7
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-mean-time"],
+        "notes": "Mean execution time per query in milliseconds. Increases with slow transactions."
+      }
+    ]
+  },
   "steady-state-hypothesis": {
     "title": "PostgreSQL accessible with normal transaction duration and lock hold times",
     "probes": [
@@ -70,31 +240,35 @@
         "type": "probe",
         "provider": {
           "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_connectivity",
-          "func": "probe_postgres_connectivity",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
           "arguments": {
-            "host": "${postgres_host}",
-            "port": "${postgres_port}",
-            "database": "${postgres_db}",
-            "user": "${postgres_user}",
-            "password": "${postgres_password}"
+            "metric_name": "rate(postgresql_commits_total[5m])",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "PostgreSQL connectivity",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "tolerance": true
       },
       {
-        "name": "transaction-duration",
+        "name": "commit-rate",
         "type": "probe",
         "provider": {
           "type": "python",
           "module": "chaosgeneric.probes.mcp_baseline_probe",
           "func": "check_metric_within_baseline",
           "arguments": {
-            "metric_name": "pg_transaction_duration_p95_ms",
+            "metric_name": "rate(postgresql_commits_total[5m])",
             "service_name": "postgres",
             "baseline_file": "postgres/baseline_metrics.json",
-            "threshold_sigma": 1.5,
-            "description": "Transaction duration p95 within 1.5-sigma of baseline (strict)"
+            "threshold_sigma": 2.0,
+            "description": "Commit rate within 2-sigma of baseline (decreases with slow transactions)",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "tolerance": true
@@ -107,7 +281,7 @@
           "module": "chaosgeneric.probes.mcp_baseline_probe",
           "func": "check_metric_within_baseline",
           "arguments": {
-            "metric_name": "pg_lock_hold_duration_ms",
+            "metric_name": "db_transaction_deadlocks_total{db_system=\"postgresql\"}",
             "service_name": "postgres",
             "baseline_file": "postgres/baseline_metrics.json",
             "threshold_sigma": 2.0,
@@ -117,18 +291,20 @@
         "tolerance": true
       },
       {
-        "name": "idle-in-transaction",
+        "name": "rollback-rate",
         "type": "probe",
         "provider": {
           "type": "python",
           "module": "chaosgeneric.probes.mcp_baseline_probe",
           "func": "check_metric_within_baseline",
           "arguments": {
-            "metric_name": "pg_idle_in_transaction_count",
+            "metric_name": "rate(postgresql_rollbacks_total[5m])",
             "service_name": "postgres",
             "baseline_file": "postgres/baseline_metrics.json",
-            "threshold_sigma": 1.5,
-            "description": "Idle-in-transaction sessions within 1.5-sigma"
+            "threshold_sigma": 2.0,
+            "description": "Rollback rate within 2-sigma of baseline",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "tolerance": true

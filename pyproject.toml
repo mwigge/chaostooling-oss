@@ -80,3 +80,154 @@ where = [
     "chaostooling-reporting"
 ]
 
+# ============================================================================
+# PYTEST CONFIGURATION
+# ============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["chaostooling-generic/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+]
+
+# Markers for test categorization
+markers = [
+    "unit: Unit tests (fast, no external dependencies)",
+    "integration: Integration tests (require database/external services)",
+    "e2e: End-to-end tests (full workflow from discover to audit)",
+    "slow: Tests that take >1 second to run",
+    "db: Tests that require database connectivity",
+    "flaky: Tests known to be flaky and need investigation",
+]
+
+# Coverage settings
+[tool.coverage.run]
+source = ["chaostooling-generic/chaosgeneric"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+branch = true
+parallel = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+fail_under = 95
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# ============================================================================
+# CODE QUALITY TOOLS
+# ============================================================================
+
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+known_first_party = ["chaosgeneric"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+no_implicit_optional = true
+check_untyped_defs = true
+ignore_missing_imports = true
+show_error_codes = true
+show_error_context = true
+pretty = true
+exclude = [
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".git",
+]
+
+# ============================================================================
+# BANDIT SECURITY CONFIGURATION
+# ============================================================================
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+tests = [
+    "B201",
+    "B301",
+    "B302",
+    "B303",
+    "B304",
+    "B305",
+    "B306",
+    "B307",
+    "B308",
+    "B309",
+    "B310",
+    "B311",
+    "B312",
+    "B313",
+    "B314",
+    "B315",
+    "B316",
+    "B317",
+    "B318",
+    "B319",
+    "B320",
+    "B321",
+    "B322",
+    "B323",
+    "B324",
+    "B325",
+]
+skips = []
+

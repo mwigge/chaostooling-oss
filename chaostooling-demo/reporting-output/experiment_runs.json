@@ -567,9 +567,9 @@
     ]
   },
   "Extensive PostgreSQL Chaos Experiment": {
-    "total_runs": 31,
-    "successful_runs": 29,
-    "failed_runs": 2,
+    "total_runs": 34,
+    "successful_runs": 30,
+    "failed_runs": 4,
     "runs": [
       {
         "experiment_id": "2905-20260116145745-3bb72ddc",
@@ -787,6 +787,27 @@
         "status": "completed",
         "success": true,
         "duration": 501.1630051136017
+      },
+      {
+        "experiment_id": "2854-20260130125441-ac8e8f52",
+        "run_timestamp": "2026-01-30T12:46:35.384435+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 375.75965642929077
+      },
+      {
+        "experiment_id": "3194-20260130133807-7461fba4",
+        "run_timestamp": "2026-01-30T12:52:56.726136+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 104.86008644104004
+      },
+      {
+        "experiment_id": "4738-20260130135719-3a32b937",
+        "run_timestamp": "2026-01-30T13:32:46.976840+00:00",
+        "status": "interrupted",
+        "success": false,
+        "duration": 318.33489871025085
       }
     ]
   },
@@ -1085,8 +1106,8 @@
     ]
   },
   "PostgreSQL Connection Pool Exhaustion Test": {
-    "total_runs": 12,
-    "successful_runs": 12,
+    "total_runs": 13,
+    "successful_runs": 13,
     "failed_runs": 0,
     "runs": [
       {
@@ -1172,6 +1193,13 @@
         "status": "completed",
         "success": true,
         "duration": 70.51081919670105
+      },
+      {
+        "experiment_id": "2285-20260130125251-060532f4",
+        "run_timestamp": "2026-01-29T13:59:29.884477+00:00",
+        "status": "completed",
+        "success": true,
+        "duration": 70.53880023956299
       }
     ]
   }

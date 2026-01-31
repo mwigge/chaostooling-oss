@@ -8,6 +8,16 @@
     "resource-exhaustion"
   ],
   "configuration": {
+    "otelservicename": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "postgres-temp-spill-test"
+    },
+    "otelendpoint": {
+      "type": "env",
+      "key": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "default": "http://otel-collector:4318"
+    },
     "postgres_host": {
       "type": "env",
       "key": "POSTGRES_HOST",
@@ -32,29 +42,220 @@
       "type": "env",
       "key": "POSTGRES_PASSWORD",
       "default": "postgres"
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
     }
+  },
+  "controls": [
+    {
+      "name": "experiment-orchestrator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.experiment_orchestrator_control"
+      }
+    },
+    {
+      "name": "env-loader",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "database-storage",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_storage_control"
+      }
+    },
+    {
+      "name": "database-display",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_display_control",
+        "arguments": {
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}"
+        }
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "reporting",
+      "provider": {
+        "type": "python",
+        "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "metrics-calculator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.metrics_calculator_control"
+      }
+    }
+  ],
+  "baseline_config": {
+    "metadata": {
+      "version": "1.0",
+      "created": "2026-01-31",
+      "service": "postgres",
+      "description": "Baseline metrics configuration for postgres temp file spill chaos experiment"
+    },
+    "discovery": {
+      "method": "system",
+      "system_id": "postgres",
+      "service_name": "postgres"
+    },
+    "default_thresholds": {
+      "sigma_threshold": 2.0,
+      "critical_sigma": 3.0,
+      "enable_anomaly_detection": true,
+      "anomaly_method": "zscore"
+    },
+    "data_validation": {
+      "max_age_days": 30,
+      "min_quality_score": 75,
+      "require_statistical_significance": true
+    },
+    "metrics": [
+      {
+        "metric_id": 7001,
+        "metric_name": "pg_stat_database_temp_bytes",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 2500000.0,
+          "stddev_value": 800000.0,
+          "min_value": 100000.0,
+          "max_value": 8500000.0,
+          "percentile_50": 2300000.0,
+          "percentile_95": 4100000.0,
+          "percentile_99": 6800000.0,
+          "quality_score": 91
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.5,
+          "critical_sigma": 3.5,
+          "warning_lower": 460000.0,
+          "warning_upper": 4540000.0,
+          "critical_lower": -1340000.0,
+          "critical_upper": 6340000.0
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.88
+        },
+        "status": "active",
+        "used_in_probes": ["check-temp-bytes"],
+        "notes": "Temporary file usage in bytes. Indicator of memory-to-disk spilling."
+      },
+      {
+        "metric_id": 7002,
+        "metric_name": "rate(pg_stat_database_temp_bytes_total[5m])",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 18500.0,
+          "stddev_value": 5200.0,
+          "min_value": 500.0,
+          "max_value": 65000.0,
+          "percentile_50": 17200.0,
+          "percentile_95": 30100.0,
+          "percentile_99": 52800.0,
+          "quality_score": 92
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 8100.0,
+          "warning_upper": 28900.0,
+          "critical_lower": 2900.0,
+          "critical_upper": 34100.0
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-temp-rate"],
+        "notes": "Rate of temporary file creation in bytes per second."
+      },
+      {
+        "metric_id": 7003,
+        "metric_name": "pg_stat_database_temp_files",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 12.3,
+          "stddev_value": 4.1,
+          "min_value": 0.0,
+          "max_value": 35.6,
+          "percentile_50": 11.2,
+          "percentile_95": 21.8,
+          "percentile_99": 28.5,
+          "quality_score": 89
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 4.1,
+          "warning_upper": 20.5,
+          "critical_lower": 0.0,
+          "critical_upper": 24.6
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-temp-files"],
+        "notes": "Cumulative count of temporary files created. Direct indicator of spill operations."
+      }
+    ]
   },
   "steady-state-hypothesis": {
     "title": "Temp Files are low",
     "probes": [
       {
         "type": "probe",
-        "name": "check-temp-files",
-        "tolerance": {
-          "type": "range",
-          "min": 0,
-          "max": 5
-        },
+        "name": "check-query-latency",
+        "tolerance": true,
         "provider": {
           "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_system_metrics",
-          "func": "collect_postgres_system_metrics",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
           "arguments": {
-            "host": "${postgres_host}",
-            "port": "${postgres_port}",
-            "database": "${postgres_db}",
-            "user": "${postgres_user}",
-            "password": "${postgres_password}"
+            "metric_name": "rate(chaos_db_query_latency_milliseconds_sum{db_system=\"postgresql\"}[5m])",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Query latency within 2-sigma of baseline (increases with temp file usage)",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "pauses": {
@@ -86,21 +287,5 @@
       }
     }
   ],
-  "rollbacks": [],
-  "controls": [
-    {
-      "name": "env-loader",
-      "provider": {
-        "type": "python",
-        "module": "chaosgeneric.control.env_loader_control"
-      }
-    },
-    {
-      "name": "reporting",
-      "provider": {
-        "type": "python",
-        "module": "chaostooling_reporting.control"
-      }
-    }
-  ]
+  "rollbacks": []
 }

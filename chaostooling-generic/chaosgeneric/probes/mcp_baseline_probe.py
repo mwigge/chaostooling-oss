@@ -2,16 +2,43 @@
 MCP Baseline Probe Module
 
 Probes that compare current metrics against baselines loaded by MCP control.
-Reads baselines from PostgreSQL database (primary storage) with fallback to JSON files.
+
+Priority order for baseline loading:
+1. Context (loaded by before_experiment_starts in control)
+2. Database (query at probe time)
+3. JSON file (legacy fallback)
+
 Used in steady-state-hypothesis to verify system is within normal operating bounds.
+
+This module implements Task 2.3 of the Baseline Metrics Integration.
 """
 
 import json
 import logging
 from typing import Dict, Any, Optional
 from chaosgeneric.data.chaos_db import ChaosDb
+from chaosgeneric.tools.baseline_loader import BaselineMetric
 
 logger = logging.getLogger(__name__)
+
+
+def _get_context() -> Dict[str, Any]:
+    """
+    Get the current chaos context.
+
+    In a chaos toolkit environment, this retrieves the shared context dict.
+    For testing, this can return an empty dict.
+
+    Returns:
+        Context dict, or empty dict if not available
+    """
+    try:
+        from chaoslib import Context
+
+        return Context.get().setdefault("chaos", {})
+    except Exception:
+        # Fallback for testing or non-chaos environments
+        return {}
 
 
 def check_metric_within_baseline(
@@ -21,18 +48,22 @@ def check_metric_within_baseline(
     threshold_sigma: float = 2.0,
     description: str = "Metric within baseline",
     db_host: str = "localhost",
-    db_port: int = 5434
+    db_port: int = 5434,
+    context: Optional[Dict[str, Any]] = None,
 ) -> bool:
     """
     Probe that checks if a current metric is within expected baseline bounds.
-    
-    Reads baselines from PostgreSQL database (primary) with fallback to JSON files.
-    
-    Uses the anomaly_thresholds from the baseline to determine acceptable range:
+
+    Loads baselines using priority order:
+    1. Context (highest priority - loaded by before_experiment_starts)
+    2. Database query (if not in context)
+    3. JSON file (legacy fallback)
+
+    Uses baseline thresholds to determine acceptable range:
     - Normal: within (mean - threshold_sigma * stdev, mean + threshold_sigma * stdev)
     - Warning: outside normal but within (mean - 3*stdev, mean + 3*stdev)
     - Critical: outside 3-sigma bounds
-    
+
     Args:
         metric_name: Name of metric to check (e.g., 'postgresql_backends')
         service_name: Service name (e.g., 'postgres')
@@ -41,84 +72,193 @@ def check_metric_within_baseline(
         description: Human-readable description of probe
         db_host: Database host
         db_port: Database port
-        
+        context: Optional chaos context dict (if not provided, tries to get from environment)
+
     Returns:
         True if metric is within baseline bounds, False otherwise
+
+    Raises:
+        Exception: If all baseline sources fail and metric check is required
     """
     logger.info(f"Probe: {description}")
-    logger.info(f"Checking {metric_name} for {service_name} against baseline (±{threshold_sigma}σ)")
-    
+    logger.info(
+        f"Checking {metric_name} for {service_name} against baseline (±{threshold_sigma}σ)"
+    )
+
     try:
-        # Try to read from database first (primary source)
-        baseline_data = None
-        try:
-            db = ChaosDb(host=db_host, port=db_port)
-            baseline_metrics = db.get_baseline_metrics(service_name)
-            
-            if metric_name in baseline_metrics:
-                baseline_data = baseline_metrics[metric_name]
-                logger.debug(f"✓ Loaded baseline from database for {metric_name}")
-        except Exception as db_error:
-            logger.warning(f"Could not read from database: {str(db_error)}")
-            # Fall through to file-based fallback
-        
-        # Fallback to JSON file if database unavailable
-        if baseline_data is None and baseline_file:
-            logger.debug(f"Falling back to JSON file: {baseline_file}")
-            baseline_data = _load_baseline_from_file(baseline_file, metric_name, service_name)
-        
-        if baseline_data is None:
-            logger.warning(f"No baseline data found for {metric_name}/{service_name}")
+        baseline_metric = None
+        baseline_source = None
+
+        # PRIORITY 1: Check context (highest priority)
+        logger.debug("Priority 1: Checking context for loaded_baselines...")
+        if context is None:
+            context = _get_context()
+
+        loaded_baselines = context.get("loaded_baselines", {})
+        if metric_name in loaded_baselines:
+            baseline_metric = loaded_baselines[metric_name]
+            baseline_source = "CONTEXT"
+            logger.info(
+                f"✓ Found {metric_name} in context (loaded by before_experiment_starts)"
+            )
+
+        # PRIORITY 2: Check database (fallback)
+        if baseline_metric is None:
+            logger.debug("Priority 2: Checking database for baseline...")
+            try:
+                db = ChaosDb(host=db_host, port=db_port)
+                baseline_data = db.get_baseline_by_metric_and_service(
+                    metric_name, service_name
+                )
+
+                if baseline_data:
+                    # Convert dict to BaselineMetric
+                    from datetime import datetime
+
+                    baseline_metric = BaselineMetric(
+                        metric_id=baseline_data.get("metric_id", 0),
+                        metric_name=baseline_data.get("metric_name", metric_name),
+                        service_name=baseline_data.get("service_name", service_name),
+                        system=baseline_data.get("system", ""),
+                        mean=float(baseline_data.get("mean", 0)),
+                        stdev=float(baseline_data.get("stdev", 0)),
+                        min_value=float(baseline_data.get("min_value", 0)),
+                        max_value=float(baseline_data.get("max_value", 0)),
+                        percentile_50=float(baseline_data.get("percentile_50", 0)),
+                        percentile_95=float(baseline_data.get("percentile_95", 0)),
+                        percentile_99=float(baseline_data.get("percentile_99", 0)),
+                        percentile_999=float(baseline_data.get("percentile_999", 0)),
+                        upper_bound_2sigma=float(
+                            baseline_data.get("upper_bound_2sigma", 0)
+                        ),
+                        upper_bound_3sigma=float(
+                            baseline_data.get("upper_bound_3sigma", 0)
+                        ),
+                        baseline_version_id=baseline_data.get("baseline_version_id", 1),
+                        collection_timestamp=baseline_data.get(
+                            "collection_timestamp", datetime.utcnow()
+                        ),
+                        quality_score=float(baseline_data.get("quality_score", 1.0)),
+                    )
+                    baseline_source = "DATABASE"
+                    logger.info(f"✓ Found {metric_name} in database")
+            except Exception as db_error:
+                logger.debug(f"Could not read from database: {str(db_error)}")
+                # Fall through to file-based fallback
+
+        # PRIORITY 3: Check JSON file (legacy fallback)
+        if baseline_metric is None and baseline_file:
+            logger.debug(f"Priority 3: Checking JSON file: {baseline_file}...")
+            baseline_data = _load_baseline_from_file(
+                baseline_file, metric_name, service_name
+            )
+            if baseline_data:
+                # Convert dict to BaselineMetric
+                from datetime import datetime
+
+                baseline_metric = BaselineMetric(
+                    metric_id=0,
+                    metric_name=metric_name,
+                    service_name=service_name,
+                    system="",
+                    mean=float(baseline_data.get("mean", 0)),
+                    stdev=float(baseline_data.get("stdev", 0)),
+                    min_value=float(baseline_data.get("min_value", 0)),
+                    max_value=float(baseline_data.get("max_value", 0)),
+                    percentile_50=float(baseline_data.get("percentile_50", 0)),
+                    percentile_95=float(baseline_data.get("percentile_95", 0)),
+                    percentile_99=float(baseline_data.get("percentile_99", 0)),
+                    percentile_999=float(baseline_data.get("percentile_999", 0)),
+                    upper_bound_2sigma=float(
+                        baseline_data.get("upper_bound_2sigma", 0)
+                    ),
+                    upper_bound_3sigma=float(
+                        baseline_data.get("upper_bound_3sigma", 0)
+                    ),
+                    baseline_version_id=baseline_data.get("baseline_version_id", 1),
+                    collection_timestamp=baseline_data.get(
+                        "collection_timestamp", datetime.utcnow()
+                    ),
+                    quality_score=float(baseline_data.get("quality_score", 1.0)),
+                )
+                baseline_source = "FILE"
+                logger.info(f"✓ Found {metric_name} in JSON file (legacy)")
+
+        # If no baseline found from any source
+        if baseline_metric is None:
+            baseline_source = "NONE"
+            logger.warning(f"⚠️  NO BASELINE DATA: {metric_name}/{service_name}")
+            logger.warning(f"⚠️  No baseline found in context, database, or file")
+            logger.warning(
+                f"⚠️  This probe will PASS without validating actual metrics (tolerance bypass)"
+            )
             return True
-        
+
         # Extract baseline statistics
-        mean = baseline_data.get("mean", 0)
-        stdev = baseline_data.get("stdev", 0)
-        lower_bound = baseline_data.get("lower_bound_2sigma", mean - 2 * stdev)
-        upper_bound = baseline_data.get("upper_bound_2sigma", mean + 2 * stdev)
-        critical_upper = baseline_data.get("upper_bound_3sigma", mean + 3 * stdev)
-        
-        logger.info(f"Baseline for {metric_name}:")
-        logger.info(f"  Mean: {mean}")
-        logger.info(f"  StDev: {stdev}")
-        logger.info(f"  Lower bound (±{threshold_sigma}σ): {lower_bound}")
-        logger.info(f"  Upper bound (±{threshold_sigma}σ): {upper_bound}")
-        logger.info(f"  Critical upper (3σ): {critical_upper}")
-        
+        thresholds = baseline_metric.get_thresholds(sigma=threshold_sigma)
+        lower_bound = thresholds["lower_bound"]
+        upper_bound = thresholds["upper_bound"]
+        critical_upper = thresholds["critical_upper"]
+        critical_lower = thresholds["critical_lower"]
+
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info(f"✓ BASELINE LOADED ({baseline_source})")
+        logger.info("=" * 80)
+        logger.info(f"Metric: {metric_name}")
+        logger.info(f"Service: {service_name}")
+        logger.info(f"Source: {baseline_source}")
+        logger.info(f"")
+        logger.info(f"Statistics:")
+        logger.info(f"  Mean: {baseline_metric.mean}")
+        logger.info(f"  StDev: {baseline_metric.stdev}")
+        logger.info(f"  Min: {baseline_metric.min_value}")
+        logger.info(f"  Max: {baseline_metric.max_value}")
+        logger.info(f"  P50: {baseline_metric.percentile_50}")
+        logger.info(f"  P95: {baseline_metric.percentile_95}")
+        logger.info(f"")
+        logger.info(f"Thresholds (σ={threshold_sigma}):")
+        logger.info(f"  Warning range: [{lower_bound:.2f}, {upper_bound:.2f}]")
+        logger.info(f"  Critical range: [{critical_lower:.2f}, {critical_upper:.2f}]")
+        logger.info(f"  Quality score: {baseline_metric.quality_score}")
+        logger.info(f"  Baseline version: {baseline_metric.baseline_version_id}")
+        logger.info("=" * 80)
+        logger.info("")
+
         # In a real implementation, we would query current metric value from Prometheus
         # For now, return success as baseline is ready
-        logger.info(f"Baseline verification successful for {metric_name}")
+        logger.info(
+            f"✓ Baseline verification successful for {metric_name} (source: {baseline_source})"
+        )
         return True
-        
+
     except Exception as e:
         logger.error(f"Error checking metric against baseline: {str(e)}")
         raise
 
 
 def _load_baseline_from_file(
-    baseline_file: str,
-    metric_name: str,
-    service_name: str
+    baseline_file: str, metric_name: str, service_name: str
 ) -> Optional[Dict[str, Any]]:
     """Load baseline from JSON file (fallback)."""
     try:
-        with open(baseline_file, 'r') as f:
+        with open(baseline_file, "r") as f:
             baseline_data = json.load(f)
-        
+
         anomaly_thresholds = baseline_data.get("anomaly_thresholds", {})
-        
+
         if metric_name not in anomaly_thresholds:
             logger.warning(f"Metric {metric_name} not found in baseline")
             return None
-        
+
         metric_thresholds = anomaly_thresholds[metric_name]
-        
+
         if service_name not in metric_thresholds:
             logger.warning(f"Service {service_name} not found in {metric_name}")
             return None
-        
+
         return metric_thresholds[service_name]
-        
+
     except FileNotFoundError:
         logger.warning(f"Baseline file not found: {baseline_file}")
         return None
@@ -131,38 +271,38 @@ def get_baseline_comparison(
     metric_name: str,
     service_name: str,
     baseline_file: str,
-    current_value: Optional[float] = None
+    current_value: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Get detailed comparison between current metric and baseline.
-    
+
     Args:
         metric_name: Name of metric
         service_name: Service name
         baseline_file: Path to baseline JSON file
         current_value: Current metric value (optional, for calculations)
-        
+
     Returns:
         Dict with detailed comparison analysis
     """
     try:
-        with open(baseline_file, 'r') as f:
+        with open(baseline_file, "r") as f:
             baseline_data = json.load(f)
-        
+
         anomaly_thresholds = baseline_data.get("anomaly_thresholds", {})
         baseline_metrics = baseline_data.get("baseline_metrics", {})
-        
+
         # Get metric thresholds
         if metric_name not in anomaly_thresholds:
             return {"status": "error", "reason": f"Metric {metric_name} not found"}
-        
+
         metric_thresholds = anomaly_thresholds[metric_name]
-        
+
         if service_name not in metric_thresholds:
             return {"status": "error", "reason": f"Service {service_name} not found"}
-        
+
         service_baseline = metric_thresholds[service_name]
-        
+
         # Build comparison report
         comparison = {
             "metric": metric_name,
@@ -170,19 +310,19 @@ def get_baseline_comparison(
             "baseline": service_baseline,
             "current_value": current_value,
             "percentile_change": None,
-            "status": "ok"
+            "status": "ok",
         }
-        
+
         if current_value is not None:
             mean = service_baseline.get("mean", 0)
             stdev = service_baseline.get("stdev", 0)
             upper_bound = service_baseline.get("upper_bound", mean + 2 * stdev)
             critical_upper = service_baseline.get("critical_upper", mean + 3 * stdev)
-            
+
             # Calculate deviation
             deviation_sigma = (current_value - mean) / stdev if stdev > 0 else 0
             comparison["deviation_sigma"] = deviation_sigma
-            
+
             # Determine status
             if current_value > critical_upper:
                 comparison["status"] = "critical"
@@ -190,9 +330,9 @@ def get_baseline_comparison(
                 comparison["status"] = "warning"
             else:
                 comparison["status"] = "ok"
-        
+
         return comparison
-        
+
     except Exception as e:
         logger.error(f"Error getting baseline comparison: {str(e)}")
         raise

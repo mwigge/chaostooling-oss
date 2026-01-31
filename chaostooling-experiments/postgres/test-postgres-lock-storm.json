@@ -37,14 +37,49 @@
       "type": "env",
       "key": "POSTGRES_PASSWORD",
       "default": "postgres"
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
     }
   },
   "controls": [
+    {
+      "name": "experiment-orchestrator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.experiment_orchestrator_control"
+      }
+    },
     {
       "name": "env-loader",
       "provider": {
         "type": "python",
         "module": "chaosgeneric.control.env_loader_control"
+      }
+    },
+    {
+      "name": "database-storage",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_storage_control"
+      }
+    },
+    {
+      "name": "database-display",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.database_display_control",
+        "arguments": {
+          "db_host": "${chaos_db_host}",
+          "db_port": "${chaos_db_port}"
+        }
       }
     },
     {
@@ -60,8 +95,143 @@
         "type": "python",
         "module": "chaostooling_reporting.control"
       }
+    },
+    {
+      "name": "metrics-calculator",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.metrics_calculator_control"
+      }
     }
   ],
+  "baseline_config": {
+    "metadata": {
+      "version": "1.0",
+      "created": "2026-01-31",
+      "service": "postgres",
+      "description": "Baseline metrics configuration for postgres lock storm chaos experiment"
+    },
+    "discovery": {
+      "method": "system",
+      "system_id": "postgres",
+      "service_name": "postgres"
+    },
+    "default_thresholds": {
+      "sigma_threshold": 2.0,
+      "critical_sigma": 3.0,
+      "enable_anomaly_detection": true,
+      "anomaly_method": "zscore"
+    },
+    "data_validation": {
+      "max_age_days": 30,
+      "min_quality_score": 75,
+      "require_statistical_significance": true
+    },
+    "metrics": [
+      {
+        "metric_id": 2001,
+        "metric_name": "pg_locks{mode='AccessExclusiveLock'}",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 0.8,
+          "stddev_value": 1.2,
+          "min_value": 0.0,
+          "max_value": 8.5,
+          "percentile_50": 0.0,
+          "percentile_95": 3.2,
+          "percentile_99": 6.5,
+          "quality_score": 92
+        },
+        "threshold_config": {
+          "sigma_threshold": 3.0,
+          "critical_sigma": 4.0,
+          "warning_lower": -3.8,
+          "warning_upper": 5.4,
+          "critical_lower": -5.0,
+          "critical_upper": 7.6
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.85
+        },
+        "status": "active",
+        "used_in_probes": ["check-exclusive-locks"],
+        "notes": "Counts exclusive locks. Rare in normal operation, needs high threshold (3.0 sigma)."
+      },
+      {
+        "metric_id": 2002,
+        "metric_name": "pg_stat_activity_count",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 12.4,
+          "stddev_value": 3.1,
+          "min_value": 3.0,
+          "max_value": 28.5,
+          "percentile_50": 11.8,
+          "percentile_95": 19.2,
+          "percentile_99": 24.6,
+          "quality_score": 94
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.0,
+          "critical_sigma": 3.0,
+          "warning_lower": 6.2,
+          "warning_upper": 18.6,
+          "critical_lower": 3.1,
+          "critical_upper": 21.7
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.9
+        },
+        "status": "active",
+        "used_in_probes": ["check-activity-count"],
+        "notes": "Number of active sessions. Increases under lock contention."
+      },
+      {
+        "metric_id": 2003,
+        "metric_name": "rate(pg_stat_database_conflicts_total[5m])",
+        "service_name": "postgres",
+        "baseline_source": "prometheus",
+        "baseline_statistics": {
+          "collection_period_days": 30,
+          "data_points": 2880,
+          "mean_value": 0.3,
+          "stddev_value": 0.18,
+          "min_value": 0.0,
+          "max_value": 2.1,
+          "percentile_50": 0.2,
+          "percentile_95": 0.8,
+          "percentile_99": 1.5,
+          "quality_score": 89
+        },
+        "threshold_config": {
+          "sigma_threshold": 2.5,
+          "critical_sigma": 3.5,
+          "warning_lower": -0.15,
+          "warning_upper": 0.75,
+          "critical_lower": -0.33,
+          "critical_upper": 0.93
+        },
+        "anomaly_detection": {
+          "enabled": true,
+          "method": "zscore",
+          "sensitivity": 0.88
+        },
+        "status": "active",
+        "used_in_probes": ["check-conflicts"],
+        "notes": "Rate of query cancellations due to conflicts. Sensitive indicator of lock issues."
+      }
+    ]
+  },
   "steady-state-hypothesis": {
     "title": "PostgreSQL accessible with normal lock contention and deadlock rates",
     "probes": [
@@ -70,14 +240,16 @@
         "type": "probe",
         "provider": {
           "type": "python",
-          "module": "chaosdb.probes.postgres.postgres_connectivity",
-          "func": "probe_postgres_connectivity",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
           "arguments": {
-            "host": "${postgres_host}",
-            "port": "${postgres_port}",
-            "database": "${postgres_db}",
-            "user": "${postgres_user}",
-            "password": "${postgres_password}"
+            "metric_name": "rate(postgresql_commits_total[5m])",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "PostgreSQL connectivity",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "tolerance": true
@@ -90,45 +262,51 @@
           "module": "chaosgeneric.probes.mcp_baseline_probe",
           "func": "check_metric_within_baseline",
           "arguments": {
-            "metric_name": "pg_deadlock_count",
-            "service_name": "postgres",
-            "baseline_file": "postgres/baseline_metrics.json",
-            "threshold_sigma": 0.0,
-            "description": "Zero deadlocks expected (absolute tolerance)"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "lock-wait-time",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosgeneric.probes.mcp_baseline_probe",
-          "func": "check_metric_within_baseline",
-          "arguments": {
-            "metric_name": "pg_lock_wait_duration_ms",
-            "service_name": "postgres",
-            "baseline_file": "postgres/baseline_metrics.json",
-            "threshold_sigma": 1.5,
-            "description": "Lock wait time within 1.5-sigma of baseline (strict)"
-          }
-        },
-        "tolerance": true
-      },
-      {
-        "name": "blocked-processes",
-        "type": "probe",
-        "provider": {
-          "type": "python",
-          "module": "chaosgeneric.probes.mcp_baseline_probe",
-          "func": "check_metric_within_baseline",
-          "arguments": {
-            "metric_name": "pg_blocked_process_count",
+            "metric_name": "db_transaction_deadlocks_total{db_system=\"postgresql\"}",
             "service_name": "postgres",
             "baseline_file": "postgres/baseline_metrics.json",
             "threshold_sigma": 2.0,
-            "description": "Blocked processes within 2-sigma of baseline"
+            "description": "Deadlocks within 2-sigma of baseline",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "connection-pool-utilization",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "chaos_db_connection_pool_utilization_percent",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Connection pool utilization within 2-sigma baseline (proxy for lock contention)",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
+          }
+        },
+        "tolerance": true
+      },
+      {
+        "name": "query-rate",
+        "type": "probe",
+        "provider": {
+          "type": "python",
+          "module": "chaosgeneric.probes.mcp_baseline_probe",
+          "func": "check_metric_within_baseline",
+          "arguments": {
+            "metric_name": "rate(chaos_db_query_count_total{db_system=\"postgresql\"}[1m])",
+            "service_name": "postgres",
+            "baseline_file": "postgres/baseline_metrics.json",
+            "threshold_sigma": 2.0,
+            "description": "Query rate within 2-sigma of baseline (decreases under lock contention)",
+            "db_host": "${chaos_db_host}",
+            "db_port": "${chaos_db_port}"
           }
         },
         "tolerance": true

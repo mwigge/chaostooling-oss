@@ -24,6 +24,19 @@ from mcp.types import (
     ToolResult,
 )
 
+# Import shared baseline management functions
+try:
+    from .tools.baseline_manager import (
+        PrometheusClient,
+        parse_time_range,
+        calculate_statistics,
+    )
+
+    BASELINE_MANAGER_AVAILABLE = True
+except ImportError:
+    BASELINE_MANAGER_AVAILABLE = False
+    PrometheusClient = None
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -48,19 +61,33 @@ class ObservabilityClient:
             "Content-Type": "application/json",
         }
 
-    def query_prometheus(
-        self, query: str, time_range: str = "1h"
-    ) -> dict:
+        # Use shared PrometheusClient if available
+        if BASELINE_MANAGER_AVAILABLE and PrometheusClient:
+            self._prom_client = PrometheusClient(self.prometheus_url)
+        else:
+            self._prom_client = None
+
+    def query_prometheus(self, query: str, time_range: str = "1h") -> dict:
         """
         Query Prometheus for metrics.
-        
+
         Args:
             query: PromQL query
             time_range: Time range (e.g., '1h', '24h', '7d')
-        
+
         Returns:
             Query results with timestamps and values
         """
+        # Use shared client if available
+        if self._prom_client:
+            end_time = datetime.utcnow()
+            start_time = end_time - parse_time_range(time_range)
+            result = self._prom_client.query_range(query, start_time, end_time)
+            if result["status"] == "success":
+                result["query"] = query
+            return result
+
+        # Fallback to legacy implementation
         try:
             end_time = datetime.utcnow()
             start_time = self._parse_time_range(time_range, end_time)
@@ -98,10 +125,10 @@ class ObservabilityClient:
     def query_instant_prometheus(self, query: str) -> dict:
         """
         Query Prometheus instant metrics (current value only).
-        
+
         Args:
             query: PromQL query
-        
+
         Returns:
             Current metric values
         """
@@ -139,12 +166,12 @@ class ObservabilityClient:
     ) -> dict:
         """
         Query Tempo for distributed traces.
-        
+
         Args:
             service_name: Filter by service (optional)
             min_duration: Minimum span duration (e.g., '100ms')
             time_range: Time range to search
-        
+
         Returns:
             List of traces matching criteria
         """
@@ -205,16 +232,14 @@ class ObservabilityClient:
             logger.error(f"Trace detail query failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def query_loki(
-        self, query: str, time_range: str = "1h"
-    ) -> dict:
+    def query_loki(self, query: str, time_range: str = "1h") -> dict:
         """
         Query Loki for logs.
-        
+
         Args:
             query: LogQL query (e.g., '{service="order-service"}')
             time_range: Time range to search
-        
+
         Returns:
             Log entries matching query
         """
@@ -463,9 +488,7 @@ def create_tools() -> list[Tool]:
     ]
 
 
-async def handle_tool_call(
-    name: str, arguments: dict
-) -> ToolResult:
+async def handle_tool_call(name: str, arguments: dict) -> ToolResult:
     """Handle tool calls from Claude"""
 
     try:
