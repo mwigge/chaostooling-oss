@@ -1827,7 +1827,7 @@ def cmd_sync(args):
     syncer.sync_by_labels(labels)
 
 
-def cmd_validate(args):
+def cmd_validate(args: Any) -> None:
     """Validate command: Validate baselines."""
     validator = BaselineValidator()
 
@@ -1849,7 +1849,7 @@ def cmd_validate(args):
         sys.exit(1)
 
 
-def cmd_analyze(args):
+def cmd_analyze(args: Any) -> None:
     """Analyze command: Full steady state analysis."""
     analyzer = SteadyStateAnalyzer(
         prometheus_url=args.prometheus_url,
@@ -1861,7 +1861,7 @@ def cmd_analyze(args):
     analyzer.analyze(output_dir=args.output_dir)
 
 
-def cmd_generate(args):
+def cmd_generate(args: Any) -> None:
     """Generate command: Create baseline_metrics.json file (legacy)."""
     logger.info(f"Generating baseline_metrics.json for {args.system}...")
 
@@ -1888,7 +1888,7 @@ def cmd_generate(args):
     logger.info(f"✓ Baseline saved to {args.output}")
 
 
-def cmd_query(args):
+def cmd_query(args: Any) -> None:
     """Query command: Query baseline data from database."""
     database = ChaosplatformDatabaseClient(
         host=args.db_host,
@@ -1912,7 +1912,7 @@ def cmd_query(args):
         print(json.dumps(baseline, indent=2, default=str))
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(
         description="Unified Baseline Manager - Comprehensive baseline management",

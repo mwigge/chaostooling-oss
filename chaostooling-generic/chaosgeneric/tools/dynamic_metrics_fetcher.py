@@ -203,7 +203,7 @@ class DynamicMetricsFetcher:
 
             # Extract base metric name if it's a PromQL expression
             base_metric_name = self._extract_base_metric_name(metric_name)
-            
+
             # Query baseline_metrics table for stored statistics
             baseline_data = self._db.get_baseline_by_metric_and_service(
                 base_metric_name, service_name
@@ -220,9 +220,21 @@ class DynamicMetricsFetcher:
             stddev = float(baseline_data.get("stdev", 0) or 0)
             min_val = float(baseline_data.get("min_value", 0) or 0)
             max_val = float(baseline_data.get("max_value", 0) or 0)
-            p50 = float(baseline_data.get("percentile_50", 0) or baseline_data.get("p50", 0) or 0)
-            p95 = float(baseline_data.get("percentile_95", 0) or baseline_data.get("p95", 0) or 0)
-            p99 = float(baseline_data.get("percentile_99", 0) or baseline_data.get("p99", 0) or 0)
+            p50 = float(
+                baseline_data.get("percentile_50", 0)
+                or baseline_data.get("p50", 0)
+                or 0
+            )
+            p95 = float(
+                baseline_data.get("percentile_95", 0)
+                or baseline_data.get("p95", 0)
+                or 0
+            )
+            p99 = float(
+                baseline_data.get("percentile_99", 0)
+                or baseline_data.get("p99", 0)
+                or 0
+            )
 
             if mean == 0 and stddev == 0:
                 logger.debug(f"Baseline has zero mean/stddev for {base_metric_name}")
@@ -233,19 +245,21 @@ class DynamicMetricsFetcher:
             # We generate values around mean ± stddev to represent the distribution
             values = [
                 mean - 2 * stddev,  # Lower bound
-                mean - stddev,      # -1 sigma
-                mean,               # Mean
-                mean + stddev,      # +1 sigma
+                mean - stddev,  # -1 sigma
+                mean,  # Mean
+                mean + stddev,  # +1 sigma
                 mean + 2 * stddev,  # Upper bound
-                p50,                # Median
-                p95,                # 95th percentile
-                p99,                # 99th percentile
-                min_val,            # Min
-                max_val,            # Max
+                p50,  # Median
+                p95,  # 95th percentile
+                p99,  # 99th percentile
+                min_val,  # Min
+                max_val,  # Max
             ]
 
             # Filter out invalid values
-            values = [v for v in values if v >= 0 or mean < 0]  # Allow negative if mean is negative
+            values = [
+                v for v in values if v >= 0 or mean < 0
+            ]  # Allow negative if mean is negative
 
             logger.debug(
                 f"Fetched baseline statistics from database for {base_metric_name} "
@@ -372,17 +386,17 @@ class DynamicMetricsFetcher:
     def _extract_base_metric_name(self, promql: str) -> str:
         """
         Extract base metric name from PromQL expression.
-        
+
         Examples:
             rate(postgresql_commits_total[5m]) -> postgresql_commits_total
             increase(metric_name[1h]) -> metric_name
             metric_name -> metric_name
         """
         import re
-        
+
         if not promql:
             return promql
-        
+
         # Remove PromQL functions like rate(), increase(), etc.
         promql_clean = re.sub(
             r"(rate|increase|irate|delta|idelta|sum|avg|min|max|count|histogram_quantile)\s*\(",
@@ -390,16 +404,16 @@ class DynamicMetricsFetcher:
             promql,
             flags=re.IGNORECASE,
         )
-        
+
         # Remove closing parentheses and time ranges [5m], [1h], etc.
         promql_clean = re.sub(r"\[[^\]]+\]", "", promql_clean)
         promql_clean = re.sub(r"\)+", "", promql_clean)
-        
+
         # Extract metric name (word characters, colons, underscores before { or whitespace)
         match = re.search(r"([a-zA-Z_:][a-zA-Z0-9_:]*)", promql_clean)
         if match:
             return match.group(1)
-        
+
         # If no match, return original (might be a simple metric name)
         return promql
 

@@ -7,9 +7,7 @@ Tests metric fetching from Grafana, Prometheus, database, and files.
 import json
 import os
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, patch
 
 from chaosgeneric.tools.dynamic_metrics_fetcher import DynamicMetricsFetcher
 
@@ -17,7 +15,7 @@ from chaosgeneric.tools.dynamic_metrics_fetcher import DynamicMetricsFetcher
 class TestDynamicMetricsFetcher:
     """Test DynamicMetricsFetcher class."""
 
-    def test_init_defaults(self):
+    def test_init_defaults(self) -> None:
         """Test initialization with default values."""
         with patch.dict(os.environ, {}, clear=True):
             fetcher = DynamicMetricsFetcher()
@@ -27,7 +25,7 @@ class TestDynamicMetricsFetcher:
             assert fetcher.db_port == 5432
             assert fetcher.timeout == 5
 
-    def test_init_custom(self):
+    def test_init_custom(self) -> None:
         """Test initialization with custom values."""
         fetcher = DynamicMetricsFetcher(
             grafana_url="http://custom-grafana:3000",
@@ -43,7 +41,7 @@ class TestDynamicMetricsFetcher:
         assert fetcher.timeout == 10
 
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.requests.get")
-    def test_fetch_from_grafana_success(self, mock_get):
+    def test_fetch_from_grafana_success(self, mock_get) -> None:
         """Test successful fetch from Grafana."""
         # Mock response
         mock_response = Mock()
@@ -72,7 +70,7 @@ class TestDynamicMetricsFetcher:
         mock_get.assert_called_once()
 
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.requests.get")
-    def test_fetch_from_grafana_failure(self, mock_get):
+    def test_fetch_from_grafana_failure(self, mock_get) -> None:
         """Test Grafana fetch failure handling."""
         mock_get.side_effect = Exception("Connection error")
 
@@ -82,7 +80,7 @@ class TestDynamicMetricsFetcher:
         assert values == []
 
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.requests.get")
-    def test_fetch_from_prometheus_success(self, mock_get):
+    def test_fetch_from_prometheus_success(self, mock_get) -> None:
         """Test successful fetch from Prometheus."""
         mock_response = Mock()
         mock_response.json.return_value = {
@@ -108,7 +106,7 @@ class TestDynamicMetricsFetcher:
         assert values == [20.1, 25.3]
 
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.requests.get")
-    def test_fetch_from_prometheus_failure(self, mock_get):
+    def test_fetch_from_prometheus_failure(self, mock_get) -> None:
         """Test Prometheus fetch failure handling."""
         mock_get.side_effect = Exception("Timeout")
 
@@ -117,7 +115,7 @@ class TestDynamicMetricsFetcher:
 
         assert values == []
 
-    def test_fetch_from_file_success(self, tmp_path):
+    def test_fetch_from_file_success(self, tmp_path) -> None:
         """Test successful fetch from file."""
         # Create test baseline file
         baseline_file = tmp_path / "baseline.json"
@@ -149,14 +147,14 @@ class TestDynamicMetricsFetcher:
         assert result["min"] == 5.0
         assert result["max"] == 32.1
 
-    def test_fetch_from_file_not_found(self):
+    def test_fetch_from_file_not_found(self) -> None:
         """Test file fetch when file doesn't exist."""
         fetcher = DynamicMetricsFetcher()
         result = fetcher.fetch_from_file("test_metric", "/nonexistent/file.json")
 
         assert result == {}
 
-    def test_fetch_from_file_metric_not_found(self, tmp_path):
+    def test_fetch_from_file_metric_not_found(self, tmp_path) -> None:
         """Test file fetch when metric not in file."""
         baseline_file = tmp_path / "baseline.json"
         baseline_data = {"baseline_config": {"metrics": []}}
@@ -168,7 +166,7 @@ class TestDynamicMetricsFetcher:
         assert result == {}
 
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.ChaosDb")
-    def test_fetch_from_database_success(self, mock_chaos_db_class):
+    def test_fetch_from_database_success(self, mock_chaos_db_class) -> None:
         """Test successful fetch from database."""
         # Mock database connection and cursor
         mock_db = Mock()
@@ -195,7 +193,7 @@ class TestDynamicMetricsFetcher:
         assert values == [10.5, 15.2]
 
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.ChaosDb")
-    def test_fetch_from_database_failure(self, mock_chaos_db_class):
+    def test_fetch_from_database_failure(self, mock_chaos_db_class) -> None:
         """Test database fetch failure handling."""
         mock_chaos_db_class.side_effect = Exception("Database error")
 
@@ -204,10 +202,16 @@ class TestDynamicMetricsFetcher:
 
         assert values == []
 
-    @patch("chaosgeneric.tools.dynamic_metrics_fetcher.DynamicMetricsFetcher.fetch_from_grafana")
-    @patch("chaosgeneric.tools.dynamic_metrics_fetcher.DynamicMetricsFetcher.fetch_from_prometheus")
-    @patch("chaosgeneric.tools.dynamic_metrics_fetcher.DynamicMetricsFetcher.fetch_from_database")
-    def test_fetch_all_parallel(self, mock_db, mock_prom, mock_grafana):
+    @patch(
+        "chaosgeneric.tools.dynamic_metrics_fetcher.DynamicMetricsFetcher.fetch_from_grafana"
+    )
+    @patch(
+        "chaosgeneric.tools.dynamic_metrics_fetcher.DynamicMetricsFetcher.fetch_from_prometheus"
+    )
+    @patch(
+        "chaosgeneric.tools.dynamic_metrics_fetcher.DynamicMetricsFetcher.fetch_from_database"
+    )
+    def test_fetch_all_parallel(self, mock_db, mock_prom, mock_grafana) -> None:
         """Test fetch_all with parallel execution."""
         mock_grafana.return_value = [10.0, 15.0]
         mock_prom.return_value = [20.0, 25.0]
@@ -215,7 +219,10 @@ class TestDynamicMetricsFetcher:
 
         fetcher = DynamicMetricsFetcher()
         result = fetcher.fetch_all(
-            "test_metric", "test_service", "24h", sources=["grafana", "prometheus", "database"]
+            "test_metric",
+            "test_service",
+            "24h",
+            sources=["grafana", "prometheus", "database"],
         )
 
         assert "grafana" in result
@@ -225,7 +232,7 @@ class TestDynamicMetricsFetcher:
         assert result["prometheus"] == [20.0, 25.0]
         assert result["database"] == [30.0, 35.0]
 
-    def test_parse_time_range_hours(self):
+    def test_parse_time_range_hours(self) -> None:
         """Test time range parsing for hours."""
         end_time = datetime(2026, 1, 31, 12, 0, 0)
         start_time = DynamicMetricsFetcher._parse_time_range("24h", end_time)
@@ -233,7 +240,7 @@ class TestDynamicMetricsFetcher:
         expected = end_time - timedelta(hours=24)
         assert start_time == expected
 
-    def test_parse_time_range_days(self):
+    def test_parse_time_range_days(self) -> None:
         """Test time range parsing for days."""
         end_time = datetime(2026, 1, 31, 12, 0, 0)
         start_time = DynamicMetricsFetcher._parse_time_range("30d", end_time)
@@ -241,7 +248,7 @@ class TestDynamicMetricsFetcher:
         expected = end_time - timedelta(days=30)
         assert start_time == expected
 
-    def test_parse_time_range_minutes(self):
+    def test_parse_time_range_minutes(self) -> None:
         """Test time range parsing for minutes."""
         end_time = datetime(2026, 1, 31, 12, 0, 0)
         start_time = DynamicMetricsFetcher._parse_time_range("60m", end_time)
@@ -249,7 +256,7 @@ class TestDynamicMetricsFetcher:
         expected = end_time - timedelta(minutes=60)
         assert start_time == expected
 
-    def test_parse_time_range_invalid(self):
+    def test_parse_time_range_invalid(self) -> None:
         """Test time range parsing with invalid format."""
         end_time = datetime(2026, 1, 31, 12, 0, 0)
         start_time = DynamicMetricsFetcher._parse_time_range("invalid", end_time)

@@ -63,29 +63,29 @@ class MockBaselineMetric:
 class TestDiscoverValidation:
     """Test discover() validation logic."""
 
-    def test_discover_no_parameters_returns_error(self):
+    def test_discover_no_parameters_returns_error(self) -> None:
         """Test that discover() without parameters returns error."""
         # This test would verify that calling discover() with no parameters
         # returns status="error" and discovered_count=0
         pass
 
-    def test_discover_invalid_system_id_format_raises_error(self):
+    def test_discover_invalid_system_id_format_raises_error(self) -> None:
         """Test that invalid system_id raises ValueError."""
         # This test would verify that system_id with invalid characters
         # like "postgres!@#$" raises a validation error
         pass
 
-    def test_discover_empty_labels_raises_error(self):
+    def test_discover_empty_labels_raises_error(self) -> None:
         """Test that empty labels dict raises ValueError."""
         # This test would verify that labels={} raises a validation error
         pass
 
-    def test_discover_non_string_system_id_raises_error(self):
+    def test_discover_non_string_system_id_raises_error(self) -> None:
         """Test that non-string system_id raises ValueError."""
         # This test would verify type checking for system_id
         pass
 
-    def test_discover_non_dict_labels_raises_error(self):
+    def test_discover_non_dict_labels_raises_error(self) -> None:
         """Test that non-dict labels raises ValueError."""
         # This test would verify type checking for labels
         pass
@@ -94,20 +94,20 @@ class TestDiscoverValidation:
 class TestDiscoverBySystem:
     """Test discover() with system_id parameter."""
 
-    def test_discover_by_system_returns_matching_baselines(self):
+    def test_discover_by_system_returns_matching_baselines(self) -> None:
         """Test that discover(system_id=X) returns baselines for that system."""
         # Mock BaselineLoader to return test data
         # Verify that result contains correct structure and metrics
         pass
 
-    def test_discover_by_system_empty_result_returns_success(self):
+    def test_discover_by_system_empty_result_returns_success(self) -> None:
         """Test that non-existent system returns success with count=0."""
         # Verify that result["status"] == "success"
         # Verify that result["discovered_count"] == 0
         # Verify that result["baselines"] == []
         pass
 
-    def test_discover_by_system_includes_metadata(self):
+    def test_discover_by_system_includes_metadata(self) -> None:
         """Test that discovery result includes metadata."""
         # Verify result contains:
         # - discovery_timestamp
@@ -119,12 +119,12 @@ class TestDiscoverBySystem:
 class TestDiscoverByService:
     """Test discover() with service_id parameter."""
 
-    def test_discover_by_service_calls_load_by_service(self):
+    def test_discover_by_service_calls_load_by_service(self) -> None:
         """Test that discover(service_id=X) calls load_by_service."""
         # Mock loader and verify correct method is called
         pass
 
-    def test_discover_by_service_returns_correct_structure(self):
+    def test_discover_by_service_returns_correct_structure(self) -> None:
         """Test that result has correct response structure."""
         # Verify keys: status, discovered_count, discovery_method, baselines, metadata
         pass
@@ -133,12 +133,12 @@ class TestDiscoverByService:
 class TestDiscoverByLabels:
     """Test discover() with labels parameter."""
 
-    def test_discover_by_labels_calls_load_by_labels(self):
+    def test_discover_by_labels_calls_load_by_labels(self) -> None:
         """Test that discover(labels=X) calls load_by_labels."""
         # Mock loader and verify correct method is called
         pass
 
-    def test_discover_by_labels_returns_matching_baselines(self):
+    def test_discover_by_labels_returns_matching_baselines(self) -> None:
         """Test that discover(labels={...}) returns baselines matching all labels."""
         # Verify result contains matching baselines
         pass
@@ -147,7 +147,7 @@ class TestDiscoverByLabels:
 class TestDiscoverShowDetails:
     """Test discover() show_details parameter."""
 
-    def test_discover_show_details_false_excludes_extended_fields(self):
+    def test_discover_show_details_false_excludes_extended_fields(self) -> None:
         """Test that show_details=False excludes percentile_999, version_id, etc."""
         # Verify that result baselines do NOT contain:
         # - percentile_999
@@ -155,7 +155,7 @@ class TestDiscoverShowDetails:
         # - collected_at
         pass
 
-    def test_discover_show_details_true_includes_extended_fields(self):
+    def test_discover_show_details_true_includes_extended_fields(self) -> None:
         """Test that show_details=True includes extended fields."""
         # Verify that result baselines DO contain:
         # - percentile_999
@@ -172,17 +172,17 @@ class TestDiscoverShowDetails:
 class TestStatusValidation:
     """Test status() validation logic."""
 
-    def test_status_invalid_experiment_id_type_raises_error(self):
+    def test_status_invalid_experiment_id_type_raises_error(self) -> None:
         """Test that non-int experiment_id raises ValueError."""
         # Verify that status("not_an_int") raises ValueError
         pass
 
-    def test_status_negative_experiment_id_raises_error(self):
+    def test_status_negative_experiment_id_raises_error(self) -> None:
         """Test that negative experiment_id raises ValueError."""
         # Verify that status(-1) raises ValueError
         pass
 
-    def test_status_nonexistent_experiment_returns_error(self):
+    def test_status_nonexistent_experiment_returns_error(self) -> None:
         """Test that non-existent experiment returns status=error."""
         # Verify that status(999999) returns status="error"
         pass
@@ -191,14 +191,14 @@ class TestStatusValidation:
 class TestStatusBasicQuery:
     """Test status() basic querying."""
 
-    def test_status_returns_all_active_baselines(self):
+    def test_status_returns_all_active_baselines(self) -> None:
         """Test that status() returns all ACTIVE baselines by default."""
         # Create mock experiment and baselines
         # Verify that result["active_count"] matches
         # Verify that all returned baselines have status="ACTIVE"
         pass
 
-    def test_status_calculates_bounds_correctly(self):
+    def test_status_calculates_bounds_correctly(self) -> None:
         """Test that warning/critical bounds are calculated correctly."""
         # Verify that warning_lower = mean - 2*stdev
         # Verify that warning_upper = mean + 2*stdev
@@ -206,7 +206,7 @@ class TestStatusBasicQuery:
         # Verify that critical_upper = mean + 3*stdev
         pass
 
-    def test_status_includes_experiment_metadata(self):
+    def test_status_includes_experiment_metadata(self) -> None:
         """Test that status() includes experiment name and metadata."""
         # Verify result contains:
         # - experiment_name
@@ -218,27 +218,27 @@ class TestStatusBasicQuery:
 class TestStatusFiltering:
     """Test status() filtering parameters."""
 
-    def test_status_show_inactive_false_hides_inactive(self):
+    def test_status_show_inactive_false_hides_inactive(self) -> None:
         """Test that show_inactive=False filters out INACTIVE baselines."""
         # Create mock data with INACTIVE baselines
         # Verify they are NOT returned
         # But verify they are counted in inactive_count
         pass
 
-    def test_status_show_inactive_true_includes_inactive(self):
+    def test_status_show_inactive_true_includes_inactive(self) -> None:
         """Test that show_inactive=True includes INACTIVE baselines."""
         # Create mock data with INACTIVE baselines
         # Verify they ARE returned in baselines list
         pass
 
-    def test_status_show_skipped_false_hides_skipped(self):
+    def test_status_show_skipped_false_hides_skipped(self) -> None:
         """Test that show_skipped=False filters out SKIPPED baselines."""
         # Create mock data with SKIPPED baselines
         # Verify they are NOT returned
         # But verify they are counted in skipped_count
         pass
 
-    def test_status_show_skipped_true_includes_skipped(self):
+    def test_status_show_skipped_true_includes_skipped(self) -> None:
         """Test that show_skipped=True includes SKIPPED baselines."""
         # Create mock data with SKIPPED baselines
         # Verify they ARE returned in baselines list
@@ -248,13 +248,13 @@ class TestStatusFiltering:
 class TestStatusCalculations:
     """Test status() statistical calculations."""
 
-    def test_status_calculates_baseline_age_correctly(self):
+    def test_status_calculates_baseline_age_correctly(self) -> None:
         """Test that baseline_age_days is calculated correctly."""
         # Create baseline collected N days ago
         # Verify baseline_age_days == N
         pass
 
-    def test_status_sets_is_fresh_correctly(self):
+    def test_status_sets_is_fresh_correctly(self) -> None:
         """Test that is_fresh flag is set based on age."""
         # Create baseline < 30 days old: should have is_fresh=True
         # Create baseline > 30 days old: should have is_fresh=False
@@ -269,28 +269,28 @@ class TestStatusCalculations:
 class TestSuggestValidation:
     """Test suggest_for_experiment() validation logic."""
 
-    def test_suggest_invalid_experiment_id_type_raises_error(self):
+    def test_suggest_invalid_experiment_id_type_raises_error(self) -> None:
         """Test that non-int experiment_id raises ValueError."""
         # Verify that suggest("not_an_int") raises ValueError
         pass
 
-    def test_suggest_negative_experiment_id_raises_error(self):
+    def test_suggest_negative_experiment_id_raises_error(self) -> None:
         """Test that negative experiment_id raises ValueError."""
         pass
 
-    def test_suggest_invalid_min_quality_score_raises_error(self):
+    def test_suggest_invalid_min_quality_score_raises_error(self) -> None:
         """Test that min_quality_score outside 0-100 raises ValueError."""
         # Verify suggest(min_quality_score=-1) raises error
         # Verify suggest(min_quality_score=101) raises error
         pass
 
-    def test_suggest_invalid_top_n_raises_error(self):
+    def test_suggest_invalid_top_n_raises_error(self) -> None:
         """Test that non-positive top_n raises ValueError."""
         # Verify suggest(top_n=0) raises ValueError
         # Verify suggest(top_n=-1) raises ValueError
         pass
 
-    def test_suggest_nonexistent_experiment_returns_error(self):
+    def test_suggest_nonexistent_experiment_returns_error(self) -> None:
         """Test that non-existent experiment returns status=error."""
         pass
 
@@ -298,31 +298,31 @@ class TestSuggestValidation:
 class TestSuggestScoring:
     """Test suggest_for_experiment() scoring logic."""
 
-    def test_suggest_quality_score_normalized_correctly(self):
+    def test_suggest_quality_score_normalized_correctly(self) -> None:
         """Test that quality score is normalized to 0-1 range."""
         # Create baseline with quality_score=0.95
         # Verify that quality_norm = 0.95
         pass
 
-    def test_suggest_freshness_score_calculated_correctly(self):
+    def test_suggest_freshness_score_calculated_correctly(self) -> None:
         """Test that freshness score decreases with age."""
         # Create baseline collected 1 day ago: should have high freshness_score
         # Create baseline collected 120 days ago: should have low freshness_score
         pass
 
-    def test_suggest_stability_score_inverse_of_variance(self):
+    def test_suggest_stability_score_inverse_of_variance(self) -> None:
         """Test that stability score is inverse of variance."""
         # Create baseline with low stddev: should have high stability_score
         # Create baseline with high stddev: should have low stability_score
         pass
 
-    def test_suggest_validity_score_checks_bounds_reasonability(self):
+    def test_suggest_validity_score_checks_bounds_reasonability(self) -> None:
         """Test that validity score checks if bounds make sense."""
         # Create baseline with reasonable bounds: high validity_score
         # Create baseline with unreasonable bounds: low validity_score
         pass
 
-    def test_suggest_composite_score_uses_correct_weights(self):
+    def test_suggest_composite_score_uses_correct_weights(self) -> None:
         """Test that overall score uses correct weight proportions."""
         # overall_score = 0.40*quality + 0.30*freshness + 0.20*stability + 0.10*validity
         # Verify calculation matches expected formula
@@ -332,13 +332,15 @@ class TestSuggestScoring:
 class TestSuggestFiltering:
     """Test suggest_for_experiment() filtering."""
 
-    def test_suggest_filters_by_min_quality_score(self):
+    def test_suggest_filters_by_min_quality_score(self) -> None:
         """Test that baselines below min_quality_score are filtered."""
         # Create baseline with quality_score=50: should be filtered with min_quality_score=75
         # Create baseline with quality_score=90: should NOT be filtered
         pass
 
-    def test_suggest_empty_baselines_returns_success_with_zero_suggestions(self):
+    def test_suggest_empty_baselines_returns_success_with_zero_suggestions(
+        self,
+    ) -> None:
         """Test that no baselines returns success with suggestions=[]."""
         # Create experiment with no baselines
         # Verify status="success", suggestions=[], message indicates no baselines
@@ -348,21 +350,21 @@ class TestSuggestFiltering:
 class TestSuggestRanking:
     """Test suggest_for_experiment() ranking and limiting."""
 
-    def test_suggest_returns_top_n_baselines_sorted_by_score(self):
+    def test_suggest_returns_top_n_baselines_sorted_by_score(self) -> None:
         """Test that suggestions are returned in descending score order."""
         # Create 10 baselines with different scores
         # Call suggest(..., top_n=5)
         # Verify returned 5 baselines in descending score order
         pass
 
-    def test_suggest_limits_to_top_n(self):
+    def test_suggest_limits_to_top_n(self) -> None:
         """Test that result is limited to top_n suggestions."""
         # Create 100 baselines
         # Call suggest(..., top_n=20)
         # Verify len(suggestions) == 20
         pass
 
-    def test_suggest_rank_field_sequential(self):
+    def test_suggest_rank_field_sequential(self) -> None:
         """Test that rank field is sequential 1, 2, 3, ..."""
         # Verify that rank values are 1, 2, 3, ..., N
         # Verify first suggestion has rank=1
@@ -372,13 +374,13 @@ class TestSuggestRanking:
 class TestSuggestRecommendationReason:
     """Test suggest_for_experiment() recommendation reason generation."""
 
-    def test_suggest_high_quality_baseline_generates_appropriate_reason(self):
+    def test_suggest_high_quality_baseline_generates_appropriate_reason(self) -> None:
         """Test that high-quality baseline generates appropriate reason."""
         # Create baseline with quality_score >= 90
         # Verify reason includes "High quality"
         pass
 
-    def test_suggest_reason_reflects_all_score_components(self):
+    def test_suggest_reason_reflects_all_score_components(self) -> None:
         """Test that reason is based on multiple score components."""
         # Create baseline with high quality, high freshness, low variance
         # Verify reason includes all three aspects
@@ -393,7 +395,7 @@ class TestSuggestRecommendationReason:
 class TestDiscoverIntegration:
     """Integration tests with real database (if available)."""
 
-    def test_discover_by_system_queries_real_database(self):
+    def test_discover_by_system_queries_real_database(self) -> None:
         """Test discover() queries real database successfully."""
         # Skip if no test database available
         # Connect to real chaos_platform_test database
@@ -406,7 +408,7 @@ class TestDiscoverIntegration:
 class TestStatusIntegration:
     """Integration tests for status() with real database."""
 
-    def test_status_queries_v_experiment_baselines_view(self):
+    def test_status_queries_v_experiment_baselines_view(self) -> None:
         """Test status() queries v_experiment_baselines view correctly."""
         # Skip if no test database available
         # Create test experiment and baseline mappings
@@ -418,7 +420,7 @@ class TestStatusIntegration:
 class TestSuggestIntegration:
     """Integration tests for suggest_for_experiment() with real database."""
 
-    def test_suggest_scores_baselines_correctly(self):
+    def test_suggest_scores_baselines_correctly(self) -> None:
         """Test suggest_for_experiment() scoring with real data."""
         # Skip if no test database available
         # Create baselines with known quality/age/variance properties
@@ -435,20 +437,20 @@ class TestSuggestIntegration:
 class TestErrorHandling:
     """Test error handling in all three commands."""
 
-    def test_discover_database_error_returns_error_status(self):
+    def test_discover_database_error_returns_error_status(self) -> None:
         """Test that database errors are caught and returned."""
         # Mock BaselineLoader to raise exception
         # Verify discover() returns status="error"
         # Verify error message is included
         pass
 
-    def test_status_database_error_returns_error_status(self):
+    def test_status_database_error_returns_error_status(self) -> None:
         """Test that database errors are caught in status()."""
         # Mock _query_experiment_baselines() to raise exception
         # Verify status() returns status="error"
         pass
 
-    def test_suggest_database_error_returns_error_status(self):
+    def test_suggest_database_error_returns_error_status(self) -> None:
         """Test that database errors are caught in suggest_for_experiment()."""
         # Mock database access to raise exception
         # Verify suggest() returns status="error"
@@ -463,28 +465,28 @@ class TestErrorHandling:
 class TestLogging:
     """Test that all commands log appropriately."""
 
-    def test_discover_logs_at_info_level(self, caplog):
+    def test_discover_logs_at_info_level(self, caplog) -> None:
         """Test that discover() logs INFO level messages."""
         # Verify logger.info() is called with discovery details
         pass
 
-    def test_status_logs_at_info_level(self, caplog):
+    def test_status_logs_at_info_level(self, caplog) -> None:
         """Test that status() logs INFO level messages."""
         # Verify logger.info() is called with baseline counts
         pass
 
-    def test_suggest_logs_at_info_level(self, caplog):
+    def test_suggest_logs_at_info_level(self, caplog) -> None:
         """Test that suggest_for_experiment() logs INFO level messages."""
         # Verify logger.info() is called with suggestion count
         pass
 
-    def test_errors_logged_at_warning_level(self, caplog):
+    def test_errors_logged_at_warning_level(self, caplog) -> None:
         """Test that validation errors are logged as WARNING."""
         # Call with invalid parameters
         # Verify logger.warning() is called
         pass
 
-    def test_exceptions_logged_at_error_level(self, caplog):
+    def test_exceptions_logged_at_error_level(self, caplog) -> None:
         """Test that exceptions are logged as ERROR."""
         # Mock database to raise exception
         # Verify logger.error() is called
@@ -499,14 +501,14 @@ class TestLogging:
 class TestPerformance:
     """Test performance characteristics."""
 
-    def test_discover_handles_large_result_sets(self):
+    def test_discover_handles_large_result_sets(self) -> None:
         """Test that discover() can handle >1000 metrics."""
         # Create large mock result set
         # Verify it completes without error
         # Verify response structure is correct
         pass
 
-    def test_status_handles_large_baseline_count(self):
+    def test_status_handles_large_baseline_count(self) -> None:
         """Test that status() can handle experiments with many baselines."""
         # Mock experiment with 500+ baselines
         # Verify it completes efficiently

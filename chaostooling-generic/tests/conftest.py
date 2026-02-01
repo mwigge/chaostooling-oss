@@ -10,7 +10,9 @@ This module provides:
 
 import json
 import os
+from collections.abc import Generator
 from datetime import datetime, timedelta
+from typing import Any
 
 import psycopg2
 import pytest
@@ -21,7 +23,7 @@ from psycopg2.extras import DictCursor
 # ============================================================================
 
 
-def pytest_configure(config):
+def pytest_configure(config: Any) -> None:
     """Register custom markers for test categorization."""
     config.addinivalue_line(
         "markers", "unit: Unit tests (fast, no external dependencies)"
@@ -57,7 +59,7 @@ def db_config() -> dict[str, str]:
 
 
 @pytest.fixture(scope="session")
-def db_connection(db_config):
+def db_connection(db_config: dict[str, str]) -> Generator[Any, None, None]:
     """Session-scoped database connection for test setup."""
     try:
         conn = psycopg2.connect(**db_config)
@@ -69,7 +71,7 @@ def db_connection(db_config):
 
 
 @pytest.fixture
-def db_cursor(db_connection):
+def db_cursor(db_connection: Any) -> Generator[Any, None, None]:
     """Function-scoped database cursor with transaction rollback after test."""
     cursor = db_connection.cursor(cursor_factory=DictCursor)
     yield cursor
@@ -82,7 +84,7 @@ def db_cursor(db_connection):
 
 
 @pytest.fixture(autouse=True)
-def db_transaction_rollback(db_connection):
+def db_transaction_rollback(db_connection: Any) -> Generator[None, None, None]:
     """Automatic transaction rollback after each test to maintain clean state."""
     yield
     try:
@@ -97,7 +99,7 @@ def db_transaction_rollback(db_connection):
 
 
 @pytest.fixture
-def baseline_metric_factory():
+def baseline_metric_factory() -> Any:
     """Factory for creating BaselineMetric instances."""
     from chaosgeneric.tools.baseline_loader import BaselineMetric
 
@@ -114,8 +116,8 @@ def baseline_metric_factory():
         max_val: float = 95.0,
         count: int = 1000,
         baseline_window_hours: int = 24,
-        thresholds: dict = None,
-        sample_time: datetime = None,
+        thresholds: dict[str, float] | None = None,
+        sample_time: datetime | None = None,
         valid: bool = True,
         quality_score: float = 0.95,
         **kwargs,
@@ -279,7 +281,7 @@ def sample_experiment_configs() -> dict[str, dict]:
 
 
 @pytest.fixture
-def mock_grafana_client(mocker):
+def mock_grafana_client(mocker: Any) -> Any:
     """Mock Grafana client for testing baseline discovery."""
     mock = mocker.MagicMock()
     mock.get_metrics_by_system.return_value = [
@@ -295,7 +297,7 @@ def mock_grafana_client(mocker):
 
 
 @pytest.fixture
-def mock_db_client(mocker):
+def mock_db_client(mocker: Any) -> Any:
     """Mock ChaosDb client for testing database operations."""
     mock = mocker.MagicMock()
     mock.get_baselines_for_system.return_value = [
@@ -311,7 +313,7 @@ def mock_db_client(mocker):
 
 
 @pytest.fixture
-def mock_metrics_client(mocker):
+def mock_metrics_client(mocker: Any) -> Any:
     """Mock metrics client for testing baseline calculations."""
     mock = mocker.MagicMock()
     mock.query_metric.return_value = {
@@ -327,7 +329,7 @@ def mock_metrics_client(mocker):
 
 
 @pytest.fixture(autouse=True)
-def cleanup_test_data(db_cursor):
+def cleanup_test_data(db_cursor: Any) -> Generator[None, None, None]:
     """Clean up test data after each test."""
     yield
     # Tables to clean in order of foreign key dependencies
@@ -358,7 +360,7 @@ def cleanup_test_data(db_cursor):
         "network_throughput",
     ]
 )
-def metric_names(request):
+def metric_names(request: Any) -> str:
     """Parameterized fixture for various metric names."""
     return request.param
 
@@ -371,7 +373,7 @@ def metric_names(request):
         "queue-server",
     ]
 )
-def system_names(request):
+def system_names(request: Any) -> str:
     """Parameterized fixture for various system names."""
     return request.param
 
@@ -383,7 +385,7 @@ def system_names(request):
         ("p99", 0.99),
     ]
 )
-def percentile_thresholds(request):
+def percentile_thresholds(request: Any) -> tuple[str, float]:
     """Parameterized fixture for percentile thresholds."""
     return request.param
 
@@ -394,7 +396,7 @@ def percentile_thresholds(request):
 
 
 @pytest.fixture
-def temp_baseline_file(tmp_path):
+def temp_baseline_file(tmp_path: Any) -> Any:
     """Create temporary baseline JSON file for testing."""
     baseline_data = {
         "version": "1.0.0",
@@ -420,7 +422,7 @@ def temp_baseline_file(tmp_path):
 
 
 @pytest.fixture
-def test_audit_log_entry() -> dict:
+def test_audit_log_entry() -> dict[str, Any]:
     """Sample audit log entry for testing."""
     return {
         "log_id": 1,

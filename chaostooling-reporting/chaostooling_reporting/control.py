@@ -53,9 +53,7 @@ def configure_control(
         }
 
     # Initialize report generator
-    output_dir = Path(
-        reporting_config.get("output_dir", "./reporting-output")
-    )
+    output_dir = Path(reporting_config.get("output_dir", "./reporting-output"))
     output_dir.mkdir(parents=True, exist_ok=True)
 
     return {
@@ -279,9 +277,9 @@ def after_experiment_control(
             reporting_config = {
                 "enabled": os.getenv("CHAOS_REPORTING_ENABLED", "true").lower()
                 == "true",
-            "output_dir": os.getenv(
-                "CHAOS_REPORTING_OUTPUT_DIR", "./reporting-output"
-            ),
+                "output_dir": os.getenv(
+                    "CHAOS_REPORTING_OUTPUT_DIR", "./reporting-output"
+                ),
                 "formats": os.getenv("CHAOS_REPORTING_FORMATS", "html,json").split(","),
                 "templates": {
                     "executive": os.getenv("CHAOS_REPORTING_EXECUTIVE", "true").lower()
@@ -300,9 +298,7 @@ def after_experiment_control(
             }
 
         if reporting_config.get("enabled", True):
-            output_dir = reporting_config.get(
-                "output_dir", "./reporting-output"
-            )
+            output_dir = reporting_config.get("output_dir", "./reporting-output")
             report_generator = ReportGenerator(
                 output_dir=output_dir,
                 formats=reporting_config.get("formats", ["html", "json"]),

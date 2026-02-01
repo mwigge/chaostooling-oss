@@ -166,9 +166,9 @@ class DynamicSteadyStateCalculator:
             if mean == 0 and stddev == 0:
                 continue  # Skip invalid metrics
 
-            # Calculate tolerance bounds
-            lower_bound = mean - (threshold_sigma * stddev)
-            upper_bound = mean + (threshold_sigma * stddev)
+            # Calculate tolerance bounds (for reference, not used in tolerance: true)
+            # lower_bound = mean - (threshold_sigma * stddev)
+            # upper_bound = mean + (threshold_sigma * stddev)
 
             probe = {
                 "name": f"check-{metric_name.replace('.', '-').replace('{', '').replace('}', '')}",

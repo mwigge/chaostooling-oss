@@ -4,15 +4,13 @@ Unit tests for SteadyStateFormatter.
 Tests console output formatting.
 """
 
-import pytest
-
 from chaosgeneric.tools.steady_state_formatter import SteadyStateFormatter
 
 
 class TestSteadyStateFormatter:
     """Test SteadyStateFormatter class."""
 
-    def test_format_metrics_table(self):
+    def test_format_metrics_table(self) -> None:
         """Test metrics table formatting."""
         metrics = [
             {
@@ -41,13 +39,13 @@ class TestSteadyStateFormatter:
         assert "15.20" in output
         assert "25.50" in output
 
-    def test_format_metrics_table_empty(self):
+    def test_format_metrics_table_empty(self) -> None:
         """Test metrics table with empty list."""
         output = SteadyStateFormatter.format_metrics_table([])
 
         assert "No metrics calculated" in output
 
-    def test_format_metrics_table_long_name(self):
+    def test_format_metrics_table_long_name(self) -> None:
         """Test metrics table with long metric names (truncation)."""
         metrics = [
             {
@@ -65,7 +63,7 @@ class TestSteadyStateFormatter:
         # Should truncate long names
         assert len([line for line in output.split("\n") if "very_long" in line]) > 0
 
-    def test_format_summary(self):
+    def test_format_summary(self) -> None:
         """Test summary formatting."""
         metrics = [
             {"quality_score": 95},
@@ -80,7 +78,7 @@ class TestSteadyStateFormatter:
         assert "Metrics Calculated: 3" in output
         assert "Average Quality Score: 90.0%" in output
 
-    def test_format_summary_with_sources(self):
+    def test_format_summary_with_sources(self) -> None:
         """Test summary formatting with sources."""
         metrics = [
             {"sources": ["grafana", "prometheus"], "quality_score": 95},
@@ -92,7 +90,7 @@ class TestSteadyStateFormatter:
         assert "Data Sources:" in output
         assert "grafana" in output or "prometheus" in output or "database" in output
 
-    def test_format_steady_state_hypothesis(self):
+    def test_format_steady_state_hypothesis(self) -> None:
         """Test hypothesis formatting."""
         hypothesis = {
             "title": "Test Hypothesis",
@@ -117,7 +115,7 @@ class TestSteadyStateFormatter:
         assert "10.00" in output
         assert "20.00" in output
 
-    def test_format_steady_state_hypothesis_empty(self):
+    def test_format_steady_state_hypothesis_empty(self) -> None:
         """Test hypothesis formatting with no probes."""
         hypothesis = {"title": "Empty Hypothesis", "probes": []}
 
@@ -126,7 +124,7 @@ class TestSteadyStateFormatter:
         assert "Empty Hypothesis" in output
         assert "Probes: 0" in output
 
-    def test_avg_quality(self):
+    def test_avg_quality(self) -> None:
         """Test average quality calculation."""
         metrics = [
             {"quality_score": 100},
@@ -138,7 +136,7 @@ class TestSteadyStateFormatter:
 
         assert avg == 80.0
 
-    def test_avg_quality_empty(self):
+    def test_avg_quality_empty(self) -> None:
         """Test average quality with empty list."""
         avg = SteadyStateFormatter._avg_quality([])
 

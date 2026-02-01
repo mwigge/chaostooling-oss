@@ -6,9 +6,9 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 import requests
+from baseline_manager import calculate_statistics
 
 from chaosgeneric.data.chaos_db import ChaosDb
-from baseline_manager import calculate_statistics
 
 # List of postgresql metrics to sync
 METRICS = [
@@ -107,7 +107,7 @@ def sync_metric(metric_name: str, db: ChaosDb) -> Optional[dict]:
         return None
 
 
-def main():
+def main() -> None:
     """Main sync function."""
     print(f"Syncing {len(METRICS)} PostgreSQL metrics from Prometheus...")
     print(f"Time range: {TIME_RANGE_DAYS} days")

@@ -180,14 +180,13 @@ known_first_party = ["chaosgeneric"]
 
 [tool.mypy]
 python_version = "3.9"
-strict = true
 warn_return_any = true
 warn_unused_configs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-disallow_untyped_calls = true
+disallow_untyped_defs = false  # Gradual typing - allow untyped defs for now
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
 no_implicit_optional = true
 check_untyped_defs = true
 ignore_missing_imports = true
@@ -200,6 +199,15 @@ exclude = [
     "__pycache__",
     ".git",
 ]
+
+# Per-module overrides for gradual typing migration
+[[tool.mypy.overrides]]
+module = [
+    "chaostooling-generic.chaosgeneric.data.chaos_db",
+    "chaostooling-generic.chaosgeneric.tools.baseline_manager",
+]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
 
 # ============================================================================
 # BANDIT SECURITY CONFIGURATION

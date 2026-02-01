@@ -34,7 +34,7 @@ logging.basicConfig(
 
 @click.group()
 @click.version_option(version="1.0.0", prog_name="chaos-observability")
-def cli():
+def cli() -> None:
     """Chaos Engineering Observability Tools"""
     pass
 
@@ -190,7 +190,7 @@ def analyze(
     default="baseline.json",
     help="Output file for baseline metrics",
 )
-def baseline(prometheus_url: str, output_file: str):
+def baseline(prometheus_url: str, output_file: str) -> None:
     """Generate baseline metrics file"""
 
     click.echo("Generating baseline metrics...")

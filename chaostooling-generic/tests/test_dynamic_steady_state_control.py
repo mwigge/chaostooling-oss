@@ -7,8 +7,6 @@ Tests control hook integration with Chaos Toolkit lifecycle.
 import os
 from unittest.mock import Mock, patch
 
-import pytest
-
 from chaosgeneric.control.dynamic_steady_state_control import (
     before_experiment_start,
     configure_control,
@@ -18,18 +16,20 @@ from chaosgeneric.control.dynamic_steady_state_control import (
 class TestDynamicSteadyStateControl:
     """Test DynamicSteadyStateControl."""
 
-    def test_configure_control_enabled(self):
+    def test_configure_control_enabled(self) -> None:
         """Test control configuration when enabled."""
         with patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "true"}):
             configure_control()
 
-    def test_configure_control_disabled(self):
+    def test_configure_control_disabled(self) -> None:
         """Test control configuration when disabled."""
         with patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "false"}):
             configure_control()
 
     @patch("chaosgeneric.control.dynamic_steady_state_control.DynamicMetricsFetcher")
-    @patch("chaosgeneric.control.dynamic_steady_state_control.DynamicSteadyStateCalculator")
+    @patch(
+        "chaosgeneric.control.dynamic_steady_state_control.DynamicSteadyStateCalculator"
+    )
     @patch("chaosgeneric.control.dynamic_steady_state_control._print_to_console")
     def test_before_experiment_start_success(
         self, mock_print, mock_calculator, mock_fetcher_class
@@ -66,7 +66,7 @@ class TestDynamicSteadyStateControl:
                 "metrics": ["test_metric"],
             },
         }
-        context = {}
+        context: dict[str, Any] = {}
 
         with patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "true"}):
             before_experiment_start(context, experiment)
@@ -75,22 +75,23 @@ class TestDynamicSteadyStateControl:
         assert "steady-state-hypothesis" in experiment
         assert "dynamic_steady_state" in context
 
-    def test_before_experiment_start_disabled(self):
+    def test_before_experiment_start_disabled(self) -> None:
         """Test when feature is disabled."""
         experiment = {"title": "Test Experiment"}
-        context = {}
+        context: dict[str, Any] = {}
 
         with patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "false"}):
             before_experiment_start(context, experiment)
 
         # Should not modify experiment
-        assert "steady-state-hypothesis" not in experiment or experiment.get(
-            "steady-state-hypothesis"
-        ) == {}
+        assert (
+            "steady-state-hypothesis" not in experiment
+            or experiment.get("steady-state-hypothesis") == {}
+        )
 
-    def test_before_experiment_start_no_experiment(self):
+    def test_before_experiment_start_no_experiment(self) -> None:
         """Test when no experiment provided."""
-        context = {}
+        context: dict[str, Any] = {}
 
         with patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "true"}):
             before_experiment_start(context, experiment=None)
@@ -98,12 +99,12 @@ class TestDynamicSteadyStateControl:
         # Should not fail
 
     @patch("chaosgeneric.control.dynamic_steady_state_control._extract_metrics")
-    def test_before_experiment_start_no_metrics(self, mock_extract):
+    def test_before_experiment_start_no_metrics(self, mock_extract) -> None:
         """Test when no metrics found."""
         mock_extract.return_value = []
 
         experiment = {"title": "Test Experiment"}
-        context = {}
+        context: dict[str, Any] = {}
 
         with patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "true"}):
             before_experiment_start(context, experiment)
@@ -111,7 +112,7 @@ class TestDynamicSteadyStateControl:
         # Should not modify experiment
 
     @patch("chaosgeneric.control.dynamic_steady_state_control.DynamicMetricsFetcher")
-    def test_before_experiment_start_error_handling(self, mock_fetcher_class):
+    def test_before_experiment_start_error_handling(self, mock_fetcher_class) -> None:
         """Test error handling during calculation."""
         mock_fetcher_class.side_effect = Exception("Fetcher error")
 
@@ -119,13 +120,13 @@ class TestDynamicSteadyStateControl:
             "title": "Test Experiment",
             "dynamic_steady_state": {"metrics": ["test_metric"]},
         }
-        context = {}
+        context: dict[str, Any] = {}
 
         with patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "true"}):
             # Should not raise exception
             before_experiment_start(context, experiment)
 
-    def test_extract_metrics_from_config(self):
+    def test_extract_metrics_from_config(self) -> None:
         """Test metric extraction from dynamic_steady_state config."""
         from chaosgeneric.control.dynamic_steady_state_control import _extract_metrics
 
@@ -139,7 +140,7 @@ class TestDynamicSteadyStateControl:
 
         assert metrics == ["metric1", "metric2"]
 
-    def test_extract_metrics_from_baseline_config(self):
+    def test_extract_metrics_from_baseline_config(self) -> None:
         """Test metric extraction from baseline_config."""
         from chaosgeneric.control.dynamic_steady_state_control import _extract_metrics
 
@@ -157,19 +158,13 @@ class TestDynamicSteadyStateControl:
         assert "metric1" in metrics
         assert "metric2" in metrics
 
-    def test_extract_metrics_from_probes(self):
+    def test_extract_metrics_from_probes(self) -> None:
         """Test metric extraction from steady-state-hypothesis probes."""
         from chaosgeneric.control.dynamic_steady_state_control import _extract_metrics
 
         experiment = {
             "steady-state-hypothesis": {
-                "probes": [
-                    {
-                        "provider": {
-                            "arguments": {"metric_name": "probe_metric"}
-                        }
-                    }
-                ]
+                "probes": [{"provider": {"arguments": {"metric_name": "probe_metric"}}}]
             }
         }
 
@@ -177,23 +172,23 @@ class TestDynamicSteadyStateControl:
 
         assert "probe_metric" in metrics
 
-    def test_extract_service_name_from_baseline_config(self):
+    def test_extract_service_name_from_baseline_config(self) -> None:
         """Test service name extraction from baseline_config."""
-        from chaosgeneric.control.dynamic_steady_state_control import _extract_service_name
+        from chaosgeneric.control.dynamic_steady_state_control import (
+            _extract_service_name,
+        )
 
-        experiment = {
-            "baseline_config": {
-                "discovery": {"service_name": "postgres"}
-            }
-        }
+        experiment = {"baseline_config": {"discovery": {"service_name": "postgres"}}}
 
         service_name = _extract_service_name(experiment)
 
         assert service_name == "postgres"
 
-    def test_extract_service_name_from_title(self):
+    def test_extract_service_name_from_title(self) -> None:
         """Test service name extraction from experiment title."""
-        from chaosgeneric.control.dynamic_steady_state_control import _extract_service_name
+        from chaosgeneric.control.dynamic_steady_state_control import (
+            _extract_service_name,
+        )
 
         experiment = {"title": "PostgreSQL Pool Exhaustion Test"}
 
@@ -201,9 +196,11 @@ class TestDynamicSteadyStateControl:
 
         assert service_name == "postgres"
 
-    def test_extract_service_name_default(self):
+    def test_extract_service_name_default(self) -> None:
         """Test service name extraction default."""
-        from chaosgeneric.control.dynamic_steady_state_control import _extract_service_name
+        from chaosgeneric.control.dynamic_steady_state_control import (
+            _extract_service_name,
+        )
 
         experiment = {"title": "Generic Test"}
 

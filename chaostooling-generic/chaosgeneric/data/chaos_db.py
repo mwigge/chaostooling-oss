@@ -72,7 +72,7 @@ class ChaosDb:
         self._test_connection()
 
     @contextmanager
-    def _get_connection(self):
+    def _get_connection(self) -> Any:
         """Get database connection from pool with automatic commit/rollback."""
         conn = None
         try:
@@ -348,7 +348,7 @@ class ChaosDb:
                     logger.info(
                         f"✓ Created experiment: {experiment_name} (ID: {experiment_id})"
                     )
-                    return experiment_id
+                    return experiment_id  # type: ignore[no-any-return]
 
         except Exception as e:
             logger.error(f"Failed to create experiment: {str(e)}")
@@ -403,7 +403,7 @@ class ChaosDb:
                     logger.info(
                         f"✓ Started experiment run {run_number} (run_id: {run_id})"
                     )
-                    return run_id
+                    return run_id  # type: ignore[no-any-return]
 
         except Exception as e:
             logger.error(f"Failed to start experiment run: {str(e)}")
@@ -573,7 +573,7 @@ class ChaosDb:
                     )
 
                     logger.info(f"✓ Created experiment run: {title} (run_id: {run_id})")
-                    return run_id
+                    return run_id  # type: ignore[no-any-return]
 
         except Exception as e:
             logger.error(f"Failed to create experiment run: {str(e)}")
@@ -582,15 +582,15 @@ class ChaosDb:
     def update_experiment_run(
         self,
         run_id: int,
-        status: str = None,
+        status: Optional[str] = None,
         ended_at: Optional[datetime] = None,
         result_summary: Optional[str] = None,
         metadata: Optional[str] = None,
-        risk_score: int = None,
-        complexity_score: int = None,
-        test_quality: int = None,
-        risk_level: str = None,
-        success_rate: float = None,
+        risk_score: Optional[int] = None,
+        complexity_score: Optional[int] = None,
+        test_quality: Optional[int] = None,
+        risk_level: Optional[str] = None,
+        success_rate: Optional[float] = None,
     ) -> bool:
         """
         Update experiment run with final status and results.

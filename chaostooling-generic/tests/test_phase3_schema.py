@@ -147,7 +147,7 @@ def phase3_test_data(db_cursor, db_connection):
 class TestColumnAddition:
     """Verify all Phase 3 columns were added with correct types."""
 
-    def test_baseline_version_id_column_exists(self, db_cursor):
+    def test_baseline_version_id_column_exists(self, db_cursor) -> None:
         """Verify baseline_version_id column exists with BIGINT type.
 
         Why: This FK column links baseline_experiment_mapping to specific
@@ -168,7 +168,7 @@ class TestColumnAddition:
         )
         assert result["is_nullable"] == "YES", "baseline_version_id should be nullable"
 
-    def test_used_sigma_threshold_column_exists(self, db_cursor):
+    def test_used_sigma_threshold_column_exists(self, db_cursor) -> None:
         """Verify used_sigma_threshold column exists with NUMERIC(5,2) type and default.
 
         Why: Records the actual sigma threshold used for anomaly detection.
@@ -192,7 +192,7 @@ class TestColumnAddition:
         )
         assert result["is_nullable"] == "NO", "used_sigma_threshold should not be null"
 
-    def test_used_critical_sigma_column_exists(self, db_cursor):
+    def test_used_critical_sigma_column_exists(self, db_cursor) -> None:
         """Verify used_critical_sigma column exists with NUMERIC(5,2) type and default.
 
         Why: Records the critical sigma threshold for alerts.
@@ -216,7 +216,7 @@ class TestColumnAddition:
         )
         assert result["is_nullable"] == "NO", "used_critical_sigma should not be null"
 
-    def test_discovery_method_column_exists(self, db_cursor):
+    def test_discovery_method_column_exists(self, db_cursor) -> None:
         """Verify discovery_method column exists with VARCHAR(50) type and CHECK constraint.
 
         Why: Tracks HOW baseline was discovered (system/service/explicit/labels).
@@ -236,7 +236,7 @@ class TestColumnAddition:
             f"Expected VARCHAR, got {result['data_type']}"
         )
 
-    def test_loaded_at_column_exists(self, db_cursor):
+    def test_loaded_at_column_exists(self, db_cursor) -> None:
         """Verify loaded_at column exists with TIMESTAMP type and default.
 
         Why: Records when baseline was loaded for audit trail and debugging.
@@ -392,7 +392,7 @@ class TestConstraints:
 class TestIndexes:
     """Verify all Phase 3 indexes were created for performance."""
 
-    def test_baseline_version_index_exists(self, db_cursor):
+    def test_baseline_version_index_exists(self, db_cursor) -> None:
         """Verify index on baseline_version_id exists.
 
         Why: Speeds up queries like:
@@ -408,7 +408,7 @@ class TestIndexes:
         result = db_cursor.fetchone()
         assert result is not None, "Index on baseline_version_id not found"
 
-    def test_discovery_method_index_exists(self, db_cursor):
+    def test_discovery_method_index_exists(self, db_cursor) -> None:
         """Verify index on discovery_method exists.
 
         Why: Speeds up queries like:
@@ -424,7 +424,7 @@ class TestIndexes:
         result = db_cursor.fetchone()
         assert result is not None, "Index on discovery_method not found"
 
-    def test_loaded_at_index_exists(self, db_cursor):
+    def test_loaded_at_index_exists(self, db_cursor) -> None:
         """Verify index on loaded_at exists.
 
         Why: Speeds up time-based queries like:
@@ -550,7 +550,7 @@ class TestDataMigration:
 class TestViewCreation:
     """Verify v_experiment_baselines view exists and works correctly."""
 
-    def test_view_exists(self, db_cursor):
+    def test_view_exists(self, db_cursor) -> None:
         """Verify v_experiment_baselines view was created.
 
         Why: View is critical for audit trail and baseline tracking queries.
@@ -565,7 +565,7 @@ class TestViewCreation:
         assert result is not None, "v_experiment_baselines view not found"
         assert result["table_type"] == "VIEW", "v_experiment_baselines should be a VIEW"
 
-    def test_view_has_required_columns(self, db_cursor):
+    def test_view_has_required_columns(self, db_cursor) -> None:
         """Verify view has all required columns for audit trail.
 
         Why: Ensures view provides complete information for compliance auditing.
@@ -597,7 +597,7 @@ class TestViewCreation:
         for col in required_columns:
             assert col in columns, f"View missing required column: {col}"
 
-    def test_view_can_be_queried(self, db_cursor, phase3_test_data):
+    def test_view_can_be_queried(self, db_cursor, phase3_test_data) -> None:
         """Verify view can be queried without errors.
 
         Why: Basic functionality check - view is usable for queries.
@@ -610,7 +610,7 @@ class TestViewCreation:
         assert result is not None, "View query should return result"
         assert "count" in result, "Should have count column"
 
-    def test_view_calculated_bounds(self, db_cursor, phase3_test_data):
+    def test_view_calculated_bounds(self, db_cursor, phase3_test_data) -> None:
         """Verify view calculates threshold bounds correctly.
 
         Why: Calculated bounds are critical for anomaly detection:
@@ -718,7 +718,7 @@ class TestViewCreation:
 class TestPermissions:
     """Verify application roles can access new view."""
 
-    def test_chaos_app_can_select_from_view(self, db_cursor):
+    def test_chaos_app_can_select_from_view(self, db_cursor) -> None:
         """Verify chaos_app role can SELECT from v_experiment_baselines.
 
         Why: chaos_app is the primary application role - must have view access.
@@ -744,7 +744,7 @@ class TestPermissions:
         except Exception as e:
             pytest.skip(f"Cannot check permissions: {e}")
 
-    def test_chaos_user_can_select_from_view(self, db_cursor):
+    def test_chaos_user_can_select_from_view(self, db_cursor) -> None:
         """Verify chaos_user role can SELECT from v_experiment_baselines.
 
         Why: chaos_user is a secondary application role - should have read access.
@@ -815,7 +815,9 @@ class TestIntegration:
         assert result["used_critical_sigma"] == 3.5
         assert result["discovery_method"] == "explicit"
 
-    def test_update_discovery_method(self, db_cursor, db_connection, phase3_test_data):
+    def test_update_discovery_method(
+        self, db_cursor, db_connection, phase3_test_data
+    ) -> None:
         """Test updating discovery_method field.
 
         Why: Discovery method might need to be corrected or refined after creation.
@@ -888,7 +890,7 @@ class TestIntegration:
 class TestPerformanceAndEdgeCases:
     """Test performance characteristics and edge cases."""
 
-    def test_index_performance_for_common_query(self, db_cursor):
+    def test_index_performance_for_common_query(self, db_cursor) -> None:
         """Verify indexes improve performance for common query patterns.
 
         Why: Indexes should make discovery_method and loaded_at filtering fast.

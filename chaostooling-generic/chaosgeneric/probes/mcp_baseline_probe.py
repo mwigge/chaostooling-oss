@@ -53,21 +53,21 @@ def _get_context() -> dict[str, Any]:
 def _extract_base_metric_name(promql: str) -> str:
     """
     Extract base metric name from PromQL expression.
-    
+
     Examples:
         rate(postgresql_commits_total[5m]) -> postgresql_commits_total
         increase(metric_name[1h]) -> metric_name
         metric_name -> metric_name
-    
+
     Args:
         promql: PromQL expression or metric name
-    
+
     Returns:
         Base metric name
     """
     if not promql:
         return promql
-    
+
     # Remove PromQL functions like rate(), increase(), etc.
     promql_clean = re.sub(
         r"(rate|increase|irate|delta|idelta|sum|avg|min|max|count|histogram_quantile)\s*\(",
@@ -75,16 +75,16 @@ def _extract_base_metric_name(promql: str) -> str:
         promql,
         flags=re.IGNORECASE,
     )
-    
+
     # Remove closing parentheses and time ranges [5m], [1h], etc.
     promql_clean = re.sub(r"\[[^\]]+\]", "", promql_clean)
     promql_clean = re.sub(r"\)+", "", promql_clean)
-    
+
     # Extract metric name (word characters, colons, underscores before { or whitespace)
     match = re.search(r"([a-zA-Z_:][a-zA-Z0-9_:]*)", promql_clean)
     if match:
         return match.group(1)
-    
+
     # If no match, return original (might be a simple metric name)
     return promql
 
@@ -147,18 +147,22 @@ def check_metric_within_baseline(
         logger.debug("Priority 1: Checking context for loaded_baselines...")
         if context is None:
             context = _get_context()
-        
+
         # Debug: Log what's in context
         if context:
             logger.debug(f"Context keys: {list(context.keys())}")
-            logger.debug(f"loaded_baselines in context: {'loaded_baselines' in context}")
+            logger.debug(
+                f"loaded_baselines in context: {'loaded_baselines' in context}"
+            )
             if "loaded_baselines" in context:
-                logger.debug(f"loaded_baselines keys: {list(context['loaded_baselines'].keys())}")
+                logger.debug(
+                    f"loaded_baselines keys: {list(context['loaded_baselines'].keys())}"
+                )
         else:
             logger.debug("Context is None or empty")
 
         loaded_baselines = context.get("loaded_baselines", {}) if context else {}
-        
+
         # Try exact match first
         if metric_name in loaded_baselines:
             baseline_metric = loaded_baselines[metric_name]
@@ -189,7 +193,7 @@ def check_metric_within_baseline(
                 baseline_data = db.get_baseline_by_metric_and_service(
                     metric_name, service_name
                 )
-                
+
                 # If not found, try base metric name
                 if not baseline_data:
                     base_metric_name = _extract_base_metric_name(metric_name)

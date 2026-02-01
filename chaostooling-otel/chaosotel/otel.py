@@ -87,6 +87,7 @@ def auto_instrument_databases_and_messaging(
         try:
             import psycopg2
             from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+
             _ = psycopg2  # Verify client is available for instrumentation
 
             Psycopg2Instrumentor().instrument(
@@ -106,6 +107,7 @@ def auto_instrument_databases_and_messaging(
         try:
             import pymysql
             from opentelemetry.instrumentation.pymysql import PyMySQLInstrumentor
+
             _ = pymysql  # Verify client is available for instrumentation
 
             PyMySQLInstrumentor().instrument(
@@ -122,6 +124,7 @@ def auto_instrument_databases_and_messaging(
         try:
             import redis
             from opentelemetry.instrumentation.redis import RedisInstrumentor
+
             _ = redis  # Verify client is available for instrumentation
 
             RedisInstrumentor().instrument(
@@ -138,6 +141,7 @@ def auto_instrument_databases_and_messaging(
         try:
             from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
             from pymongo import MongoClient
+
             _ = MongoClient  # Verify client is available for instrumentation
 
             PymongoInstrumentor().instrument(
@@ -154,6 +158,7 @@ def auto_instrument_databases_and_messaging(
         try:
             import pika
             from opentelemetry.instrumentation.pika import PikaInstrumentor
+
             _ = pika  # Verify client is available for instrumentation
 
             PikaInstrumentor().instrument(
@@ -169,6 +174,7 @@ def auto_instrument_databases_and_messaging(
     if "activemq" in messaging:
         try:
             import stomp
+
             _ = stomp  # Verify client is available for user code
 
             # Note: There's no official OpenTelemetry instrumentor for stomp.py

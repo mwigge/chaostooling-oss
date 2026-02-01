@@ -1218,6 +1218,7 @@ def trace_activemq_receive(
     """
     try:
         import stomp
+
         _ = stomp  # Verify stomp is available for user code
     except ImportError:
         raise ImportError(

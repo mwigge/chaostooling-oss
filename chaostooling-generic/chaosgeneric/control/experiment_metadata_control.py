@@ -52,12 +52,12 @@ KNOWN_SERVICES = {
 }
 
 
-def configure_control():
+def configure_control() -> None:
     """Configure the experiment metadata control."""
     logger.info("Configuring experiment metadata control")
 
 
-def load_control(control: Control):
+def load_control(control: Control) -> None:
     """Load the experiment metadata control."""
     control.name = "experiment-metadata"
     control.description = "Initialize stable experiment metadata for all controls"
@@ -68,7 +68,7 @@ def load_control(control: Control):
     logger.info("Experiment metadata control loaded")
 
 
-def unload_control(control: Control):
+def unload_control(control: Control) -> None:
     """Unload the experiment metadata control."""
     logger.info("Experiment metadata control unloaded")
 

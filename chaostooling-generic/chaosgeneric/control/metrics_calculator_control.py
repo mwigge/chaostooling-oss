@@ -377,7 +377,7 @@ class MetricsCalculator:
 # Control provider functions
 
 
-def configure_control():
+def configure_control() -> None:
     """Configure the metrics calculator control."""
     logger.info("Metrics calculator control configured")
 

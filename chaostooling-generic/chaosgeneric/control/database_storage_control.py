@@ -59,12 +59,12 @@ def query_prometheus_metric(
     return None
 
 
-def configure_control():
+def configure_control() -> None:
     """Configure the database storage control."""
     logger.info("Configuring database storage control")
 
 
-def load_control(control: Control):
+def load_control(control: Control) -> None:
     """Load the database storage control."""
     control.name = "database-storage"
     control.description = "Persist experiment execution to PostgreSQL"
@@ -77,7 +77,7 @@ def load_control(control: Control):
     logger.info("Database storage control loaded")
 
 
-def unload_control(control: Control):
+def unload_control(control: Control) -> None:
     """Unload the database storage control."""
     logger.info("Database storage control unloaded")
 

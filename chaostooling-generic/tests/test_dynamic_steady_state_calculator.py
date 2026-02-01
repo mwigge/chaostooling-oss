@@ -4,8 +4,6 @@ Unit tests for DynamicSteadyStateCalculator.
 Tests statistical calculation, aggregation, and hypothesis generation.
 """
 
-import pytest
-
 from chaosgeneric.tools.dynamic_steady_state_calculator import (
     DynamicSteadyStateCalculator,
 )
@@ -14,7 +12,7 @@ from chaosgeneric.tools.dynamic_steady_state_calculator import (
 class TestDynamicSteadyStateCalculator:
     """Test DynamicSteadyStateCalculator class."""
 
-    def test_calculate_statistics_basic(self):
+    def test_calculate_statistics_basic(self) -> None:
         """Test basic statistics calculation."""
         values = [10.0, 15.0, 20.0, 25.0, 30.0]
         stats = DynamicSteadyStateCalculator.calculate_statistics(values)
@@ -27,7 +25,7 @@ class TestDynamicSteadyStateCalculator:
         assert "p95" in stats
         assert "p99" in stats
 
-    def test_calculate_statistics_empty(self):
+    def test_calculate_statistics_empty(self) -> None:
         """Test statistics calculation with empty values."""
         stats = DynamicSteadyStateCalculator.calculate_statistics([])
 
@@ -37,7 +35,7 @@ class TestDynamicSteadyStateCalculator:
         assert stats["max"] == 0.0
         assert stats["data_points"] == 0
 
-    def test_calculate_statistics_single_value(self):
+    def test_calculate_statistics_single_value(self) -> None:
         """Test statistics calculation with single value."""
         stats = DynamicSteadyStateCalculator.calculate_statistics([42.0])
 
@@ -47,7 +45,7 @@ class TestDynamicSteadyStateCalculator:
         assert stats["max"] == 42.0
         assert stats["data_points"] == 1
 
-    def test_aggregate_sources_time_series(self):
+    def test_aggregate_sources_time_series(self) -> None:
         """Test aggregation from time-series sources."""
         source_data = {
             "grafana": [10.0, 15.0, 20.0],
@@ -55,7 +53,9 @@ class TestDynamicSteadyStateCalculator:
             "database": [35.0, 40.0],
         }
 
-        result = DynamicSteadyStateCalculator.aggregate_sources(source_data, "test_metric")
+        result = DynamicSteadyStateCalculator.aggregate_sources(
+            source_data, "test_metric"
+        )
 
         assert result["metric_name"] == "test_metric"
         assert result["data_points"] == 7  # 3 + 2 + 2
@@ -63,7 +63,7 @@ class TestDynamicSteadyStateCalculator:
         assert "sources" in result
         assert "quality_score" in result
 
-    def test_aggregate_sources_file_fallback(self):
+    def test_aggregate_sources_file_fallback(self) -> None:
         """Test aggregation with file source as fallback."""
         source_data = {
             "file": {
@@ -79,24 +79,28 @@ class TestDynamicSteadyStateCalculator:
             }
         }
 
-        result = DynamicSteadyStateCalculator.aggregate_sources(source_data, "test_metric")
+        result = DynamicSteadyStateCalculator.aggregate_sources(
+            source_data, "test_metric"
+        )
 
         assert result["metric_name"] == "test_metric"
         assert result["data_points"] > 0  # Synthetic values generated
         assert "sources" in result
         assert "file" in result["sources"]
 
-    def test_aggregate_sources_no_data(self):
+    def test_aggregate_sources_no_data(self) -> None:
         """Test aggregation with no data."""
         source_data = {}
 
-        result = DynamicSteadyStateCalculator.aggregate_sources(source_data, "test_metric")
+        result = DynamicSteadyStateCalculator.aggregate_sources(
+            source_data, "test_metric"
+        )
 
         assert result["metric_name"] == "test_metric"
         assert result["data_points"] == 0
         assert result["quality_score"] == 0
 
-    def test_generate_steady_state_hypothesis(self):
+    def test_generate_steady_state_hypothesis(self) -> None:
         """Test steady-state-hypothesis generation."""
         metrics = [
             {
@@ -129,7 +133,7 @@ class TestDynamicSteadyStateCalculator:
         assert "provider" in probe
         assert "tolerance" in probe
 
-    def test_generate_steady_state_hypothesis_empty(self):
+    def test_generate_steady_state_hypothesis_empty(self) -> None:
         """Test hypothesis generation with empty metrics."""
         hypothesis = DynamicSteadyStateCalculator.generate_steady_state_hypothesis([])
 
@@ -137,7 +141,7 @@ class TestDynamicSteadyStateCalculator:
         assert "probes" in hypothesis
         assert len(hypothesis["probes"]) == 0
 
-    def test_generate_steady_state_hypothesis_invalid_metrics(self):
+    def test_generate_steady_state_hypothesis_invalid_metrics(self) -> None:
         """Test hypothesis generation with invalid metrics (zero mean/stddev)."""
         metrics = [
             {
@@ -148,12 +152,14 @@ class TestDynamicSteadyStateCalculator:
             }
         ]
 
-        hypothesis = DynamicSteadyStateCalculator.generate_steady_state_hypothesis(metrics)
+        hypothesis = DynamicSteadyStateCalculator.generate_steady_state_hypothesis(
+            metrics
+        )
 
         # Invalid metrics should be skipped
         assert len(hypothesis["probes"]) == 0
 
-    def test_percentile_calculation(self):
+    def test_percentile_calculation(self) -> None:
         """Test percentile calculation."""
         sorted_data = [10.0, 20.0, 30.0, 40.0, 50.0]
 
@@ -165,28 +171,34 @@ class TestDynamicSteadyStateCalculator:
         assert p95 > 40.0
         assert p99 > 45.0
 
-    def test_percentile_empty(self):
+    def test_percentile_empty(self) -> None:
         """Test percentile with empty data."""
         result = DynamicSteadyStateCalculator._percentile([], 50)
         assert result == 0.0
 
-    def test_calculate_quality_score_high(self):
+    def test_calculate_quality_score_high(self) -> None:
         """Test quality score calculation with high-quality data."""
         stats = {"data_points": 1000, "stddev": 5.0}
-        score = DynamicSteadyStateCalculator._calculate_quality_score(stats, source_count=3)
+        score = DynamicSteadyStateCalculator._calculate_quality_score(
+            stats, source_count=3
+        )
 
         assert score >= 80  # High quality
 
-    def test_calculate_quality_score_low(self):
+    def test_calculate_quality_score_low(self) -> None:
         """Test quality score calculation with low-quality data."""
         stats = {"data_points": 5, "stddev": 0.0}
-        score = DynamicSteadyStateCalculator._calculate_quality_score(stats, source_count=1)
+        score = DynamicSteadyStateCalculator._calculate_quality_score(
+            stats, source_count=1
+        )
 
         assert score < 50  # Low quality
 
-    def test_calculate_quality_score_max(self):
+    def test_calculate_quality_score_max(self) -> None:
         """Test quality score caps at 100."""
         stats = {"data_points": 10000, "stddev": 10.0}
-        score = DynamicSteadyStateCalculator._calculate_quality_score(stats, source_count=4)
+        score = DynamicSteadyStateCalculator._calculate_quality_score(
+            stats, source_count=4
+        )
 
         assert score <= 100

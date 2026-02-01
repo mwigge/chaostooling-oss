@@ -17,6 +17,7 @@ Usage:
 import json
 import os
 from datetime import datetime, timedelta
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -149,7 +150,7 @@ class TestDynamicMetricsFetcher:
     """Test DynamicMetricsFetcher class."""
 
     @pytest.mark.unit
-    def test_init_defaults(self):
+    def test_init_defaults(self) -> None:
         """Test initialization with default values."""
         fetcher = DynamicMetricsFetcher()
         assert fetcher.grafana_url == "http://grafana:3000"
@@ -159,7 +160,7 @@ class TestDynamicMetricsFetcher:
         assert fetcher.timeout == 5
 
     @pytest.mark.unit
-    def test_init_custom_values(self):
+    def test_init_custom_values(self) -> None:
         """Test initialization with custom values."""
         fetcher = DynamicMetricsFetcher(
             grafana_url="http://custom-grafana:3000",
@@ -176,7 +177,9 @@ class TestDynamicMetricsFetcher:
 
     @pytest.mark.unit
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.requests.get")
-    def test_fetch_from_prometheus_success(self, mock_get, sample_prometheus_response):
+    def test_fetch_from_prometheus_success(
+        self, mock_get, sample_prometheus_response
+    ) -> None:
         """Test successful fetch from Prometheus."""
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = sample_prometheus_response
@@ -191,7 +194,7 @@ class TestDynamicMetricsFetcher:
 
     @pytest.mark.unit
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.requests.get")
-    def test_fetch_from_prometheus_failure(self, mock_get):
+    def test_fetch_from_prometheus_failure(self, mock_get) -> None:
         """Test Prometheus fetch failure handling."""
         mock_get.side_effect = Exception("Connection error")
 
@@ -202,7 +205,9 @@ class TestDynamicMetricsFetcher:
 
     @pytest.mark.unit
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.requests.get")
-    def test_fetch_from_grafana_success(self, mock_get, sample_grafana_response):
+    def test_fetch_from_grafana_success(
+        self, mock_get, sample_grafana_response
+    ) -> None:
         """Test successful fetch from Grafana."""
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = sample_grafana_response
@@ -216,7 +221,7 @@ class TestDynamicMetricsFetcher:
 
     @pytest.mark.unit
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.requests.get")
-    def test_fetch_from_grafana_with_api_key(self, mock_get):
+    def test_fetch_from_grafana_with_api_key(self, mock_get) -> None:
         """Test Grafana fetch with API key."""
         with patch.dict(os.environ, {"GRAFANA_API_KEY": "test-key"}):
             mock_get.return_value.status_code = 200
@@ -235,7 +240,7 @@ class TestDynamicMetricsFetcher:
             assert call_args[1]["headers"]["Authorization"] == "Bearer test-key"
 
     @pytest.mark.unit
-    def test_fetch_from_file_success(self, sample_baseline_file):
+    def test_fetch_from_file_success(self, sample_baseline_file) -> None:
         """Test successful fetch from file."""
         fetcher = DynamicMetricsFetcher()
         result = fetcher.fetch_from_file(
@@ -248,7 +253,7 @@ class TestDynamicMetricsFetcher:
         assert result["max"] == 32.1
 
     @pytest.mark.unit
-    def test_fetch_from_file_not_found(self):
+    def test_fetch_from_file_not_found(self) -> None:
         """Test file fetch with non-existent file."""
         fetcher = DynamicMetricsFetcher()
         result = fetcher.fetch_from_file("test_metric", "/nonexistent/file.json")
@@ -256,7 +261,7 @@ class TestDynamicMetricsFetcher:
         assert result == {}
 
     @pytest.mark.unit
-    def test_fetch_from_file_metric_not_found(self, sample_baseline_file):
+    def test_fetch_from_file_metric_not_found(self, sample_baseline_file) -> None:
         """Test file fetch with metric not in file."""
         fetcher = DynamicMetricsFetcher()
         result = fetcher.fetch_from_file("nonexistent_metric", sample_baseline_file)
@@ -265,7 +270,7 @@ class TestDynamicMetricsFetcher:
 
     @pytest.mark.unit
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.ChaosDb")
-    def test_fetch_from_database_success(self, mock_chaos_db):
+    def test_fetch_from_database_success(self, mock_chaos_db) -> None:
         """Test successful fetch from database."""
         # Mock database connection and cursor
         mock_db = MagicMock()
@@ -296,7 +301,7 @@ class TestDynamicMetricsFetcher:
         assert values == [10.0, 12.0]
 
     @pytest.mark.unit
-    def test_parse_time_range_hours(self):
+    def test_parse_time_range_hours(self) -> None:
         """Test time range parsing for hours."""
         end_time = datetime(2026, 1, 31, 12, 0, 0)
         start_time = DynamicMetricsFetcher._parse_time_range("24h", end_time)
@@ -305,7 +310,7 @@ class TestDynamicMetricsFetcher:
         assert start_time == expected
 
     @pytest.mark.unit
-    def test_parse_time_range_days(self):
+    def test_parse_time_range_days(self) -> None:
         """Test time range parsing for days."""
         end_time = datetime(2026, 1, 31, 12, 0, 0)
         start_time = DynamicMetricsFetcher._parse_time_range("30d", end_time)
@@ -314,7 +319,7 @@ class TestDynamicMetricsFetcher:
         assert start_time == expected
 
     @pytest.mark.unit
-    def test_parse_time_range_minutes(self):
+    def test_parse_time_range_minutes(self) -> None:
         """Test time range parsing for minutes."""
         end_time = datetime(2026, 1, 31, 12, 0, 0)
         start_time = DynamicMetricsFetcher._parse_time_range("60m", end_time)
@@ -323,7 +328,7 @@ class TestDynamicMetricsFetcher:
         assert start_time == expected
 
     @pytest.mark.unit
-    def test_parse_time_range_invalid_defaults_to_24h(self):
+    def test_parse_time_range_invalid_defaults_to_24h(self) -> None:
         """Test invalid time range defaults to 24h."""
         end_time = datetime(2026, 1, 31, 12, 0, 0)
         start_time = DynamicMetricsFetcher._parse_time_range("invalid", end_time)
@@ -333,7 +338,7 @@ class TestDynamicMetricsFetcher:
 
     @pytest.mark.unit
     @patch("chaosgeneric.tools.dynamic_metrics_fetcher.requests.get")
-    def test_fetch_all_parallel(self, mock_get, sample_prometheus_response):
+    def test_fetch_all_parallel(self, mock_get, sample_prometheus_response) -> None:
         """Test fetch_all with parallel execution."""
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = sample_prometheus_response
@@ -360,7 +365,7 @@ class TestDynamicSteadyStateCalculator:
     """Test DynamicSteadyStateCalculator class."""
 
     @pytest.mark.unit
-    def test_calculate_statistics(self, sample_metric_values):
+    def test_calculate_statistics(self, sample_metric_values) -> None:
         """Test statistical calculation."""
         stats = DynamicSteadyStateCalculator.calculate_statistics(sample_metric_values)
 
@@ -374,7 +379,7 @@ class TestDynamicSteadyStateCalculator:
         assert stats["data_points"] == 10
 
     @pytest.mark.unit
-    def test_calculate_statistics_empty_list(self):
+    def test_calculate_statistics_empty_list(self) -> None:
         """Test statistics calculation with empty list."""
         stats = DynamicSteadyStateCalculator.calculate_statistics([])
 
@@ -383,7 +388,7 @@ class TestDynamicSteadyStateCalculator:
         assert stats["data_points"] == 0
 
     @pytest.mark.unit
-    def test_calculate_statistics_single_value(self):
+    def test_calculate_statistics_single_value(self) -> None:
         """Test statistics calculation with single value."""
         stats = DynamicSteadyStateCalculator.calculate_statistics([10.0])
 
@@ -393,7 +398,7 @@ class TestDynamicSteadyStateCalculator:
         assert stats["max"] == 10.0
 
     @pytest.mark.unit
-    def test_aggregate_sources_time_series(self):
+    def test_aggregate_sources_time_series(self) -> None:
         """Test aggregation from time-series sources."""
         source_data = {
             "grafana": [10.0, 12.0, 15.0],
@@ -413,7 +418,7 @@ class TestDynamicSteadyStateCalculator:
         assert result["quality_score"] > 0
 
     @pytest.mark.unit
-    def test_aggregate_sources_with_file_fallback(self):
+    def test_aggregate_sources_with_file_fallback(self) -> None:
         """Test aggregation with file source as fallback."""
         source_data = {
             "file": {
@@ -435,7 +440,7 @@ class TestDynamicSteadyStateCalculator:
         assert "file" in result["sources"]
 
     @pytest.mark.unit
-    def test_aggregate_sources_no_data(self):
+    def test_aggregate_sources_no_data(self) -> None:
         """Test aggregation with no data from any source."""
         source_data = {}
 
@@ -448,7 +453,7 @@ class TestDynamicSteadyStateCalculator:
         assert result["quality_score"] == 0
 
     @pytest.mark.unit
-    def test_generate_steady_state_hypothesis(self):
+    def test_generate_steady_state_hypothesis(self) -> None:
         """Test steady-state-hypothesis generation."""
         metrics = [
             {
@@ -469,7 +474,7 @@ class TestDynamicSteadyStateCalculator:
         assert "tolerance" in hypothesis["probes"][0]
 
     @pytest.mark.unit
-    def test_generate_steady_state_hypothesis_skips_invalid(self):
+    def test_generate_steady_state_hypothesis_skips_invalid(self) -> None:
         """Test hypothesis generation skips invalid metrics."""
         metrics = [
             {
@@ -492,7 +497,7 @@ class TestDynamicSteadyStateCalculator:
         assert hypothesis["probes"][0]["name"] == "check-valid-metric"
 
     @pytest.mark.unit
-    def test_percentile_calculation(self):
+    def test_percentile_calculation(self) -> None:
         """Test percentile calculation."""
         sorted_data = [10.0, 20.0, 30.0, 40.0, 50.0]
 
@@ -505,7 +510,7 @@ class TestDynamicSteadyStateCalculator:
         assert p99 > 45.0
 
     @pytest.mark.unit
-    def test_quality_score_calculation(self):
+    def test_quality_score_calculation(self) -> None:
         """Test quality score calculation."""
         stats = {
             "data_points": 1000,
@@ -518,7 +523,7 @@ class TestDynamicSteadyStateCalculator:
         assert score > 50  # Should be high with 1000 points and 3 sources
 
     @pytest.mark.unit
-    def test_quality_score_low_data_points(self):
+    def test_quality_score_low_data_points(self) -> None:
         """Test quality score with low data points."""
         stats = {
             "data_points": 5,
@@ -539,7 +544,7 @@ class TestSteadyStateFormatter:
     """Test SteadyStateFormatter class."""
 
     @pytest.mark.unit
-    def test_format_metrics_table(self):
+    def test_format_metrics_table(self) -> None:
         """Test metrics table formatting."""
         metrics = [
             {
@@ -560,14 +565,14 @@ class TestSteadyStateFormatter:
         assert "95" in output
 
     @pytest.mark.unit
-    def test_format_metrics_table_empty(self):
+    def test_format_metrics_table_empty(self) -> None:
         """Test formatting with empty metrics."""
         output = SteadyStateFormatter.format_metrics_table([])
 
         assert "No metrics calculated" in output
 
     @pytest.mark.unit
-    def test_format_metrics_table_long_name(self):
+    def test_format_metrics_table_long_name(self) -> None:
         """Test formatting with long metric name."""
         metrics = [
             {
@@ -588,7 +593,7 @@ class TestSteadyStateFormatter:
         assert len(metric_line.split()[0]) <= 40
 
     @pytest.mark.unit
-    def test_format_summary(self):
+    def test_format_summary(self) -> None:
         """Test summary formatting."""
         metrics = [
             {
@@ -606,7 +611,7 @@ class TestSteadyStateFormatter:
         assert "90.0" in output  # Average quality
 
     @pytest.mark.unit
-    def test_format_steady_state_hypothesis(self):
+    def test_format_steady_state_hypothesis(self) -> None:
         """Test hypothesis formatting."""
         hypothesis = {
             "title": "Test hypothesis",
@@ -636,19 +641,19 @@ class TestDynamicSteadyStateControl:
     """Test DynamicSteadyStateControl."""
 
     @pytest.mark.unit
-    def test_configure_control_enabled(self):
+    def test_configure_control_enabled(self) -> None:
         """Test control configuration when enabled."""
         with patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "true"}):
             configure_control()
 
     @pytest.mark.unit
-    def test_configure_control_disabled(self):
+    def test_configure_control_disabled(self) -> None:
         """Test control configuration when disabled."""
         with patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "false"}):
             configure_control()
 
     @pytest.mark.unit
-    def test_extract_metrics_from_explicit_config(self, sample_experiment):
+    def test_extract_metrics_from_explicit_config(self, sample_experiment) -> None:
         """Test metric extraction from explicit config."""
         metrics = _extract_metrics(
             sample_experiment, sample_experiment["dynamic_steady_state"]
@@ -657,7 +662,7 @@ class TestDynamicSteadyStateControl:
         assert "postgresql_commits_total" in metrics
 
     @pytest.mark.unit
-    def test_extract_metrics_from_baseline_config(self):
+    def test_extract_metrics_from_baseline_config(self) -> None:
         """Test metric extraction from baseline_config."""
         experiment = {
             "baseline_config": {
@@ -674,7 +679,7 @@ class TestDynamicSteadyStateControl:
         assert "metric2" in metrics
 
     @pytest.mark.unit
-    def test_extract_metrics_from_probes(self):
+    def test_extract_metrics_from_probes(self) -> None:
         """Test metric extraction from steady-state-hypothesis probes."""
         experiment = {
             "steady-state-hypothesis": {
@@ -687,7 +692,7 @@ class TestDynamicSteadyStateControl:
         assert "probe_metric" in metrics
 
     @pytest.mark.unit
-    def test_extract_service_name_from_baseline_config(self):
+    def test_extract_service_name_from_baseline_config(self) -> None:
         """Test service name extraction from baseline_config."""
         experiment = {"baseline_config": {"discovery": {"service_name": "postgres"}}}
 
@@ -696,7 +701,7 @@ class TestDynamicSteadyStateControl:
         assert service_name == "postgres"
 
     @pytest.mark.unit
-    def test_extract_service_name_from_title(self):
+    def test_extract_service_name_from_title(self) -> None:
         """Test service name extraction from title."""
         experiment = {"title": "PostgreSQL Pool Exhaustion Test"}
 
@@ -705,7 +710,7 @@ class TestDynamicSteadyStateControl:
         assert service_name == "postgres"
 
     @pytest.mark.unit
-    def test_extract_service_name_default(self):
+    def test_extract_service_name_default(self) -> None:
         """Test service name extraction defaults to unknown."""
         experiment = {"title": "Generic Test"}
 
@@ -746,7 +751,7 @@ class TestDynamicSteadyStateControl:
             "probes": [],
         }
 
-        context = {}
+        context: dict[str, Any] = {}
         before_experiment_start(context, experiment=sample_experiment)
 
         assert "dynamic_steady_state" in context
@@ -756,17 +761,17 @@ class TestDynamicSteadyStateControl:
 
     @pytest.mark.unit
     @patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "false"})
-    def test_before_experiment_start_disabled(self, sample_experiment):
+    def test_before_experiment_start_disabled(self, sample_experiment) -> None:
         """Test before_experiment_start when disabled."""
-        context = {}
+        context: dict[str, Any] = {}
         before_experiment_start(context, experiment=sample_experiment)
 
         assert "dynamic_steady_state" not in context
 
     @pytest.mark.unit
-    def test_before_experiment_start_no_experiment(self):
+    def test_before_experiment_start_no_experiment(self) -> None:
         """Test before_experiment_start with no experiment."""
-        context = {}
+        context: dict[str, Any] = {}
         before_experiment_start(context, experiment=None)
 
         # Should not raise exception
@@ -775,13 +780,15 @@ class TestDynamicSteadyStateControl:
     @pytest.mark.unit
     @patch("chaosgeneric.control.dynamic_steady_state_control.DynamicMetricsFetcher")
     @patch.dict(os.environ, {"DYNAMIC_STEADY_STATE_ENABLED": "true"})
-    def test_before_experiment_start_no_metrics(self, mock_fetcher, sample_experiment):
+    def test_before_experiment_start_no_metrics(
+        self, mock_fetcher: Any, sample_experiment: dict[str, Any]
+    ) -> None:
         """Test before_experiment_start with no metrics found."""
         # Remove metrics from experiment
         del sample_experiment["dynamic_steady_state"]["metrics"]
         del sample_experiment["baseline_config"]
 
-        context = {}
+        context: dict[str, Any] = {}
         before_experiment_start(context, experiment=sample_experiment)
 
         # Should handle gracefully
@@ -798,7 +805,12 @@ class TestDynamicSteadyStateIntegration:
     """Integration tests for dynamic steady-state feature."""
 
     @pytest.mark.integration
-    def test_end_to_end_flow(self, sample_experiment, tmp_path, sample_baseline_file):
+    def test_end_to_end_flow(
+        self,
+        sample_experiment: dict[str, Any],
+        tmp_path: Any,
+        sample_baseline_file: str,
+    ) -> None:
         """Test end-to-end flow from fetch to hypothesis generation."""
         # Setup
         with patch.dict(
@@ -820,7 +832,7 @@ class TestDynamicSteadyStateIntegration:
                 mock_get.return_value.raise_for_status = Mock()
 
                 # Execute
-                context = {}
+                context: dict[str, Any] = {}
                 before_experiment_start(context, experiment=sample_experiment)
 
                 # Verify

@@ -152,7 +152,9 @@ def before_experiment_control(
                 percentile_50=float(metric_stats.get("p50", 0.0)),
                 percentile_95=float(metric_stats.get("p95", 0.0)),
                 percentile_99=float(metric_stats.get("p99", 0.0)),
-                percentile_999=float(metric_stats.get("p999", metric_stats.get("p99", 0.0))),
+                percentile_999=float(
+                    metric_stats.get("p999", metric_stats.get("p99", 0.0))
+                ),
                 upper_bound_2sigma=float(metric_stats.get("mean", 0.0))
                 + (2.0 * float(metric_stats.get("stddev", 0.0))),
                 upper_bound_3sigma=float(metric_stats.get("mean", 0.0))
