@@ -8,7 +8,7 @@ Seven decorators for automatic metrics, logs, traces, and compliance tracking:
 4. @record_metric - Custom metric recording
 5. @track_compliance - Compliance violation detection
 6. @track_impact - Impact scope measurement
-7. instrumented_section - Context manager for code blocks
+7. InstrumentedSection - Context manager for code blocks
 
 All decorators automatically use MetricsCore, LogCore, TraceCore, ComplianceCore.
 """
@@ -589,18 +589,18 @@ def track_impact(impact_type: str) -> Callable:
 
 
 # ============================================================================
-# 7. instrumented_section - Context manager
+# 7. InstrumentedSection - Context manager
 # ============================================================================
 
 
-class instrumented_section:
+class InstrumentedSection:
     """
     Context manager for instrumenting arbitrary code sections.
 
     Example:
-        from chaosotel import instrumented_section, get_metrics_core
+        from chaosotel import InstrumentedSection, get_metrics_core
 
-        with instrumented_section("backup_validation"):
+        with InstrumentedSection("backup_validation"):
             validate_backup()
             check_integrity()
     """
@@ -619,7 +619,7 @@ class instrumented_section:
         self.log_core = None
         self.span = None
 
-    def __enter__(self) -> "instrumented_section":
+    def __enter__(self) -> "InstrumentedSection":
         """Enter instrumented section."""
         try:
             ensure_initialized()

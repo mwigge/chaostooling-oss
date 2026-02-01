@@ -4,14 +4,13 @@ Sync PostgreSQL baselines from Prometheus to chaos_platform database
 Queries Prometheus directly for actual metric values
 """
 
-import json
-import psycopg2
-import psycopg2.extras
-import requests
 import statistics
 import sys
 from datetime import datetime, timedelta
-from pathlib import Path
+
+import psycopg2
+import psycopg2.extras
+import requests
 
 # Configuration
 PROMETHEUS_URL = "http://localhost:9090"
@@ -119,7 +118,7 @@ def fetch_metric_stats(metric_name, time_range_hours=24, use_rate=True):
     results = query_prometheus(query, start_time, end_time)
 
     if not results:
-        print(f"  ⊘ No data found in Prometheus")
+        print("  ⊘ No data found in Prometheus")
         return None, None
 
     # Extract values from all series
@@ -133,7 +132,7 @@ def fetch_metric_stats(metric_name, time_range_hours=24, use_rate=True):
                 continue
 
     if not all_values:
-        print(f"  ⊘ No valid values found")
+        print("  ⊘ No valid values found")
         return None, None
 
     # Calculate statistics
@@ -145,7 +144,7 @@ def fetch_metric_stats(metric_name, time_range_hours=24, use_rate=True):
         print(f"    P95: {stats['p95']:.4f}, P99: {stats['p99']:.4f}")
         return display_name, stats
     else:
-        print(f"  ⊘ Failed to calculate statistics")
+        print("  ⊘ Failed to calculate statistics")
         return None, None
 
 
@@ -270,8 +269,8 @@ def sync_baselines(time_range_hours=24):
         # Commit transaction
         conn.commit()
 
-        print(f"\n" + "="*80)
-        print(f"✅ Sync complete!")
+        print("\n" + "="*80)
+        print("✅ Sync complete!")
         print(f"   - Synced: {success_count}")
         print(f"   - Failed: {failed_count}")
         print("="*80)

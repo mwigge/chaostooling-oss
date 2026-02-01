@@ -10,17 +10,17 @@ Tests all 7 decorators:
 4. @record_metric
 5. @track_compliance
 6. @track_impact
-7. instrumented_section
+7. InstrumentedSection
 """
 
 import time
 
 import pytest
 from chaosotel import (
+    InstrumentedSection,
     instrument_action,
     instrument_probe,
     instrument_rollback,
-    instrumented_section,
     record_metric,
     track_compliance,
     track_impact,
@@ -303,30 +303,30 @@ class TestTrackImpact:
 
 
 class TestInstrumentedSection:
-    """Test instrumented_section context manager."""
+    """Test InstrumentedSection context manager."""
 
     def test_successful_section(self, initialized_chaosotel):
         """Test successful instrumented section."""
-        with instrumented_section("test_section"):
+        with InstrumentedSection("test_section"):
             value = 42
 
         assert value == 42
 
     def test_section_with_tags(self, initialized_chaosotel):
         """Test instrumented section with tags."""
-        with instrumented_section("tagged_section", tags={"team": "platform"}):
+        with InstrumentedSection("tagged_section", tags={"team": "platform"}):
             pass
 
     def test_section_exception_handling(self, initialized_chaosotel):
         """Test exception handling in section."""
         with pytest.raises(ValueError):
-            with instrumented_section("error_section"):
+            with InstrumentedSection("error_section"):
                 raise ValueError("Section error")
 
     def test_nested_sections(self, initialized_chaosotel):
         """Test nested instrumented sections."""
-        with instrumented_section("outer"):
-            with instrumented_section("inner"):
+        with InstrumentedSection("outer"):
+            with InstrumentedSection("inner"):
                 value = "nested"
 
         assert value == "nested"

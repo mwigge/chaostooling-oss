@@ -28,7 +28,6 @@ from mcp.types import (
 try:
     from .tools.baseline_manager import (
         PrometheusClient,
-        calculate_statistics,
         parse_time_range,
     )
 

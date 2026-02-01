@@ -421,9 +421,9 @@ class ReportGenerator:
 
         # Categorize activities into: End-to-End Tests, Application Tests, Infrastructure Components
         run = journal.get("run", [])
-        e2e_tests = {}  # test_name -> {activities, total, successful, failed}
-        application_tests = {}  # test_name -> {activities, total, successful, failed}
-        infrastructure_components = {}  # component_name -> {activities, total, successful, failed, component_type}
+        e2e_tests: dict[str, dict[str, Any]] = {}  # test_name -> {activities, total, successful, failed}
+        application_tests: dict[str, dict[str, Any]] = {}  # test_name -> {activities, total, successful, failed}
+        infrastructure_components: dict[str, dict[str, Any]] = {}  # component_name -> {activities, total, successful, failed, component_type}
 
         # Extract and categorize activities
         for activity_entry in run:
@@ -1251,7 +1251,7 @@ class ReportGenerator:
         Group activities by SCENARIO.
         Returns a dictionary mapping scenario names to their activities.
         """
-        scenarios = {}
+        scenarios: dict[str, list[dict[str, Any]]] = {}
         current_scenario = "Baseline/Other"
 
         for activity_entry in run:

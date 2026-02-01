@@ -214,6 +214,7 @@ class Phase1InstrumentationChecker:
         # Check if OpenTelemetry packages are installed
         try:
             import opentelemetry
+            _ = opentelemetry  # Verify package is importable
 
             return CheckResult(
                 name="Application startup with OTEL",
@@ -235,6 +236,7 @@ class Phase1InstrumentationChecker:
         try:
             # Try to import baseline_manager
             from chaostooling_generic.tools import baseline_manager
+            _ = baseline_manager  # Verify module is importable
 
             return CheckResult(
                 name="Baseline metrics module initializes",
@@ -604,6 +606,7 @@ class Phase3MetricsValidator:
         """Check custom metrics from MetricsCore appear."""
         try:
             from chaostooling_otel.metrics_core import MetricsCore
+            _ = MetricsCore  # Verify class is importable
 
             return CheckResult(
                 name="Custom metrics from MetricsCore available",

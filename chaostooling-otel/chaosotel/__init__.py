@@ -25,11 +25,11 @@ from .calculator import (
 )
 from .core import ComplianceCore, LogCore, MetricsCore, Regulation, TraceCore
 from .decorators import (
+    InstrumentedSection,
     init_cores,
     instrument_action,
     instrument_probe,
     instrument_rollback,
-    instrumented_section,
     record_metric,
     track_compliance,
     track_impact,
@@ -111,7 +111,7 @@ __all__ = [
     "record_metric",
     "track_compliance",
     "track_impact",
-    "instrumented_section",
+    "InstrumentedSection",
     "init_cores",
     # Calculator
     "calculate_risk_level",

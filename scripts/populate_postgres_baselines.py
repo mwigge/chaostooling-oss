@@ -5,11 +5,12 @@ Reads metrics from dashboard JSON and creates baseline entries
 """
 
 import json
-import psycopg2
-import psycopg2.extras
 import re
 import sys
 from pathlib import Path
+
+import psycopg2
+import psycopg2.extras
 
 # Database configuration
 DB_CONFIG = {
@@ -247,7 +248,7 @@ def populate_baselines(dashboard_path):
         print(f"✓ Service ID: {service_id}")
 
         # Insert baselines
-        print(f"\n📝 Inserting baseline metrics...")
+        print("\n📝 Inserting baseline metrics...")
         success_count = 0
         skipped_count = 0
 
@@ -276,8 +277,8 @@ def populate_baselines(dashboard_path):
         # Commit transaction
         conn.commit()
 
-        print(f"\n" + "="*80)
-        print(f"✅ Baseline population complete!")
+        print("\n" + "="*80)
+        print("✅ Baseline population complete!")
         print(f"   - Inserted/Updated: {success_count}")
         print(f"   - Skipped: {skipped_count}")
         print("="*80)
