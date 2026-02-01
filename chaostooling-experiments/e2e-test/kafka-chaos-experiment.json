@@ -99,6 +99,13 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
@@ -113,6 +120,22 @@
       }
     }
   ],
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "chaos_messaging_operation_count_total",
+      "chaos_messaging_error_count_total",
+      "postgresql_commits_total"
+    ],
+    "sources": [
+      "grafana",
+      "prometheus",
+      "database",
+      "file"
+    ],
+    "threshold_sigma": 2.0
+  },
   "steady-state-hypothesis": {
     "title": "Kafka system is healthy and accessible",
     "probes": [
@@ -355,4 +378,3 @@
     }
   ]
 }
-

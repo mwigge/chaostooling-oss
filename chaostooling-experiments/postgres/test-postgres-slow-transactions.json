@@ -90,6 +90,13 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
@@ -231,6 +238,17 @@
         "notes": "Mean execution time per query in milliseconds. Increases with slow transactions."
       }
     ]
+  },
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "rate(postgresql_commits_total[5m])",
+      "rate(postgresql_rollbacks_total[5m])",
+      "postgresql_commits_total"
+    ],
+    "sources": ["grafana", "prometheus", "database", "file"],
+    "threshold_sigma": 2.0
   },
   "steady-state-hypothesis": {
     "title": "PostgreSQL accessible with normal transaction duration and lock hold times",

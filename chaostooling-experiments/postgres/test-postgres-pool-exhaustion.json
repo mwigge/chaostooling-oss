@@ -90,6 +90,13 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
@@ -231,6 +238,17 @@
         "notes": "Pool connection count. Direct indicator of pool exhaustion risk."
       }
     ]
+  },
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "rate(postgresql_commits_total[5m])",
+      "chaos_db_connection_pool_utilization_percent",
+      "postgresql_commits_total"
+    ],
+    "sources": ["grafana", "prometheus", "database", "file"],
+    "threshold_sigma": 2.0
   },
   "steady-state-hypothesis": {
     "title": "PostgreSQL accessible with normal connection pool utilization",

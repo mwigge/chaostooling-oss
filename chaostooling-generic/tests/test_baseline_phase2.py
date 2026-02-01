@@ -1016,9 +1016,7 @@ class TestCheckMetricWithinBaseline:
             # Verify CONTEXT source was logged
             assert mock_logger.info.called
             log_calls = [str(call) for call in mock_logger.info.call_args_list]
-            any(
-                "CONTEXT" in str(call) or "context" in str(call) for call in log_calls
-            )
+            any("CONTEXT" in str(call) or "context" in str(call) for call in log_calls)
             # May not log "CONTEXT" explicitly but should indicate baseline was found
 
     def test_probe_context_priority(self, sample_baseline_metric):

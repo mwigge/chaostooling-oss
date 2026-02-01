@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit and Integration Tests for BaselineManager Phase 4 Commands
+Unit and Integration Tests for BaselineManager Commands
 
 Tests for:
 1. discover() - baseline discovery by system/service/labels
@@ -12,10 +12,7 @@ from datetime import datetime
 
 import pytest
 
-# These imports would be actual imports in real test
-# from chaosgeneric.tools.baseline_manager_phase4 import BaselineManager
-# from chaosgeneric.tools.baseline_loader import BaselineMetric
-# from chaosgeneric.data.chaos_db import ChaosDb
+# Updated imports - BaselineManager is now in baseline_manager.py
 
 
 class MockBaselineMetric:

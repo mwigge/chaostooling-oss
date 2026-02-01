@@ -911,7 +911,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{service_name=\"chaostoolkit-demo\"} |~ \"(Progress|experiment|chaos|probe|action|rollback|Steady state|hypothesis|transactions|transaction|CRITICAL|ERROR|WARNING|INFO|Running|SCENARIO|baseline|verify|Method|Activity|Executing|Phase|Step|Validation|Completed|Failed|Success)\"",
+          "expr": "{service_name=\"chaostooling-demo\"} |~ \"(Progress|experiment|chaos|probe|action|rollback|Steady state|hypothesis|transactions|transaction|CRITICAL|ERROR|WARNING|INFO|Running|SCENARIO|baseline|verify|Method|Activity|Executing|Phase|Step|Validation|Completed|Failed|Success)\"",
           "refId": "A"
         }
       ],

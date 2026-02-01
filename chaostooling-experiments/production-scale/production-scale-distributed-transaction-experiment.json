@@ -292,16 +292,6 @@
       "key": "AUTO_START_LOAD_GENERATOR",
       "default": "true"
     },
-    "reporting_output_dir": {
-      "type": "env",
-      "key": "CHAOS_REPORTING_OUTPUT_DIR",
-      "default": "/var/log/chaostoolkit/reports"
-    },
-    "reporting_formats": {
-      "type": "env",
-      "key": "CHAOS_REPORTING_FORMATS",
-      "default": "html,json"
-    }
   },
 "controls": [
   {

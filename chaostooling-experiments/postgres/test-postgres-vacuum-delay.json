@@ -48,6 +48,13 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
@@ -236,6 +243,16 @@
         "notes": "Rate of analyze operations per minute. Correlates with vacuum activity."
       }
     ]
+  },
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "rate(pg_stat_database_vacuum_count[5m])",
+      "postgresql_commits_total"
+    ],
+    "sources": ["grafana", "prometheus", "database", "file"],
+    "threshold_sigma": 2.0
   },
   "steady-state-hypothesis": {
     "title": "Dead Tuples are low",

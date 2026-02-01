@@ -26,7 +26,6 @@ class TestBaselineControlDiscovery:
             "cpu_usage": mocker.MagicMock(spec=BaselineMetric),
         }
 
-
         # Should call load_by_system
         result = loader_mock.load_by_system("api-server")
         assert len(result) > 0
@@ -38,7 +37,6 @@ class TestBaselineControlDiscovery:
         loader_mock.load_by_service.return_value = {
             "postgres_connections": mocker.MagicMock(spec=BaselineMetric),
         }
-
 
         result = loader_mock.load_by_service("postgres")
         assert len(result) > 0

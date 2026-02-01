@@ -15,6 +15,8 @@ This module implements Task 2.3 of the Baseline Metrics Integration.
 
 import json
 import logging
+import os
+import re
 from typing import Any, Optional
 
 from chaosgeneric.data.chaos_db import ChaosDb
@@ -36,10 +38,55 @@ def _get_context() -> dict[str, Any]:
     try:
         from chaoslib import Context
 
-        return Context.get().setdefault("chaos", {})
+        # Get the full context dict (not just the "chaos" sub-dict)
+        # Controls store data directly in context, not in context["chaos"]
+        full_context = Context.get()
+        if isinstance(full_context, dict):
+            return full_context
+        # Fallback: try to get "chaos" sub-dict if full context is not a dict
+        return full_context.setdefault("chaos", {})
     except Exception:
         # Fallback for testing or non-chaos environments
         return {}
+
+
+def _extract_base_metric_name(promql: str) -> str:
+    """
+    Extract base metric name from PromQL expression.
+    
+    Examples:
+        rate(postgresql_commits_total[5m]) -> postgresql_commits_total
+        increase(metric_name[1h]) -> metric_name
+        metric_name -> metric_name
+    
+    Args:
+        promql: PromQL expression or metric name
+    
+    Returns:
+        Base metric name
+    """
+    if not promql:
+        return promql
+    
+    # Remove PromQL functions like rate(), increase(), etc.
+    promql_clean = re.sub(
+        r"(rate|increase|irate|delta|idelta|sum|avg|min|max|count|histogram_quantile)\s*\(",
+        "",
+        promql,
+        flags=re.IGNORECASE,
+    )
+    
+    # Remove closing parentheses and time ranges [5m], [1h], etc.
+    promql_clean = re.sub(r"\[[^\]]+\]", "", promql_clean)
+    promql_clean = re.sub(r"\)+", "", promql_clean)
+    
+    # Extract metric name (word characters, colons, underscores before { or whitespace)
+    match = re.search(r"([a-zA-Z_:][a-zA-Z0-9_:]*)", promql_clean)
+    if match:
+        return match.group(1)
+    
+    # If no match, return original (might be a simple metric name)
+    return promql
 
 
 def check_metric_within_baseline(
@@ -48,8 +95,8 @@ def check_metric_within_baseline(
     baseline_file: str = "",
     threshold_sigma: float = 2.0,
     description: str = "Metric within baseline",
-    db_host: str = "localhost",
-    db_port: int = 5434,
+    db_host: Optional[str] = None,
+    db_port: Optional[int] = None,
     context: Optional[dict[str, Any]] = None,
 ) -> bool:
     """
@@ -90,27 +137,69 @@ def check_metric_within_baseline(
         baseline_metric = None
         baseline_source = None
 
+        # Get database connection info from environment if not provided
+        if db_host is None:
+            db_host = os.getenv("CHAOS_DB_HOST", "chaos-platform-db")
+        if db_port is None:
+            db_port = int(os.getenv("CHAOS_DB_PORT", "5432"))
+
         # PRIORITY 1: Check context (highest priority)
         logger.debug("Priority 1: Checking context for loaded_baselines...")
         if context is None:
             context = _get_context()
+        
+        # Debug: Log what's in context
+        if context:
+            logger.debug(f"Context keys: {list(context.keys())}")
+            logger.debug(f"loaded_baselines in context: {'loaded_baselines' in context}")
+            if "loaded_baselines" in context:
+                logger.debug(f"loaded_baselines keys: {list(context['loaded_baselines'].keys())}")
+        else:
+            logger.debug("Context is None or empty")
 
-        loaded_baselines = context.get("loaded_baselines", {})
+        loaded_baselines = context.get("loaded_baselines", {}) if context else {}
+        
+        # Try exact match first
         if metric_name in loaded_baselines:
             baseline_metric = loaded_baselines[metric_name]
             baseline_source = "CONTEXT"
             logger.info(
                 f"✓ Found {metric_name} in context (loaded by before_experiment_starts)"
             )
+        else:
+            # Try extracting base metric name from PromQL expressions (e.g., rate(metric[5m]) -> metric)
+            base_metric_name = _extract_base_metric_name(metric_name)
+            if base_metric_name and base_metric_name != metric_name:
+                logger.debug(
+                    f"Extracted base metric name '{base_metric_name}' from '{metric_name}'"
+                )
+                if base_metric_name in loaded_baselines:
+                    baseline_metric = loaded_baselines[base_metric_name]
+                    baseline_source = "CONTEXT"
+                    logger.info(
+                        f"✓ Found {base_metric_name} in context (base of {metric_name})"
+                    )
 
         # PRIORITY 2: Check database (fallback)
         if baseline_metric is None:
             logger.debug("Priority 2: Checking database for baseline...")
             try:
                 db = ChaosDb(host=db_host, port=db_port)
+                # Try exact match first
                 baseline_data = db.get_baseline_by_metric_and_service(
                     metric_name, service_name
                 )
+                
+                # If not found, try base metric name
+                if not baseline_data:
+                    base_metric_name = _extract_base_metric_name(metric_name)
+                    if base_metric_name != metric_name:
+                        logger.debug(
+                            f"Trying base metric name '{base_metric_name}' in database"
+                        )
+                        baseline_data = db.get_baseline_by_metric_and_service(
+                            base_metric_name, service_name
+                        )
 
                 if baseline_data:
                     # Convert dict to BaselineMetric

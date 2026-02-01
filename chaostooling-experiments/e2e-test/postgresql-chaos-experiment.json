@@ -102,16 +102,6 @@
       "key": "AUTO_START_LOAD_GENERATOR",
       "default": "true"
     },
-    "reporting_output_dir": {
-      "type": "env",
-      "key": "CHAOS_REPORTING_OUTPUT_DIR",
-      "default": "/var/log/chaostoolkit/reports"
-    },
-    "reporting_formats": {
-      "type": "env",
-      "key": "CHAOS_REPORTING_FORMATS",
-      "default": "html,json"
-    }
   },
   "controls": [
     {
@@ -129,6 +119,13 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
@@ -143,6 +140,17 @@
       }
     }
   ],
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "postgresql_commits_total",
+      "rate(postgresql_commits_total[5m])",
+      "chaos_db_connection_pool_utilization_percent"
+    ],
+    "sources": ["grafana", "prometheus", "database", "file"],
+    "threshold_sigma": 2.0
+  },
   "steady-state-hypothesis": {
     "title": "PostgreSQL system is healthy and accessible",
     "probes": [

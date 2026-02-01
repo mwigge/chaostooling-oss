@@ -68,10 +68,7 @@ def generate_experiment_reports(
     try:
         # Get configuration from environment variables or arguments
         if not output_dir:
-            output_dir = os.getenv(
-                "CHAOS_REPORTING_OUTPUT_DIR",
-                os.getenv("REPORTING_OUTPUT_DIR", "./reporting-output"),
-            )
+            output_dir = os.getenv("CHAOS_REPORTING_OUTPUT_DIR", "./reporting-output")
 
         if not formats:
             formats = os.getenv("CHAOS_REPORTING_FORMATS", "html,json")

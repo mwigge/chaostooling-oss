@@ -1,6 +1,6 @@
 dist:
   name: otelcol-custom
-  description: Custom OTel Collector with servicegraph connector
+  description: Custom OTel Collector with servicegraph connector and all database/messaging receivers
   output_path: ./otelcol-custom
 
 receivers:
@@ -8,6 +8,15 @@ receivers:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.117.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver v0.117.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/postgresqlreceiver v0.117.0
+  # Database Receivers
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mysqlreceiver v0.117.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/sqlserverreceiver v0.117.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mongodbreceiver v0.117.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/redisreceiver v0.117.0
+  # JMX Receiver (for Cassandra, Kafka, ActiveMQ)
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jmxreceiver v0.117.0
+  # Messaging Receivers
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/rabbitmqreceiver v0.117.0
 
 processors:
   - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.117.0
