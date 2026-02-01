@@ -156,7 +156,7 @@ def mock_chaos_db():
 
 
 @pytest.fixture
-def test_context():
+def test_context() -> None:
     """Create a test chaos context."""
     return {
         "experiment_id": 123,
@@ -394,7 +394,9 @@ class TestBeforeExperimentStarts:
 
         assert "experiment_id required" in str(exc_info.value)
 
-    def test_before_experiment_starts_invalid_discovery_method(self, test_context):
+    def test_before_experiment_starts_invalid_discovery_method(
+        self, test_context
+    ) -> None:
         """Test that ValueError is raised for unknown discovery method."""
         control = MCPBaselineControl()
         config = {"discovery_method": "invalid_method", "discovery_params": {}}
@@ -507,7 +509,7 @@ class TestBeforeExperimentStarts:
 class TestBaselineControlValidation:
     """Tests for baseline validation logic in control."""
 
-    def test_validate_and_log_baselines_all_valid(self, mock_baseline_loader):
+    def test_validate_and_log_baselines_all_valid(self, mock_baseline_loader) -> None:
         """Test validation when all baselines are valid."""
         control = MCPBaselineControl()
         control.loaded_baselines = {"metric1": Mock(), "metric2": Mock()}
@@ -516,7 +518,9 @@ class TestBaselineControlValidation:
         # Should not raise
         control._validate_and_log_baselines({"fail_on_invalid": True})
 
-    def test_validate_and_log_baselines_some_invalid_fail(self, mock_baseline_loader):
+    def test_validate_and_log_baselines_some_invalid_fail(
+        self, mock_baseline_loader
+    ) -> None:
         """Test that validation failure raises when fail_on_invalid=True."""
         control = MCPBaselineControl()
         control.loaded_baselines = {"metric1": Mock()}
@@ -562,7 +566,9 @@ class TestBaselineControlValidation:
 class TestCreateBaselineMappings:
     """Tests for baseline-experiment mapping creation."""
 
-    def test_create_baseline_mappings_success(self, sample_baselines, mock_chaos_db):
+    def test_create_baseline_mappings_success(
+        self, sample_baselines, mock_chaos_db
+    ) -> None:
         """Test successful mapping creation."""
         control = MCPBaselineControl()
         control.loaded_baselines = sample_baselines
@@ -604,7 +610,7 @@ class TestInsertBaselineExperimentMapping:
     """Tests for ChaosDb.insert_baseline_experiment_mapping"""
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_success(self, mock_connect):
+    def test_insert_mapping_success(self, mock_connect) -> None:
         """Test basic insert operation."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -620,7 +626,7 @@ class TestInsertBaselineExperimentMapping:
         assert result == 1
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_returns_id(self, mock_connect):
+    def test_insert_mapping_returns_id(self, mock_connect) -> None:
         """Test that correct mapping_id is returned."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -636,7 +642,7 @@ class TestInsertBaselineExperimentMapping:
         assert result == 42
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_all_parameters(self, mock_connect):
+    def test_insert_mapping_all_parameters(self, mock_connect) -> None:
         """Test that all parameters are correctly passed to database."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -665,7 +671,7 @@ class TestInsertBaselineExperimentMapping:
         assert 1 in call_args[0][1]  # metric_id
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_discovery_method_system(self, mock_connect):
+    def test_insert_mapping_discovery_method_system(self, mock_connect) -> None:
         """Test discovery_method='system' is recorded."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -686,7 +692,7 @@ class TestInsertBaselineExperimentMapping:
         assert "system" in call_args[0][1]
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_discovery_method_service(self, mock_connect):
+    def test_insert_mapping_discovery_method_service(self, mock_connect) -> None:
         """Test discovery_method='service' is recorded."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -706,7 +712,7 @@ class TestInsertBaselineExperimentMapping:
         assert "service" in call_args[0][1]
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_discovery_method_explicit(self, mock_connect):
+    def test_insert_mapping_discovery_method_explicit(self, mock_connect) -> None:
         """Test discovery_method='explicit' is recorded."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -726,7 +732,7 @@ class TestInsertBaselineExperimentMapping:
         assert "explicit" in call_args[0][1]
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_discovery_method_labels(self, mock_connect):
+    def test_insert_mapping_discovery_method_labels(self, mock_connect) -> None:
         """Test discovery_method='labels' is recorded."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -746,7 +752,7 @@ class TestInsertBaselineExperimentMapping:
         assert "labels" in call_args[0][1]
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_default_values(self, mock_connect):
+    def test_insert_mapping_default_values(self, mock_connect) -> None:
         """Test that default parameters are used correctly."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -773,7 +779,7 @@ class TestInsertBaselineExperimentMapping:
         assert "system" in params  # default discovery_method
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_database_error(self, mock_connect):
+    def test_insert_mapping_database_error(self, mock_connect) -> None:
         """Test handling of database errors."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -790,7 +796,7 @@ class TestInsertBaselineExperimentMapping:
             )
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_insert_mapping_invalid_experiment_id(self, mock_connect):
+    def test_insert_mapping_invalid_experiment_id(self, mock_connect) -> None:
         """Test handling of invalid experiment_id."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -813,7 +819,7 @@ class TestGetBaselineByMetricAndService:
     """Tests for ChaosDb.get_baseline_by_metric_and_service"""
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_get_baseline_success(self, mock_connect):
+    def test_get_baseline_success(self, mock_connect) -> None:
         """Test successful baseline retrieval."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -874,7 +880,7 @@ class TestGetBaselineByMetricAndService:
         assert result["quality_score"] == 0.95
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_get_baseline_not_found(self, mock_connect):
+    def test_get_baseline_not_found(self, mock_connect) -> None:
         """Test when baseline is not found."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -888,7 +894,7 @@ class TestGetBaselineByMetricAndService:
         assert result is None
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_get_baseline_correct_query(self, mock_connect):
+    def test_get_baseline_correct_query(self, mock_connect) -> None:
         """Test that correct SQL query is generated."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -908,7 +914,7 @@ class TestGetBaselineByMetricAndService:
         assert "metric1" in call_args[0][1] or "metric1" in call_args[1].get("args", [])
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_get_baseline_database_error(self, mock_connect):
+    def test_get_baseline_database_error(self, mock_connect) -> None:
         """Test handling of database errors."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -931,7 +937,7 @@ class TestGetBaselineByMetricAndService:
 class TestCheckMetricWithinBaseline:
     """Tests for check_metric_within_baseline probe"""
 
-    def test_probe_uses_context_baseline(self, sample_baseline_metric):
+    def test_probe_uses_context_baseline(self, sample_baseline_metric) -> None:
         """Priority 1: Context baseline loaded."""
         context = {
             "loaded_baselines": {"postgresql_connections": sample_baseline_metric}
@@ -946,7 +952,9 @@ class TestCheckMetricWithinBaseline:
         assert result is True
 
     @patch("chaosgeneric.probes.mcp_baseline_probe.ChaosDb")
-    def test_probe_falls_back_to_database(self, mock_db_class, sample_baseline_metric):
+    def test_probe_falls_back_to_database(
+        self, mock_db_class, sample_baseline_metric
+    ) -> None:
         """Priority 2: Database baseline when not in context."""
         mock_db = MagicMock()
         mock_db_class.return_value = mock_db
@@ -981,7 +989,7 @@ class TestCheckMetricWithinBaseline:
         assert result is True
         mock_db.get_baseline_by_metric_and_service.assert_called_once()
 
-    def test_probe_falls_back_to_file(self, baseline_json_file):
+    def test_probe_falls_back_to_file(self, baseline_json_file) -> None:
         """Priority 3: File baseline when not in context or DB."""
         context = {"loaded_baselines": {}}
 
@@ -1000,7 +1008,7 @@ class TestCheckMetricWithinBaseline:
 
         assert result is True
 
-    def test_probe_logs_baseline_source(self, sample_baseline_metric):
+    def test_probe_logs_baseline_source(self, sample_baseline_metric) -> None:
         """Test that baseline source is logged."""
         context = {
             "loaded_baselines": {"postgresql_connections": sample_baseline_metric}
@@ -1016,12 +1024,10 @@ class TestCheckMetricWithinBaseline:
             # Verify CONTEXT source was logged
             assert mock_logger.info.called
             log_calls = [str(call) for call in mock_logger.info.call_args_list]
-            any(
-                "CONTEXT" in str(call) or "context" in str(call) for call in log_calls
-            )
+            any("CONTEXT" in str(call) or "context" in str(call) for call in log_calls)
             # May not log "CONTEXT" explicitly but should indicate baseline was found
 
-    def test_probe_context_priority(self, sample_baseline_metric):
+    def test_probe_context_priority(self, sample_baseline_metric) -> None:
         """Test that context takes priority over database."""
         context = {
             "loaded_baselines": {"postgresql_connections": sample_baseline_metric}
@@ -1044,7 +1050,7 @@ class TestCheckMetricWithinBaseline:
             assert result is True
 
     @patch("chaosgeneric.probes.mcp_baseline_probe.ChaosDb")
-    def test_probe_database_priority(self, mock_db_class):
+    def test_probe_database_priority(self, mock_db_class) -> None:
         """Test that database takes priority over file."""
         mock_db = MagicMock()
         mock_db_class.return_value = mock_db
@@ -1079,7 +1085,7 @@ class TestCheckMetricWithinBaseline:
 
         assert result is True
 
-    def test_probe_no_baseline_found(self):
+    def test_probe_no_baseline_found(self) -> None:
         """Test tolerance bypass when no baseline available."""
         context = {"loaded_baselines": {}}
 
@@ -1095,7 +1101,7 @@ class TestCheckMetricWithinBaseline:
         # Should return True (tolerance bypass)
         assert result is True
 
-    def test_probe_metric_within_bounds(self, sample_baseline_metric):
+    def test_probe_metric_within_bounds(self, sample_baseline_metric) -> None:
         """Test returns True when metric is in bounds."""
         context = {
             "loaded_baselines": {"postgresql_connections": sample_baseline_metric}
@@ -1111,7 +1117,7 @@ class TestCheckMetricWithinBaseline:
         # metric is within bounds
         assert result is True
 
-    def test_probe_metric_outside_bounds(self):
+    def test_probe_metric_outside_bounds(self) -> None:
         """Test returns False when metric exceeds critical threshold."""
         # Create baseline with specific bounds
         baseline = BaselineMetric(
@@ -1148,7 +1154,7 @@ class TestCheckMetricWithinBaseline:
         # Without actual metric value being passed, it returns True
         assert result is True
 
-    def test_probe_calculates_thresholds(self, sample_baseline_metric):
+    def test_probe_calculates_thresholds(self, sample_baseline_metric) -> None:
         """Test that thresholds are calculated correctly."""
         context = {
             "loaded_baselines": {"postgresql_connections": sample_baseline_metric}
@@ -1169,7 +1175,7 @@ class TestCheckMetricWithinBaseline:
         assert thresholds["lower_bound"] == 100.0 - (2.0 * 10.0)
         assert thresholds["upper_bound"] == 100.0 + (2.0 * 10.0)
 
-    def test_probe_custom_sigma(self, sample_baseline_metric):
+    def test_probe_custom_sigma(self, sample_baseline_metric) -> None:
         """Test using custom sigma value in thresholds."""
         context = {
             "loaded_baselines": {"postgresql_connections": sample_baseline_metric}
@@ -1187,7 +1193,7 @@ class TestCheckMetricWithinBaseline:
         assert thresholds["upper_bound"] == 100.0 + (3.0 * 10.0)
         assert result is True
 
-    def test_probe_error_logging(self, sample_baseline_metric):
+    def test_probe_error_logging(self, sample_baseline_metric) -> None:
         """Test that errors are logged with context."""
         context = {
             "loaded_baselines": {"postgresql_connections": sample_baseline_metric}
@@ -1207,7 +1213,7 @@ class TestCheckMetricWithinBaseline:
 class TestLoadBaselineFromFile:
     """Tests for _load_baseline_from_file helper."""
 
-    def test_load_from_file_success(self, baseline_json_file):
+    def test_load_from_file_success(self, baseline_json_file) -> None:
         """Test successful load from JSON file."""
         result = _load_baseline_from_file(
             baseline_json_file, "postgresql_connections", "postgres"
@@ -1217,13 +1223,13 @@ class TestLoadBaselineFromFile:
         assert result["mean"] == 100.0
         assert result["stdev"] == 10.0
 
-    def test_load_from_file_not_found(self):
+    def test_load_from_file_not_found(self) -> None:
         """Test handling when file doesn't exist."""
         result = _load_baseline_from_file("/nonexistent/file.json", "metric", "service")
 
         assert result is None
 
-    def test_load_from_file_metric_not_found(self, baseline_json_file):
+    def test_load_from_file_metric_not_found(self, baseline_json_file) -> None:
         """Test when metric not in file."""
         result = _load_baseline_from_file(
             baseline_json_file, "nonexistent_metric", "postgres"
@@ -1231,7 +1237,7 @@ class TestLoadBaselineFromFile:
 
         assert result is None
 
-    def test_load_from_file_service_not_found(self, baseline_json_file):
+    def test_load_from_file_service_not_found(self, baseline_json_file) -> None:
         """Test when service not found for metric."""
         result = _load_baseline_from_file(
             baseline_json_file, "postgresql_connections", "nonexistent_service"
@@ -1243,7 +1249,7 @@ class TestLoadBaselineFromFile:
 class TestGetBaselineComparison:
     """Tests for get_baseline_comparison helper."""
 
-    def test_comparison_success(self, baseline_json_file):
+    def test_comparison_success(self, baseline_json_file) -> None:
         """Test successful baseline comparison."""
         result = get_baseline_comparison(
             "postgresql_connections", "postgres", baseline_json_file, current_value=95.0
@@ -1253,7 +1259,7 @@ class TestGetBaselineComparison:
         assert result["service"] == "postgres"
         assert result["current_value"] == 95.0
 
-    def test_comparison_metric_not_found(self, baseline_json_file):
+    def test_comparison_metric_not_found(self, baseline_json_file) -> None:
         """Test comparison when metric not found."""
         result = get_baseline_comparison(
             "nonexistent_metric", "postgres", baseline_json_file
@@ -1262,7 +1268,7 @@ class TestGetBaselineComparison:
         assert result["status"] == "error"
         assert "not found" in result["reason"]
 
-    def test_comparison_service_not_found(self, baseline_json_file):
+    def test_comparison_service_not_found(self, baseline_json_file) -> None:
         """Test comparison when service not found."""
         result = get_baseline_comparison(
             "postgresql_connections", "nonexistent_service", baseline_json_file
@@ -1401,7 +1407,7 @@ class TestControlProbeIntegration:
         assert "validation failed" in str(exc_info.value)
 
     @patch("chaosgeneric.data.chaos_db.psycopg2.connect")
-    def test_mapping_audit_trail(self, mock_connect):
+    def test_mapping_audit_trail(self, mock_connect) -> None:
         """Verify mapping records are created with audit trail."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -1421,7 +1427,7 @@ class TestControlProbeIntegration:
         assert mock_cursor.execute.call_count >= 2
 
     @patch("chaosgeneric.probes.mcp_baseline_probe.ChaosDb")
-    def test_graceful_degradation(self, mock_db_class):
+    def test_graceful_degradation(self, mock_db_class) -> None:
         """System handles database unavailability gracefully."""
         mock_db = MagicMock()
         mock_db_class.return_value = mock_db
@@ -1469,7 +1475,7 @@ class TestControlProbeIntegration:
 class TestBaselineMetricThresholds:
     """Tests for BaselineMetric threshold calculations."""
 
-    def test_get_thresholds_2sigma(self, sample_baseline_metric):
+    def test_get_thresholds_2sigma(self, sample_baseline_metric) -> None:
         """Test 2-sigma threshold calculation."""
         thresholds = sample_baseline_metric.get_thresholds(sigma=2.0)
 
@@ -1478,7 +1484,7 @@ class TestBaselineMetricThresholds:
         assert thresholds["lower_bound"] == 80.0
         assert thresholds["upper_bound"] == 120.0
 
-    def test_get_thresholds_3sigma(self, sample_baseline_metric):
+    def test_get_thresholds_3sigma(self, sample_baseline_metric) -> None:
         """Test 3-sigma threshold calculation."""
         thresholds = sample_baseline_metric.get_thresholds(sigma=3.0)
 
@@ -1487,7 +1493,7 @@ class TestBaselineMetricThresholds:
         assert thresholds["critical_upper"] == 130.0
         assert thresholds["critical_lower"] == 70.0
 
-    def test_get_thresholds_custom_sigma(self, sample_baseline_metric):
+    def test_get_thresholds_custom_sigma(self, sample_baseline_metric) -> None:
         """Test custom sigma value."""
         thresholds = sample_baseline_metric.get_thresholds(sigma=1.5)
 
@@ -1558,7 +1564,7 @@ class TestDiscoveryMethodsParametrized:
 class TestErrorHandling:
     """Tests for error handling and edge cases."""
 
-    def test_missing_required_discovery_params_system(self, test_context):
+    def test_missing_required_discovery_params_system(self, test_context) -> None:
         """Test error when required system param missing."""
         control = MCPBaselineControl()
         config = {
@@ -1574,7 +1580,7 @@ class TestErrorHandling:
 
         assert "system" in str(exc_info.value)
 
-    def test_missing_required_discovery_params_service(self, test_context):
+    def test_missing_required_discovery_params_service(self, test_context) -> None:
         """Test error when required service_name param missing."""
         control = MCPBaselineControl()
         config = {
@@ -1590,7 +1596,7 @@ class TestErrorHandling:
 
         assert "service_name" in str(exc_info.value)
 
-    def test_missing_required_discovery_params_explicit(self, test_context):
+    def test_missing_required_discovery_params_explicit(self, test_context) -> None:
         """Test error when required metric_names param missing."""
         control = MCPBaselineControl()
         config = {
@@ -1606,7 +1612,7 @@ class TestErrorHandling:
 
         assert "metric_names" in str(exc_info.value)
 
-    def test_missing_required_discovery_params_labels(self, test_context):
+    def test_missing_required_discovery_params_labels(self, test_context) -> None:
         """Test error when required labels param missing."""
         control = MCPBaselineControl()
         config = {

@@ -153,10 +153,24 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
         "module": "chaostooling_reporting.control"
+      }
+    },
+    {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
       }
     },
     {
@@ -169,6 +183,17 @@
       }
     }
   ],
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "postgresql_backends",
+      "rate(postgresql_commits_total[5m])",
+      "postgresql_commits_total"
+    ],
+    "sources": ["grafana", "prometheus", "database", "file"],
+    "threshold_sigma": 2.0
+  },
   "steady-state-hypothesis": {
     "title": "PostgreSQL Database is accessible with normal connection pool utilization and setup latency",
     "probes": [

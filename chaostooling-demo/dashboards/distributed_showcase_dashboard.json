@@ -818,7 +818,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{job=\"chaostoolkit-experiment-logs\"} |~ \"(Running|Executing|Activity|SCENARIO)\" | line_format \"{{.line}}\"",
+          "expr": "{job=\"chaostooling-experiment-logs\"} |~ \"(Running|Executing|Activity|SCENARIO)\" | line_format \"{{.line}}\"",
           "refId": "A"
         }
       ],
@@ -1427,7 +1427,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{job=\"chaostoolkit-experiment-logs\"} |~ \"(Progress|experiment|chaos|probe|action|rollback|Steady state|hypothesis|transactions|transaction|CRITICAL|ERROR|WARNING|INFO|Running|SCENARIO|baseline|verify)\"",
+          "expr": "{job=\"chaostooling-experiment-logs\"} |~ \"(Progress|experiment|chaos|probe|action|rollback|Steady state|hypothesis|transactions|transaction|CRITICAL|ERROR|WARNING|INFO|Running|SCENARIO|baseline|verify)\"",
           "refId": "A"
         }
       ],
@@ -1993,7 +1993,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{job=~\"chaostoolkit-experiment-logs|.*\"} |~ \"(too many clients|connection refused|Access denied|lock|deadlock|timeout|pool exhausted|connection.*failed|FATAL|ERROR|CRITICAL)\"",
+          "expr": "{job=~\"chaostooling-experiment-logs|.*\"} |~ \"(too many clients|connection refused|Access denied|lock|deadlock|timeout|pool exhausted|connection.*failed|FATAL|ERROR|CRITICAL)\"",
           "refId": "A"
         }
       ],

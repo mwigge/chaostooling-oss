@@ -95,6 +95,13 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
@@ -202,6 +209,16 @@
         "notes": "Cache hit ratio as percentage. High precision for cache effectiveness monitoring."
       }
     ]
+  },
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "rate(postgresql_blocks_read_total[5m])",
+      "postgresql_commits_total"
+    ],
+    "sources": ["grafana", "prometheus", "database", "file"],
+    "threshold_sigma": 2.0
   },
   "steady-state-hypothesis": {
     "title": "Cache Hit Ratio is high",

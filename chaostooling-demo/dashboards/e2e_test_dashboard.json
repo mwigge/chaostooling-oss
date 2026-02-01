@@ -250,7 +250,7 @@
                         "type": "loki",
                         "uid": "loki"
                     },
-                    "expr": "{service_name=\"chaostoolkit-demo\"} |~ \"(start_activity|start_hypothesis|start_method|start_rollback|finish|Experiment|Steady state|Playing|rollback|Action|Probe)\"",
+                    "expr": "{service_name=\"chaostooling-demo\"} |~ \"(start_activity|start_hypothesis|start_method|start_rollback|finish|Experiment|Steady state|Playing|rollback|Action|Probe)\"",
                     "maxLines": 10,
                     "refId": "A"
                 }

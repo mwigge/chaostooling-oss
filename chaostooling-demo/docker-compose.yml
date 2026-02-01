@@ -11,7 +11,7 @@ services:
     ports:
       - "5434:5432"  # Use 5434 for chaos platform database
     volumes:
-      - ./postgres/init-chaos-platform.sql:/docker-entrypoint-initdb.d/01-init-chaos-platform.sql
+      - ../chaostooling-platform-db/postgres/init-chaos-platform.sql:/docker-entrypoint-initdb.d/01-init-chaos-platform.sql:ro
       - chaos-platform-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U chaos_admin -d chaos_platform"]
@@ -21,43 +21,55 @@ services:
 
   # --- Observability Stack ---
 
+  # Observability stack now in external repository
+  # Reference: ../chaostooling-observability-stack/docker-compose.yml
   tempo:
     image: grafana/tempo:latest
+    container_name: observability_tempo
     command: [ "-config.file=/etc/tempo/config.yml" ]
     volumes:
-      - ./tempo/config.yml:/etc/tempo/config.yml:ro
+      - ../chaostooling-observability-stack/tempo/config.yml:/etc/tempo/config.yml:ro
       - tempo-data:/var/tempo
     ports:
-      - "3200:3200" # tempo UI
-      - "9317:4317" # OTLP gRPC receiver
-      - "9318:4318" # OTLP HTTP receiver
+      - "3200:3200"  # tempo UI
+      - "9317:4317"  # OTLP gRPC receiver
+      - "9318:4318"  # OTLP HTTP receiver
+    networks:
+      - default
 
   promtail:
     image: grafana/promtail:latest
+    container_name: observability_promtail
     volumes:
-      - ./promtail/promtail-config.yaml:/etc/promtail/config.yml
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ../chaostooling-observability-stack/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - chaos-experiment-logs:/var/log/chaostoolkit:ro
       - ../chaostooling-experiments:/experiments:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
+    networks:
+      - default
 
   loki:
     image: grafana/loki:latest
+    container_name: observability_loki
     command: -config.file=/etc/loki/config.yml
     volumes:
-      - ./loki/config.yml:/etc/loki/config.yml:ro
+      - ../chaostooling-observability-stack/loki/config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
     ports:
-      - "3100:3100" # HTTP API + OTLP /otlp endpoint
-      - "9096:9096" # gRPC (if needed)
+      - "3100:3100"  # HTTP API + OTLP /otlp endpoint
+      - "9096:9096"  # gRPC (if needed)
+    networks:
+      - default
 
   otel-collector:
-    build: ./otel-collector
+    build: ../chaostooling-otel-collector/otel-collector
     command: [ "--config=/etc/otelcol-custom/config.yaml" ]
     volumes:
-      - ./otel-collector/config.yaml:/etc/otelcol-custom/config.yaml:ro
+      - ../chaostooling-otel-collector/otel-collector/config.yaml:/etc/otelcol-custom/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "8327:4317" # OTLP gRPC (changed from 4317 to avoid conflicts)
@@ -69,11 +81,13 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
+    container_name: observability_prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus-alert-rules.yml:/etc/prometheus/alert-rules.yml
+      - ../chaostooling-observability-stack/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../chaostooling-observability-stack/prometheus/prometheus-alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+      - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -82,9 +96,12 @@ services:
       - '--enable-feature=native-histograms'
     depends_on:
       - otel-collector
+    networks:
+      - default
 
   grafana:
     image: grafana/grafana:latest
+    container_name: observability_grafana
     ports:
       - "3000:3000"
     environment:
@@ -92,12 +109,15 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/e2e_experiment_dashboard.json
     volumes:
-      - ./dashboards:/var/lib/grafana/dashboards
-      - ./grafana-provisioning:/etc/grafana/provisioning
+      - ../chaostooling-observability-stack/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ../chaostooling-observability-stack/grafana/grafana-provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
       - loki
       - tempo
+    networks:
+      - default
 
   # --- Application Stack (for E2E demos) ---
   # --- SITE A (Primary Site) ---
@@ -432,8 +452,11 @@ services:
     image: cassandra:4.1
     ports:
       - "9042:9042"
+      - "7199:7199"  # JMX port for OTEL collector
     environment:
       - CASSANDRA_CLUSTER_NAME=ChaosCluster
+      # Enable JMX for OTEL collector
+      - JVM_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=7199 -Dcom.sun.management.jmxremote.rmi.port=7199 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
     volumes:
       - ./scripts/init-cassandra-keyspace.sh:/docker-entrypoint-initdb.d/init-cassandra-keyspace.sh:ro
       - ./scripts/cassandra-entrypoint-wrapper.sh:/usr/local/bin/cassandra-entrypoint-wrapper.sh:ro
@@ -483,6 +506,10 @@ services:
       - "61616:61616"
       - "61613:61613" # STOMP
       - "8161:8161" # Web console
+      - "1099:1099"  # JMX port for OTEL collector
+    environment:
+      # Enable JMX for OTEL collector
+      - ACTIVEMQ_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=1099 -Dcom.sun.management.jmxremote.rmi.port=1099 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
     volumes:
       - ./scripts/init-activemq-queues.sh:/docker-entrypoint-initdb.d/init-activemq-queues.sh:ro
       - ./scripts/activemq-entrypoint-wrapper.sh:/usr/local/bin/activemq-entrypoint-wrapper.sh:ro
@@ -545,7 +572,7 @@ services:
       - ../:/chaostooling-oss
       - /var/run/docker.sock:/var/run/docker.sock
       - chaos-experiment-logs:/var/log/chaostoolkit
-      - ./reporting-output:/var/log/chaostoolkit/reports
+      - ./reporting-output:/reporting-output
       - ./scripts/chaos-runner-entrypoint.sh:/chaos-runner-entrypoint.sh:ro
     entrypoint: ["/chaos-runner-entrypoint.sh"]
     environment:
@@ -562,16 +589,15 @@ services:
       - OTEL_LOG_LEVEL=debug
       - OTEL_EXPORTER_OTLP_METRICS_TIMEOUT=10000
       - OTEL_METRIC_EXPORT_INTERVAL=5000
-      - OTEL_SERVICE_NAME=chaostoolkit-demo
+      - OTEL_SERVICE_NAME=chaostooling-demo
       - OTEL_SERVICE_NAMESPACE=chaos-engineering
       - OTEL_TRACES_SAMPLER=parentbased_always_on
       - CHAOSTOOLKIT_IN_DOCKER=true
       - CHAOSTOOLKIT_LOG_FILE=/var/log/chaostoolkit/chaostoolkit.log
       - CHAOSTOOLKIT_JOURNAL_PATH=/var/log/chaostoolkit/journal.json
+      - CHAOS_REPORTING_OUTPUT_DIR=/reporting-output
       # PYTHONPATH will be set by chaos-runner-entrypoint.sh via setup-extensions.sh
       # This ensures extensions are installed and PYTHONPATH is configured automatically
-      - CHAOS_REPORTING_OUTPUT_DIR=/var/log/chaostoolkit/reports
-      - CHAOS_REPORTING_FORMATS=html,json
 
       # Postgres (for basic experiments)
       - POSTGRES_HOST=postgres-primary-site-a

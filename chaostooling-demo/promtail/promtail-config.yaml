@@ -26,7 +26,7 @@ scrape_configs:
       - source_labels: ['__meta_docker_container_name']
         regex: '/.*chaos-runner.*'
         target_label: 'service_name'
-        replacement: 'chaostoolkit-demo'
+        replacement: 'chaostooling-demo'
       - source_labels: ['__meta_docker_container_name']
         regex: '/.*app-server-1.*'
         target_label: 'service_name'
@@ -53,20 +53,20 @@ scrape_configs:
         replacement: 'haproxy'
 
   # Scrape experiment logs from shared volume
-  - job_name: chaostoolkit-experiment-logs
+  - job_name: chaostooling-experiment-logs
     static_configs:
       - targets:
           - localhost
         labels:
-          job: chaostoolkit-experiment-logs
-          service_name: chaostoolkit-demo
+          job: chaostooling-experiment-logs
+          service_name: chaostooling-demo
           log_type: experiment
           __path__: /var/log/chaostoolkit/chaostoolkit.log
       - targets:
           - localhost
         labels:
-          job: chaostoolkit-experiment-logs
-          service_name: chaostoolkit-demo
+          job: chaostooling-experiment-logs
+          service_name: chaostooling-demo
           log_type: experiment
           __path__: /experiments/chaostoolkit.log
     pipeline_stages:
@@ -84,13 +84,13 @@ scrape_configs:
   # Scrape journal.json (structured experiment data)
   # Note: journal.json is a single JSON object, not JSONL
   # We read it as plain text to avoid parse errors - journal is better accessed via reporting system
-  - job_name: chaostoolkit-journal
+  - job_name: chaostooling-journal
     static_configs:
       - targets:
           - localhost
         labels:
-          job: chaostoolkit-journal
-          service_name: chaostoolkit-demo
+          job: chaostooling-journal
+          service_name: chaostooling-demo
           log_type: journal
           __path__: /var/log/chaostoolkit/journal.json
     pipeline_stages:

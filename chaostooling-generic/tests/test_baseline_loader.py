@@ -21,7 +21,9 @@ class TestLoadBySystem:
     """Test BaselineLoader.load_by_system() method - 6 tests."""
 
     @pytest.mark.unit
-    def test_load_by_system_normal_case(self, mock_db_client, baseline_metric_factory):
+    def test_load_by_system_normal_case(
+        self, mock_db_client, baseline_metric_factory
+    ) -> None:
         """Test loading baselines for a single system."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_for_system.return_value = [
@@ -36,7 +38,7 @@ class TestLoadBySystem:
         mock_db_client.get_baselines_for_system.assert_called_once()
 
     @pytest.mark.unit
-    def test_load_by_system_with_include_patterns(self, mock_db_client):
+    def test_load_by_system_with_include_patterns(self, mock_db_client) -> None:
         """Test load_by_system with include_patterns filter."""
         loader = BaselineLoader(db_client=mock_db_client)
 
@@ -48,7 +50,7 @@ class TestLoadBySystem:
         mock_db_client.get_baselines_for_system.assert_called_once()
 
     @pytest.mark.unit
-    def test_load_by_system_with_exclude_patterns(self, mock_db_client):
+    def test_load_by_system_with_exclude_patterns(self, mock_db_client) -> None:
         """Test load_by_system with exclude_patterns filter."""
         loader = BaselineLoader(db_client=mock_db_client)
 
@@ -60,7 +62,7 @@ class TestLoadBySystem:
         mock_db_client.get_baselines_for_system.assert_called_once()
 
     @pytest.mark.unit
-    def test_load_by_system_empty_result(self, mock_db_client):
+    def test_load_by_system_empty_result(self, mock_db_client) -> None:
         """Test load_by_system when no baselines exist."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_for_system.return_value = []
@@ -71,7 +73,7 @@ class TestLoadBySystem:
         assert len(result) == 0
 
     @pytest.mark.unit
-    def test_load_by_system_returns_baseline_metrics(self, mock_db_client):
+    def test_load_by_system_returns_baseline_metrics(self, mock_db_client) -> None:
         """Test that load_by_system returns BaselineMetric objects."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_for_system.return_value = [
@@ -101,7 +103,7 @@ class TestLoadBySystem:
             assert isinstance(metric, BaselineMetric)
 
     @pytest.mark.unit
-    def test_load_by_system_db_error_handling(self, mock_db_client):
+    def test_load_by_system_db_error_handling(self, mock_db_client) -> None:
         """Test load_by_system handles database errors gracefully."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_for_system.side_effect = Exception("DB Error")
@@ -114,7 +116,7 @@ class TestLoadByService:
     """Test BaselineLoader.load_by_service() method - 5 tests."""
 
     @pytest.mark.unit
-    def test_load_by_service_normal_case(self, mock_db_client):
+    def test_load_by_service_normal_case(self, mock_db_client) -> None:
         """Test loading baselines for a single service."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_for_service.return_value = [
@@ -128,7 +130,7 @@ class TestLoadByService:
         assert len(result) > 0
 
     @pytest.mark.unit
-    def test_load_by_service_empty_result(self, mock_db_client):
+    def test_load_by_service_empty_result(self, mock_db_client) -> None:
         """Test load_by_service when service has no baselines."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_for_service.return_value = []
@@ -139,7 +141,7 @@ class TestLoadByService:
         assert len(result) == 0
 
     @pytest.mark.unit
-    def test_load_by_service_returns_baseline_metrics(self, mock_db_client):
+    def test_load_by_service_returns_baseline_metrics(self, mock_db_client) -> None:
         """Test that load_by_service returns BaselineMetric objects."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_for_service.return_value = [
@@ -169,7 +171,7 @@ class TestLoadByService:
             assert isinstance(metric, BaselineMetric)
 
     @pytest.mark.unit
-    def test_load_by_service_case_sensitivity(self, mock_db_client):
+    def test_load_by_service_case_sensitivity(self, mock_db_client) -> None:
         """Test that service name lookup handles case variations."""
         loader = BaselineLoader(db_client=mock_db_client)
 
@@ -181,7 +183,7 @@ class TestLoadByService:
         assert mock_db_client.get_baselines_for_service.called
 
     @pytest.mark.unit
-    def test_load_by_service_with_multiple_metrics(self, mock_db_client):
+    def test_load_by_service_with_multiple_metrics(self, mock_db_client) -> None:
         """Test load_by_service returns all metrics for a service."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_for_service.return_value = [
@@ -198,7 +200,7 @@ class TestLoadByMetrics:
     """Test BaselineLoader.load_by_metrics() method - 6 tests."""
 
     @pytest.mark.unit
-    def test_load_by_metrics_existing(self, mock_db_client):
+    def test_load_by_metrics_existing(self, mock_db_client) -> None:
         """Test loading existing metrics by name."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_by_metrics.return_value = [
@@ -212,7 +214,7 @@ class TestLoadByMetrics:
         assert len(result) == 2
 
     @pytest.mark.unit
-    def test_load_by_metrics_missing(self, mock_db_client):
+    def test_load_by_metrics_missing(self, mock_db_client) -> None:
         """Test load_by_metrics when some metrics don't exist."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_by_metrics.return_value = []
@@ -223,7 +225,7 @@ class TestLoadByMetrics:
         assert len(result) == 0
 
     @pytest.mark.unit
-    def test_load_by_metrics_with_service_filter(self, mock_db_client):
+    def test_load_by_metrics_with_service_filter(self, mock_db_client) -> None:
         """Test load_by_metrics with optional service_name filter."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_by_metrics.return_value = [
@@ -235,7 +237,7 @@ class TestLoadByMetrics:
         assert isinstance(result, dict)
 
     @pytest.mark.unit
-    def test_load_by_metrics_partial_match(self, mock_db_client):
+    def test_load_by_metrics_partial_match(self, mock_db_client) -> None:
         """Test load_by_metrics when only some metrics found."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_by_metrics.return_value = [
@@ -248,7 +250,7 @@ class TestLoadByMetrics:
         assert isinstance(result, dict)
 
     @pytest.mark.unit
-    def test_load_by_metrics_returns_baseline_metrics(self, mock_db_client):
+    def test_load_by_metrics_returns_baseline_metrics(self, mock_db_client) -> None:
         """Test that load_by_metrics returns BaselineMetric objects."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_by_metrics.return_value = [
@@ -278,7 +280,7 @@ class TestLoadByMetrics:
             assert isinstance(metric, BaselineMetric)
 
     @pytest.mark.unit
-    def test_load_by_metrics_empty_list(self, mock_db_client):
+    def test_load_by_metrics_empty_list(self, mock_db_client) -> None:
         """Test load_by_metrics with empty metric list."""
         loader = BaselineLoader(db_client=mock_db_client)
 
@@ -291,7 +293,7 @@ class TestLoadByLabels:
     """Test BaselineLoader.load_by_labels() method - 6 tests."""
 
     @pytest.mark.unit
-    def test_load_by_labels_single_label(self, mock_db_client):
+    def test_load_by_labels_single_label(self, mock_db_client) -> None:
         """Test loading baselines by single label."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_by_labels.return_value = [
@@ -305,7 +307,7 @@ class TestLoadByLabels:
         assert len(result) > 0
 
     @pytest.mark.unit
-    def test_load_by_labels_multiple_labels(self, mock_db_client):
+    def test_load_by_labels_multiple_labels(self, mock_db_client) -> None:
         """Test loading baselines by multiple labels."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_by_labels.return_value = []
@@ -321,7 +323,7 @@ class TestLoadByLabels:
         assert isinstance(result, dict)
 
     @pytest.mark.unit
-    def test_load_by_labels_empty_result(self, mock_db_client):
+    def test_load_by_labels_empty_result(self, mock_db_client) -> None:
         """Test load_by_labels when no metrics match labels."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_by_labels.return_value = []
@@ -332,7 +334,7 @@ class TestLoadByLabels:
         assert len(result) == 0
 
     @pytest.mark.unit
-    def test_load_by_labels_returns_baseline_metrics(self, mock_db_client):
+    def test_load_by_labels_returns_baseline_metrics(self, mock_db_client) -> None:
         """Test that load_by_labels returns BaselineMetric objects."""
         loader = BaselineLoader(db_client=mock_db_client)
         mock_db_client.get_baselines_by_labels.return_value = [
@@ -362,7 +364,7 @@ class TestLoadByLabels:
             assert isinstance(metric, BaselineMetric)
 
     @pytest.mark.unit
-    def test_load_by_labels_label_matching_logic(self, mock_db_client):
+    def test_load_by_labels_label_matching_logic(self, mock_db_client) -> None:
         """Test that label matching uses correct logic (AND vs OR)."""
         loader = BaselineLoader(db_client=mock_db_client)
 
@@ -377,7 +379,7 @@ class TestLoadByLabels:
         assert isinstance(result, dict)
 
     @pytest.mark.unit
-    def test_load_by_labels_empty_dict(self, mock_db_client):
+    def test_load_by_labels_empty_dict(self, mock_db_client) -> None:
         """Test load_by_labels with empty label dictionary."""
         loader = BaselineLoader(db_client=mock_db_client)
 
@@ -390,7 +392,7 @@ class TestValidateBaselines:
     """Test BaselineLoader.validate_baselines() method - 9 tests."""
 
     @pytest.mark.unit
-    def test_validate_fresh_baselines(self, sample_baselines):
+    def test_validate_fresh_baselines(self, sample_baselines) -> None:
         """Test validation of fresh baselines."""
         loader = BaselineLoader()
 
@@ -408,7 +410,7 @@ class TestValidateBaselines:
             assert "valid" in status
 
     @pytest.mark.unit
-    def test_validate_stale_baselines(self, baseline_metric_factory):
+    def test_validate_stale_baselines(self, baseline_metric_factory) -> None:
         """Test validation detects stale baselines."""
         loader = BaselineLoader()
 
@@ -428,7 +430,7 @@ class TestValidateBaselines:
         assert "valid" in result.get("old_metric", {})
 
     @pytest.mark.unit
-    def test_validate_low_quality_baselines(self, baseline_metric_factory):
+    def test_validate_low_quality_baselines(self, baseline_metric_factory) -> None:
         """Test validation detects low quality baselines."""
         loader = BaselineLoader()
 
@@ -440,7 +442,7 @@ class TestValidateBaselines:
         assert "quality_score" in result.get("low_quality", {})
 
     @pytest.mark.unit
-    def test_validate_zero_stdev(self, baseline_metric_factory):
+    def test_validate_zero_stdev(self, baseline_metric_factory) -> None:
         """Test validation with zero standard deviation."""
         loader = BaselineLoader()
 
@@ -456,7 +458,7 @@ class TestValidateBaselines:
         assert isinstance(result, dict)
 
     @pytest.mark.unit
-    def test_validate_empty_baselines(self, mock_db_client):
+    def test_validate_empty_baselines(self, mock_db_client) -> None:
         """Test validation of empty baseline set."""
         loader = BaselineLoader()
 
@@ -466,7 +468,7 @@ class TestValidateBaselines:
         assert len(result) == 0
 
     @pytest.mark.unit
-    def test_validate_returns_validation_details(self, sample_baselines):
+    def test_validate_returns_validation_details(self, sample_baselines) -> None:
         """Test that validation returns detailed status."""
         loader = BaselineLoader()
 
@@ -478,7 +480,7 @@ class TestValidateBaselines:
             assert "reason" in validation or "reasons" in validation
 
     @pytest.mark.unit
-    def test_validate_mixed_valid_invalid(self, sample_baselines):
+    def test_validate_mixed_valid_invalid(self, sample_baselines) -> None:
         """Test validation with mix of valid and invalid baselines."""
         loader = BaselineLoader()
 
@@ -493,7 +495,7 @@ class TestValidateBaselines:
         assert len(result) == 3
 
     @pytest.mark.unit
-    def test_validate_insufficient_data(self, baseline_metric_factory):
+    def test_validate_insufficient_data(self, baseline_metric_factory) -> None:
         """Test validation detects insufficient data (low count)."""
         loader = BaselineLoader()
 
@@ -509,7 +511,7 @@ class TestValidateBaselines:
         assert isinstance(result, dict)
 
     @pytest.mark.unit
-    def test_validate_high_variance_warning(self, sample_baselines):
+    def test_validate_high_variance_warning(self, sample_baselines) -> None:
         """Test validation warnings for high variance metrics."""
         loader = BaselineLoader()
 

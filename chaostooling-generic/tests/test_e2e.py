@@ -24,7 +24,9 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_discover_sync_validate_run(self, db_cursor, sample_experiment_configs):
+    def test_discover_sync_validate_run(
+        self, db_cursor, sample_experiment_configs
+    ) -> None:
         """Test complete workflow: discover → sync → validate → run."""
         # Phase 1: Discovery
         loader = BaselineLoader()
@@ -44,7 +46,7 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_discover_by_system_e2e(self, db_cursor):
+    def test_discover_by_system_e2e(self, db_cursor) -> None:
         """Test full workflow using by_system discovery."""
         loader = BaselineLoader()
 
@@ -62,7 +64,7 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_discover_by_service_e2e(self, db_cursor):
+    def test_discover_by_service_e2e(self, db_cursor) -> None:
         """Test full workflow using by_service discovery."""
         loader = BaselineLoader()
 
@@ -74,7 +76,7 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_discover_by_metrics_e2e(self, db_cursor):
+    def test_discover_by_metrics_e2e(self, db_cursor) -> None:
         """Test full workflow using by_metrics discovery."""
         loader = BaselineLoader()
 
@@ -87,7 +89,7 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_discover_by_labels_e2e(self, db_cursor):
+    def test_discover_by_labels_e2e(self, db_cursor) -> None:
         """Test full workflow using by_labels discovery."""
         loader = BaselineLoader()
 
@@ -103,7 +105,7 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_baseline_versioning(self, db_cursor, db_connection):
+    def test_baseline_versioning(self, db_cursor, db_connection) -> None:
         """Test baseline versioning in workflow."""
         # Should track baseline versions
         try:
@@ -120,7 +122,7 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_audit_trail_creation(self, db_cursor):
+    def test_audit_trail_creation(self, db_cursor) -> None:
         """Test that audit trail is created during workflow."""
         try:
             db_cursor.execute(
@@ -138,7 +140,7 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_error_recovery(self, db_cursor):
+    def test_error_recovery(self, db_cursor) -> None:
         """Test error recovery in workflow."""
         loader = BaselineLoader()
 
@@ -149,7 +151,7 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_workflow_with_mixed_quality(self, sample_baselines):
+    def test_workflow_with_mixed_quality(self, sample_baselines) -> None:
         """Test workflow with mix of valid and invalid baselines."""
         loader = BaselineLoader()
 
@@ -165,7 +167,7 @@ class TestEndToEndWorkflow:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_workflow_with_large_dataset(self):
+    def test_workflow_with_large_dataset(self) -> None:
         """Test workflow with large number of metrics."""
         loader = BaselineLoader()
 
@@ -188,7 +190,7 @@ class TestExperimentIntegration:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_parse_experiment_config(self, sample_experiment_configs):
+    def test_parse_experiment_config(self, sample_experiment_configs) -> None:
         """Test parsing experiment config with baseline section."""
         experiment = sample_experiment_configs["postgres_pool_exhaustion"]
 
@@ -198,7 +200,7 @@ class TestExperimentIntegration:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_load_baselines_for_experiment(self, sample_experiment_configs):
+    def test_load_baselines_for_experiment(self, sample_experiment_configs) -> None:
         """Test loading baselines for a specific experiment."""
         experiment = sample_experiment_configs["cpu_stress_test"]
 
@@ -214,7 +216,9 @@ class TestExperimentIntegration:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_create_baseline_mappings_for_experiment(self, db_cursor, db_connection):
+    def test_create_baseline_mappings_for_experiment(
+        self, db_cursor, db_connection
+    ) -> None:
         """Test creating baseline mappings for experiment."""
         try:
             # Create mappings for a test experiment
@@ -242,7 +246,7 @@ class TestExperimentIntegration:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_store_context_for_probes(self, sample_baselines):
+    def test_store_context_for_probes(self, sample_baselines) -> None:
         """Test storing baseline context for probes to use."""
         context = {
             "baseline": {
@@ -257,7 +261,7 @@ class TestExperimentIntegration:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_experiment_error_scenarios(self, db_cursor):
+    def test_experiment_error_scenarios(self, db_cursor) -> None:
         """Test handling of error scenarios during experiment."""
         loader = BaselineLoader()
 
@@ -290,7 +294,7 @@ class TestRealWorldScenarios:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_cpu_stress_test_scenario(self, sample_experiment_configs):
+    def test_cpu_stress_test_scenario(self, sample_experiment_configs) -> None:
         """Test baseline integration for CPU stress test."""
         sample_experiment_configs["cpu_stress_test"]
 
@@ -301,7 +305,7 @@ class TestRealWorldScenarios:
 
     @pytest.mark.e2e
     @pytest.mark.slow
-    def test_repeated_execution_consistency(self, sample_baselines):
+    def test_repeated_execution_consistency(self, sample_baselines) -> None:
         """Test that repeated execution gives consistent results."""
         loader = BaselineLoader()
 

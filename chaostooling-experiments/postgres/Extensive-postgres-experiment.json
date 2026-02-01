@@ -130,6 +130,51 @@
       "key": "LOKI_URL",
       "default": "http://loki:3100"
     },
+    "grafana_url": {
+      "type": "env",
+      "key": "GRAFANA_URL",
+      "default": "http://grafana:3000"
+    },
+    "grafana_api_key": {
+      "type": "env",
+      "key": "GRAFANA_API_KEY",
+      "default": "glsa_mmtq2mWswuHTXKQCsN7MKDggAKshgLlH_21d9511e"
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
+    },
+    "chaos_db_name": {
+      "type": "env",
+      "key": "CHAOS_DB_NAME",
+      "default": "chaos_platform"
+    },
+    "chaos_db_user": {
+      "type": "env",
+      "key": "CHAOS_DB_USER",
+      "default": "chaos_admin"
+    },
+    "chaos_db_password": {
+      "type": "env",
+      "key": "CHAOS_DB_PASSWORD",
+      "default": "chaos_admin_secure_password"
+    },
+    "otel_service_name": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAME",
+      "default": "chaostooling-demo"
+    },
+    "otel_service_namespace": {
+      "type": "env",
+      "key": "OTEL_SERVICE_NAMESPACE",
+      "default": "chaos-engineering"
+    },
     "chaos_db_host": {
       "type": "env",
       "key": "CHAOS_DB_HOST",
@@ -179,6 +224,13 @@
       "provider": {
         "type": "python",
         "module": "chaosotel.control"
+      }
+    },
+    {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
       }
     },
     {
@@ -901,6 +953,17 @@
         "notes": "Rate of analyze operations per minute. Correlates with vacuum activity."
       }
     ]
+  },
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "postgresql_commits_total",
+      "rate(postgresql_commits_total[5m])",
+      "chaos_db_connection_pool_utilization_percent"
+    ],
+    "sources": ["grafana", "prometheus", "database", "file"],
+    "threshold_sigma": 2.0
   },
   "steady-state-hypothesis": {
     "title": "System is healthy",
@@ -1697,7 +1760,7 @@
         "func": "verify_traces_exported",
         "arguments": {
           "tempo_url": "${tempo_url}",
-          "service_name": "chaostoolkit-demo"
+          "service_name": "${otel_service_name}"
         }
       }
     },
@@ -1711,7 +1774,7 @@
         "func": "verify_logs_exported",
         "arguments": {
           "loki_url": "${loki_url}",
-          "service_namespace": "chaos-engineering"
+          "service_namespace": "${otel_service_namespace}"
         }
       }
     }

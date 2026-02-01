@@ -29,14 +29,14 @@ class TestDatabaseConnectivity:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_connect_to_chaos_platform(self, db_connection):
+    def test_connect_to_chaos_platform(self, db_connection) -> None:
         """Test connection to chaos_platform database."""
         assert db_connection is not None
         assert not db_connection.closed
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_query_baseline_metrics_table(self, db_cursor):
+    def test_query_baseline_metrics_table(self, db_cursor) -> None:
         """Test querying baseline_metrics table."""
         try:
             db_cursor.execute("SELECT COUNT(*) as count FROM baseline_metrics")
@@ -48,7 +48,7 @@ class TestDatabaseConnectivity:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_query_baseline_versions_table(self, db_cursor):
+    def test_query_baseline_versions_table(self, db_cursor) -> None:
         """Test querying baseline_versions table."""
         try:
             db_cursor.execute("SELECT COUNT(*) as count FROM baseline_versions")
@@ -59,7 +59,7 @@ class TestDatabaseConnectivity:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_create_baseline_experiment_mapping(self, db_cursor):
+    def test_create_baseline_experiment_mapping(self, db_cursor) -> None:
         """Test creating baseline_experiment_mapping entries."""
         try:
             db_cursor.execute(
@@ -84,7 +84,7 @@ class TestDatabaseConnectivity:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_handle_connection_failure(self, db_config):
+    def test_handle_connection_failure(self, db_config) -> None:
         """Test handling of connection failures."""
         bad_config = db_config.copy()
         bad_config["port"] = 9999  # Invalid port
@@ -105,7 +105,7 @@ class TestBaselineDiscoveryIntegration:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_load_by_system_with_real_db(self, db_cursor, db_connection):
+    def test_load_by_system_with_real_db(self, db_cursor, db_connection) -> None:
         """Test load_by_system against real database."""
         # Insert test data
         try:
@@ -146,7 +146,7 @@ class TestBaselineDiscoveryIntegration:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_load_by_service_with_real_db(self, db_cursor, db_connection):
+    def test_load_by_service_with_real_db(self, db_cursor, db_connection) -> None:
         """Test load_by_service against real database."""
         try:
             db_cursor.execute(
@@ -184,7 +184,7 @@ class TestBaselineDiscoveryIntegration:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_load_by_metrics_with_real_db(self, db_cursor, db_connection):
+    def test_load_by_metrics_with_real_db(self, db_cursor, db_connection) -> None:
         """Test load_by_metrics against real database."""
         try:
             metrics = [
@@ -229,7 +229,7 @@ class TestBaselineDiscoveryIntegration:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_load_by_labels_with_real_db(self, db_cursor, db_connection):
+    def test_load_by_labels_with_real_db(self, db_cursor, db_connection) -> None:
         """Test load_by_labels against real database."""
         try:
             db_cursor.execute(
@@ -280,7 +280,7 @@ class TestBaselineDiscoveryIntegration:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_multiple_discovery_methods(self, db_cursor, db_connection):
+    def test_multiple_discovery_methods(self, db_cursor, db_connection) -> None:
         """Test all 4 discovery methods in sequence."""
         try:
             BaselineLoader(db_client=None)
@@ -300,7 +300,7 @@ class TestBaselineDiscoveryIntegration:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_discovery_returns_baseline_metrics(self, db_cursor):
+    def test_discovery_returns_baseline_metrics(self, db_cursor) -> None:
         """Test that discovery returns BaselineMetric objects."""
         try:
             loader = BaselineLoader(db_client=None)
@@ -312,7 +312,7 @@ class TestBaselineDiscoveryIntegration:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_discovery_error_handling(self, db_cursor):
+    def test_discovery_error_handling(self, db_cursor) -> None:
         """Test error handling during discovery."""
         loader = BaselineLoader(db_client=None)
         # Should handle missing table gracefully
@@ -325,7 +325,7 @@ class TestBaselineDiscoveryIntegration:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_discovery_with_patterns(self, db_cursor):
+    def test_discovery_with_patterns(self, db_cursor) -> None:
         """Test discovery with include/exclude patterns."""
         try:
             loader = BaselineLoader(db_client=None)
@@ -350,7 +350,7 @@ class TestBaselineExperimentMapping:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_insert_mapping_entry(self, db_cursor, db_connection):
+    def test_insert_mapping_entry(self, db_cursor, db_connection) -> None:
         """Test inserting a baseline_experiment_mapping entry."""
         try:
             db_cursor.execute(
@@ -373,7 +373,7 @@ class TestBaselineExperimentMapping:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_insert_multiple_mappings(self, db_cursor, db_connection):
+    def test_insert_multiple_mappings(self, db_cursor, db_connection) -> None:
         """Test inserting multiple mappings for one experiment."""
         try:
             mappings = [
@@ -397,7 +397,7 @@ class TestBaselineExperimentMapping:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_query_mapping_by_experiment(self, db_cursor):
+    def test_query_mapping_by_experiment(self, db_cursor) -> None:
         """Test querying mappings for a specific experiment."""
         try:
             db_cursor.execute(
@@ -414,7 +414,7 @@ class TestBaselineExperimentMapping:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_query_mapping_by_metric(self, db_cursor):
+    def test_query_mapping_by_metric(self, db_cursor) -> None:
         """Test querying mappings for a specific metric."""
         try:
             db_cursor.execute(
@@ -431,7 +431,7 @@ class TestBaselineExperimentMapping:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_mapping_with_all_fields(self, db_cursor, db_connection):
+    def test_mapping_with_all_fields(self, db_cursor, db_connection) -> None:
         """Test mapping with all optional fields."""
         try:
             db_cursor.execute(
@@ -449,7 +449,7 @@ class TestBaselineExperimentMapping:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_mapping_baseline_version_link(self, db_cursor, db_connection):
+    def test_mapping_baseline_version_link(self, db_cursor, db_connection) -> None:
         """Test linking mapping to baseline version."""
         try:
             db_cursor.execute(
@@ -467,7 +467,7 @@ class TestBaselineExperimentMapping:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_view_experiment_baselines(self, db_cursor):
+    def test_view_experiment_baselines(self, db_cursor) -> None:
         """Test v_experiment_baselines view."""
         try:
             db_cursor.execute("SELECT * FROM v_experiment_baselines LIMIT 1")
@@ -478,7 +478,7 @@ class TestBaselineExperimentMapping:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_mapping_audit_trail(self, db_cursor):
+    def test_mapping_audit_trail(self, db_cursor) -> None:
         """Test that mappings are audited."""
         try:
             db_cursor.execute(
@@ -495,7 +495,7 @@ class TestBaselineExperimentMapping:
 
     @pytest.mark.integration
     @pytest.mark.db
-    def test_delete_experiment_mappings(self, db_cursor, db_connection):
+    def test_delete_experiment_mappings(self, db_cursor, db_connection) -> None:
         """Test cleaning up mappings for an experiment."""
         try:
             db_cursor.execute(

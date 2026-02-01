@@ -208,6 +208,13 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
@@ -215,6 +222,39 @@
       }
     }
   ],
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "postgresql_commits_total",
+      "rate(postgresql_commits_total[5m])",
+      "chaos_db_connection_pool_utilization_percent",
+      "chaos_db_query_count_total{db_system=\"mysql\"}",
+      "chaos_db_error_count_total{db_system=\"mysql\"}",
+      "chaos_db_query_count_total{db_system=\"mssql\"}",
+      "chaos_db_error_count_total{db_system=\"mssql\"}",
+      "chaos_db_query_count_total{db_system=\"mongodb\"}",
+      "chaos_db_error_count_total{db_system=\"mongodb\"}",
+      "chaos_db_query_count_total{db_system=\"redis\"}",
+      "chaos_db_error_count_total{db_system=\"redis\"}",
+      "chaos_db_query_count_total{db_system=\"cassandra\"}",
+      "chaos_db_error_count_total{db_system=\"cassandra\"}",
+      "chaos_messaging_operation_count_total",
+      "chaos_messaging_error_count_total",
+      "chaos_transaction_total",
+      "chaos_transaction_successful_total",
+      "chaos_transaction_failed_total",
+      "chaos_experiment_activities_total",
+      "chaos_experiment_probes_total"
+    ],
+    "sources": [
+      "grafana",
+      "prometheus",
+      "database",
+      "file"
+    ],
+    "threshold_sigma": 2.0
+  },
   "steady-state-hypothesis": {
     "title": "System is healthy and all services are accessible",
     "probes": [

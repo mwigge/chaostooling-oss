@@ -99,6 +99,13 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
@@ -113,6 +120,22 @@
       }
     }
   ],
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "chaos_db_query_count_total{db_system=\"redis\"}",
+      "chaos_db_error_count_total{db_system=\"redis\"}",
+      "postgresql_commits_total"
+    ],
+    "sources": [
+      "grafana",
+      "prometheus",
+      "database",
+      "file"
+    ],
+    "threshold_sigma": 2.0
+  },
   "steady-state-hypothesis": {
     "title": "Redis system is healthy and accessible",
     "probes": [
@@ -311,4 +334,3 @@
     }
   ]
 }
-

@@ -1,0 +1,105 @@
+{
+  "version": "1.0",
+  "title": "PostgreSQL Pool Exhaustion with Dynamic Steady-State",
+  "description": "Example experiment using dynamic steady-state calculation from multiple sources (Grafana, Prometheus, DB, files).",
+  "configuration": {
+    "postgres_host": {
+      "type": "env",
+      "key": "POSTGRES_HOST",
+      "default": "postgres-primary"
+    },
+    "postgres_port": {
+      "type": "env",
+      "key": "POSTGRES_PORT",
+      "default": "5432"
+    },
+    "postgres_db": {
+      "type": "env",
+      "key": "POSTGRES_DB",
+      "default": "testdb"
+    },
+    "postgres_user": {
+      "type": "env",
+      "key": "POSTGRES_USER",
+      "default": "postgres"
+    },
+    "postgres_password": {
+      "type": "env",
+      "key": "POSTGRES_PASSWORD",
+      "default": "postgres"
+    },
+    "chaos_db_host": {
+      "type": "env",
+      "key": "CHAOS_DB_HOST",
+      "default": "chaos-platform-db"
+    },
+    "chaos_db_port": {
+      "type": "env",
+      "key": "CHAOS_DB_PORT",
+      "default": "5432"
+    }
+  },
+  "controls": [
+    {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
+      "name": "opentelemetry",
+      "provider": {
+        "type": "python",
+        "module": "chaosotel.control"
+      }
+    }
+  ],
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "postgresql_commits_total",
+      "chaos_db_connection_pool_utilization_percent",
+      "rate(postgresql_commits_total[5m])"
+    ],
+    "sources": ["grafana", "prometheus", "database", "file"],
+    "threshold_sigma": 2.0
+  },
+  "steady-state-hypothesis": {
+    "title": "Will be dynamically generated from historical metrics",
+    "probes": []
+  },
+  "method": [
+    {
+      "name": "inject-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "inject_connection_pool_exhaustion",
+        "arguments": {
+          "host": "${postgres_host}",
+          "port": "${postgres_port}",
+          "database": "${postgres_db}",
+          "user": "${postgres_user}",
+          "password": "${postgres_password}",
+          "num_connections": 100,
+          "duration_seconds": 60,
+          "leak_connections": false
+        }
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "stop-pool-exhaustion",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosdb.actions.postgres.postgres_pool_exhaustion",
+        "func": "stop_pool_exhaustion"
+      }
+    }
+  ]
+}

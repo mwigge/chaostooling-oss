@@ -21,7 +21,7 @@ Open source Chaos Engineering toolkit ecosystem built on Chaos Toolkit.
 ✅ **9 Updated Experiments** - All postgres experiments configured for baseline validation  
 ✅ **Full Observability** - Traces (Tempo), Metrics (Prometheus), Logs (Loki)  
 ✅ **Production Documentation** - 5,000+ lines (User Guide, DBA Guide, Deployment Guide)  
-✅ **Deployment Ready** - Kubernetes manifests, Docker support, rollback scripts  
+✅ **Deployment Ready** - Docker Compose support, rollback scripts  
 
 ### Quick Links
 - **[START HERE](docs_local/projects/chaostooling-generic/01-project-overview/START_HERE.md)** ← New to the project?
@@ -42,6 +42,7 @@ ChaosTooling provides a comprehensive set of extensions, observability tools, an
 ✅ **7-Control Standard** - Unified experiment lifecycle management  
 ✅ **Database Integration** - Automatic results storage and querying  
 ✅ **Baseline Metrics** - Pre/during/post chaos comparison (NEW - Production Ready!)  
+✅ **Dynamic Steady-State** - Automatic baseline calculation from historical metrics (NEW!)  
 ✅ **Full Observability** - Traces, metrics, logs via OpenTelemetry  
 ✅ **60+ Chaos Actions** - Database, network, compute, messaging systems  
 ✅ **Automated Reporting** - Risk/complexity/quality scores  
@@ -95,7 +96,7 @@ Create `.env` file in experiment directory:
 
 ```bash
 # Observability
-export OTEL_SERVICE_NAME=chaostoolkit-experiments
+export OTEL_SERVICE_NAME=chaostooling-demo
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
 export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 
@@ -215,6 +216,7 @@ All experiments follow a standardized 7-control lifecycle:
 | **opentelemetry** | Observability instrumentation | Traces, metrics, logs, compliance |
 | **reporting** | Generates experiment reports | PDF, JSON, HTML formats |
 | **metrics-calculator** | Calculates quality metrics | Risk, complexity, test score |
+| **dynamic-steady-state** | Automatic baseline calculation | Fetches from Grafana/Prometheus/DB/Files, calculates statistics, generates steady-state-hypothesis |
 
 ### Component Architecture
 
@@ -440,9 +442,53 @@ GRAFANA_URL=http://grafana:3000
 CHAOS_DURATION_SECONDS=60
 CHAOS_INTENSITY=0.8
 CHAOS_THREAD_COUNT=5
+
+# ==== DYNAMIC STEADY-STATE (Automatic Baseline Calculation) ====
+DYNAMIC_STEADY_STATE_ENABLED=true
+DYNAMIC_STEADY_STATE_PERIOD=30d
+DYNAMIC_STEADY_STATE_SOURCES=grafana,prometheus,database,file
+DYNAMIC_STEADY_STATE_BASELINE_FILES=
+DYNAMIC_STEADY_STATE_CONSOLE_OUTPUT=true
+DYNAMIC_STEADY_STATE_VERBOSE=false
 ```
 
 See individual extension READMEs for system-specific variables.
+
+### Dynamic Steady-State Control
+
+The **Dynamic Steady-State Control** automatically calculates baseline metrics from historical data before your experiment runs. It:
+
+1. **Fetches metrics** from multiple sources (Grafana, Prometheus, Database, Files)
+2. **Calculates statistics** (mean, stddev, percentiles) over a configurable time period
+3. **Generates steady-state-hypothesis** dynamically with appropriate tolerance ranges
+4. **Updates your experiment** before execution
+
+**Usage in Experiment:**
+
+```json
+{
+  "controls": [
+    {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    }
+  ],
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": ["postgresql_commits_total", "rate(postgresql_commits_total[5m])"],
+    "sources": ["grafana", "prometheus", "database", "file"],
+    "threshold_sigma": 2.0
+  }
+}
+```
+
+**See:**
+- **[Usage Guide](docs_local/projects/chaostooling-generic/05-documentation-guides/DYNAMIC_STEADY_STATE_USAGE.md)** - Complete usage instructions
+- **[Flowchart Diagram](docs_local/projects/chaostooling-generic/05-documentation-guides/DYNAMIC_STEADY_STATE_FLOWCHART.drawio)** - Visual flow diagram
 
 ### .env.example Template
 

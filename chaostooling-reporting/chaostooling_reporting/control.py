@@ -37,10 +37,8 @@ def configure_control(
     if not reporting_config:
         reporting_config = {
             "enabled": os.getenv("CHAOS_REPORTING_ENABLED", "true").lower() == "true",
-            "output_dir": os.getenv(
-                "CHAOS_REPORTING_OUTPUT_DIR", "/var/log/chaostoolkit/reports"
-            ),
-            "formats": os.getenv("CHAOS_REPORTING_FORMATS", "html,json").split(","),
+            "output_dir": os.getenv("CHAOS_REPORTING_OUTPUT_DIR", "./reporting-output"),
+            "formats": ["html", "json"],
             "templates": {
                 "executive": os.getenv("CHAOS_REPORTING_EXECUTIVE", "true").lower()
                 == "true",
@@ -55,9 +53,7 @@ def configure_control(
         }
 
     # Initialize report generator
-    output_dir = Path(
-        reporting_config.get("output_dir", "/var/log/chaostoolkit/reports")
-    )
+    output_dir = Path(reporting_config.get("output_dir", "./reporting-output"))
     output_dir.mkdir(parents=True, exist_ok=True)
 
     return {
@@ -85,10 +81,8 @@ def load_control(
     if not reporting_config:
         reporting_config = {
             "enabled": os.getenv("CHAOS_REPORTING_ENABLED", "true").lower() == "true",
-            "output_dir": os.getenv(
-                "CHAOS_REPORTING_OUTPUT_DIR", "/var/log/chaostoolkit/reports"
-            ),
-            "formats": os.getenv("CHAOS_REPORTING_FORMATS", "html,json").split(","),
+            "output_dir": os.getenv("CHAOS_REPORTING_OUTPUT_DIR", "./reporting-output"),
+            "formats": ["html", "json"],
             "templates": {
                 "executive": os.getenv("CHAOS_REPORTING_EXECUTIVE", "true").lower()
                 == "true",
@@ -109,7 +103,7 @@ def load_control(
     logger.info("Loading chaostooling-reporting control")
 
     # Initialize report generator
-    output_dir = reporting_config.get("output_dir", "/var/log/chaostoolkit/reports")
+    output_dir = reporting_config.get("output_dir", "./reporting-output")
     report_generator = ReportGenerator(
         output_dir=output_dir,
         formats=reporting_config.get("formats", ["html", "json"]),
@@ -284,7 +278,7 @@ def after_experiment_control(
                 "enabled": os.getenv("CHAOS_REPORTING_ENABLED", "true").lower()
                 == "true",
                 "output_dir": os.getenv(
-                    "CHAOS_REPORTING_OUTPUT_DIR", "/var/log/chaostoolkit/reports"
+                    "CHAOS_REPORTING_OUTPUT_DIR", "./reporting-output"
                 ),
                 "formats": os.getenv("CHAOS_REPORTING_FORMATS", "html,json").split(","),
                 "templates": {
@@ -304,9 +298,7 @@ def after_experiment_control(
             }
 
         if reporting_config.get("enabled", True):
-            output_dir = reporting_config.get(
-                "output_dir", "/var/log/chaostoolkit/reports"
-            )
+            output_dir = reporting_config.get("output_dir", "./reporting-output")
             report_generator = ReportGenerator(
                 output_dir=output_dir,
                 formats=reporting_config.get("formats", ["html", "json"]),

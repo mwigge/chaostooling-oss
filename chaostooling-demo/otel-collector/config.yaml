@@ -92,6 +92,69 @@ receivers:
     tls:
       insecure: true
 
+  # MySQL Receiver
+  mysql:
+    endpoint: mysql:3306
+    username: root
+    password: mysql
+    collection_interval: 10s
+    initial_delay: 10s
+
+  # MSSQL Receiver
+  sqlserver:
+    server: mssql
+    port: 1433
+    username: sa
+    password: Password123!
+    database: master
+    collection_interval: 10s
+    initial_delay: 10s
+
+  # MongoDB Receiver
+  mongodb:
+    hosts:
+      - endpoint: mongodb:27017
+    collection_interval: 10s
+    initial_delay: 10s
+
+  # Redis Receiver
+  redis:
+    endpoint: redis:6379
+    collection_interval: 10s
+    initial_delay: 10s
+
+  # RabbitMQ Receiver
+  rabbitmq:
+    endpoint: http://rabbitmq:15672
+    username: chaos
+    password: password
+    collection_interval: 10s
+    initial_delay: 10s
+
+  # JMX Receiver for Cassandra
+  jmx/cassandra:
+    endpoint: cassandra:7199
+    target_system: cassandra
+    collection_interval: 10s
+    initial_delay: 10s
+    jar_path: /opt/opentelemetry-java-contrib-jmx-metrics.jar
+
+  # JMX Receiver for Kafka
+  jmx/kafka:
+    endpoint: kafka:9999
+    target_system: kafka
+    collection_interval: 10s
+    initial_delay: 10s
+    jar_path: /opt/opentelemetry-java-contrib-jmx-metrics.jar
+
+  # JMX Receiver for ActiveMQ
+  jmx/activemq:
+    endpoint: activemq:1099
+    target_system: activemq
+    collection_interval: 10s
+    initial_delay: 10s
+    jar_path: /opt/opentelemetry-java-contrib-jmx-metrics.jar
+
 processors:
   batch:
 
@@ -113,7 +176,9 @@ exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
     resource_to_telemetry_conversion:
-      enabled: true
+      enabled: false
+    # Disabled to avoid duplicate label names error in v0.117.0
+    # Resource attributes are still available via OTLP export to Tempo/Loki
 
 service:
   pipelines:
@@ -123,7 +188,23 @@ service:
       exporters: [otlphttp/tempo, servicegraph, debug]
 
     metrics:
-      receivers: [otlp, prometheus, docker_stats, postgresql, postgresql/replica, postgresql/chaos-platform, servicegraph]
+      receivers: [
+        otlp,
+        prometheus,
+        docker_stats,
+        postgresql,
+        postgresql/replica,
+        postgresql/chaos-platform,
+        mysql,
+        sqlserver,
+        mongodb,
+        redis,
+        rabbitmq,
+        jmx/cassandra,
+        jmx/kafka,
+        jmx/activemq,
+        servicegraph
+      ]
       processors: [batch]
       exporters: [prometheus]
 

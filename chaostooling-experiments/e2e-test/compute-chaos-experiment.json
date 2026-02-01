@@ -139,6 +139,13 @@
       }
     },
     {
+      "name": "dynamic-steady-state",
+      "provider": {
+        "type": "python",
+        "module": "chaosgeneric.control.dynamic_steady_state_control"
+      }
+    },
+    {
       "name": "reporting",
       "provider": {
         "type": "python",
@@ -153,6 +160,21 @@
       }
     }
   ],
+  "dynamic_steady_state": {
+    "enabled": true,
+    "period": "30d",
+    "metrics": [
+      "chaos_experiment_activities_total",
+      "postgresql_commits_total"
+    ],
+    "sources": [
+      "grafana",
+      "prometheus",
+      "database",
+      "file"
+    ],
+    "threshold_sigma": 2.0
+  },
   "steady-state-hypothesis": {
     "title": "Compute infrastructure is healthy and accessible",
     "probes": [
@@ -262,7 +284,10 @@
       "tolerance": {
         "type": "jsonpath",
         "path": "$.cpu_percent",
-        "range": [0, 100]
+        "range": [
+          0,
+          100
+        ]
       }
     },
     {
@@ -284,7 +309,10 @@
       "tolerance": {
         "type": "jsonpath",
         "path": "$.memory_percent",
-        "range": [0, 100]
+        "range": [
+          0,
+          100
+        ]
       }
     },
     {
@@ -341,7 +369,10 @@
       "tolerance": {
         "type": "jsonpath",
         "path": "$.cpu_percent",
-        "range": [40, 100]
+        "range": [
+          40,
+          100
+        ]
       }
     },
     {
@@ -396,7 +427,10 @@
       "tolerance": {
         "type": "jsonpath",
         "path": "$.memory_percent",
-        "range": [40, 100]
+        "range": [
+          40,
+          100
+        ]
       }
     },
     {
@@ -535,4 +569,3 @@
     }
   ]
 }
-
