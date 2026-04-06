@@ -39,7 +39,7 @@ def probe_connection_exhaustion_status(
 
     user = user or os.getenv("ACTIVEMQ_USER", "admin")
 
-    password = password or os.getenv("ACTIVEMQ_PASSWORD", "admin")
+    password = password or os.getenv("ACTIVEMQ_PASSWORD", "changeme")
 
     # chaosotel is initialized via chaosotel.control - use directly
 

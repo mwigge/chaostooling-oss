@@ -57,7 +57,7 @@ def probe_replication_lag(
     replica_port = replica_port or int(os.getenv("POSTGRES_REPLICA_PORT", "5432"))
     database = database or os.getenv("POSTGRES_DB", "testdb")
     user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    password = password or os.getenv("POSTGRES_PASSWORD", "changeme")
 
     # chaosotel is initialized via chaosotel.control - use directly
     tracer = get_tracer()
@@ -314,7 +314,7 @@ def probe_data_consistency(
     replica_port = replica_port or int(os.getenv("POSTGRES_REPLICA_PORT", "5432"))
     database = database or os.getenv("POSTGRES_DB", "testdb")
     user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    password = password or os.getenv("POSTGRES_PASSWORD", "changeme")
 
     # chaosotel is initialized via chaosotel.control - use directly
     tracer = get_tracer()

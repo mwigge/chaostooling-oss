@@ -109,7 +109,7 @@ export CHAOS_DB_HOST=localhost
 export CHAOS_DB_PORT=5432
 export CHAOS_DB_NAME=chaos_platform
 export CHAOS_DB_USER=chaos_admin
-export CHAOS_DB_PASSWORD=password
+export CHAOS_DB_PASSWORD=changeme
 
 chaos run experiment.json
 ```
@@ -370,7 +370,7 @@ export CHAOS_DB_HOST=localhost
 export CHAOS_DB_PORT=5432
 export CHAOS_DB_NAME=chaos_platform
 export CHAOS_DB_USER=chaos_admin
-export CHAOS_DB_PASSWORD=password
+export CHAOS_DB_PASSWORD=changeme
 
 # Reporting
 export REPORT_OUTPUT_DIR=./reports

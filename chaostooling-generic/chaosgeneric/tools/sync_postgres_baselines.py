@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Sync PostgreSQL baseline metrics from Prometheus to chaos_platform database."""
 
+import os
 import sys
 from datetime import datetime, timedelta
 from typing import Optional
@@ -33,8 +34,8 @@ METRICS = [
 PROMETHEUS_URL = "http://prometheus:9090"
 DB_HOST = "chaos-platform-db"
 DB_PORT = 5432
-DB_USER = "chaos_admin"
-DB_PASSWORD = "chaos_admin_secure_password"
+DB_USER = os.getenv("CHAOS_DB_USER", "changeme")
+DB_PASSWORD = os.getenv("CHAOS_DB_PASSWORD", "changeme")
 SERVICE_NAME = "postgres"
 TIME_RANGE_DAYS = 30
 

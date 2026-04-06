@@ -266,13 +266,13 @@ receivers:
   sqlserver:
     collection_interval: 10s
     username: sa
-    password: Password123!
+    password: changeme
     server: mssql
     port: 1433
 ```
 
 **SQL Server Requirements**:
-- ✅ Works with `sa` user (already configured: `Password123!`)
+- ✅ Works with `sa` user (set via MSSQL_SA_PASSWORD env var)
 - ✅ Uses Windows Performance Counters or direct connection
 - ✅ Linux compatible (uses direct SQL queries)
 

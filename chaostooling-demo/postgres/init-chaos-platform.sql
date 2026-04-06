@@ -433,7 +433,7 @@ DO
 $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'chaos_app') THEN
-        CREATE ROLE chaos_app WITH LOGIN PASSWORD 'chaos_app_secure_password';
+        CREATE ROLE chaos_app WITH LOGIN PASSWORD 'changeme';
     END IF;
 END
 $$;
@@ -443,7 +443,7 @@ DO
 $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'chaos_user') THEN
-        CREATE ROLE chaos_user WITH LOGIN PASSWORD 'chaos_password';
+        CREATE ROLE chaos_user WITH LOGIN PASSWORD 'changeme';
     END IF;
 END
 $$;

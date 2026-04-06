@@ -41,7 +41,7 @@
     "mssql_password": {
       "type": "env",
       "key": "MSSQL_SA_PASSWORD",
-      "default": "Password123!"
+      "default": "changeme"
     },
     "_comment3": "=== CHAOS PARAMETERS ===",
     "stress_duration": {

@@ -118,7 +118,7 @@ python baseline_manager.py sync \
   --db-host chaos-platform-db \
   --db-port 5432 \
   --db-user chaos_admin \
-  --db-password chaos_admin_secure_password
+  --db-password changeme
 ```
 
 ### Step 2: Verify Data
@@ -130,7 +130,7 @@ python baseline_manager.py query \
   --db-host chaos-platform-db \
   --db-port 5432 \
   --db-user chaos_admin \
-  --db-password chaos_admin_secure_password
+  --db-password changeme
 ```
 
 ### Sync Options
@@ -247,7 +247,7 @@ Add these to the `configuration` section:
     "chaos_db_password": {
       "type": "env",
       "key": "CHAOS_DB_PASSWORD",
-      "default": "chaos_admin_secure_password"
+      "default": "changeme"
     }
   }
 }

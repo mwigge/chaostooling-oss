@@ -57,11 +57,11 @@ KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "chaos")
-RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "password")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "changeme")
 ACTIVEMQ_HOST = os.getenv("ACTIVEMQ_HOST", "activemq")
 ACTIVEMQ_PORT = int(os.getenv("ACTIVEMQ_PORT", "61616"))
 ACTIVEMQ_USER = os.getenv("ACTIVEMQ_USER", "admin")
-ACTIVEMQ_PASSWORD = os.getenv("ACTIVEMQ_PASSWORD", "admin")
+ACTIVEMQ_PASSWORD = os.getenv("ACTIVEMQ_PASSWORD", "changeme")
 
 # Load generation parameters
 TRANSACTIONS_PER_SECOND = float(os.getenv("TRANSACTIONS_PER_SECOND", "2.0"))

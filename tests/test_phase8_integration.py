@@ -57,7 +57,7 @@ def db_config():
         "port": int(os.getenv("CHAOS_DB_PORT", "5434")),
         "database": os.getenv("CHAOS_DB_NAME", "chaos_platform"),
         "user": os.getenv("CHAOS_DB_USER", "chaos_user"),
-        "password": os.getenv("CHAOS_DB_PASSWORD", "chaos_password"),
+        "password": os.getenv("CHAOS_DB_PASSWORD", "changeme"),
     }
 
 

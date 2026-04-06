@@ -62,7 +62,7 @@ def inject_query_timeout_storm(
     port = port or int(os.getenv("MYSQL_PORT", "3306"))
     database = database or os.getenv("MYSQL_DB", "testdb")
     user = user or os.getenv("MYSQL_USER", "root")
-    password = password or os.getenv("MYSQL_PASSWORD", "mysql")
+    password = password or os.getenv("MYSQL_PASSWORD", "changeme")
 
     ensure_initialized()
     db_system = os.getenv("DB_SYSTEM", "mysql")

@@ -1951,7 +1951,7 @@ def main() -> None:
         "--db-user", default=os.getenv("CHAOS_DB_USER", "postgres")
     )
     sync_parser.add_argument(
-        "--db-password", default=os.getenv("CHAOS_DB_PASSWORD", "postgres")
+        "--db-password", default=os.getenv("CHAOS_DB_PASSWORD", "changeme")
     )
     sync_parser.add_argument(
         "--time-range",
@@ -1980,7 +1980,7 @@ def main() -> None:
         "--db-user", default=os.getenv("CHAOS_DB_USER", "postgres")
     )
     validate_parser.add_argument(
-        "--db-password", default=os.getenv("CHAOS_DB_PASSWORD", "postgres")
+        "--db-password", default=os.getenv("CHAOS_DB_PASSWORD", "changeme")
     )
 
     # Analyze command
@@ -2030,7 +2030,7 @@ def main() -> None:
         "--db-user", default=os.getenv("CHAOS_DB_USER", "postgres")
     )
     query_parser.add_argument(
-        "--db-password", default=os.getenv("CHAOS_DB_PASSWORD", "postgres")
+        "--db-password", default=os.getenv("CHAOS_DB_PASSWORD", "changeme")
     )
 
     args = parser.parse_args()

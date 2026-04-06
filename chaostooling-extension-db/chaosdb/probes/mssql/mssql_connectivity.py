@@ -45,7 +45,7 @@ def probe_mssql_connectivity(
 
     user = user or os.getenv("MSSQL_USER", "sa")
 
-    password = password or os.getenv("MSSQL_PASSWORD", "Password123!")
+    password = password or os.getenv("MSSQL_PASSWORD", "changeme")
 
     driver = driver or os.getenv("MSSQL_DRIVER", "FreeTDS")
 

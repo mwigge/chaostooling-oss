@@ -48,7 +48,7 @@ def get_db_connection():
     if "," in host:
         # Construct libpq connection string
         # postgresql://user:password@host1:port1,host2:port2/dbname?target_session_attrs=read-write
-        dsn = f"postgresql://{os.getenv('POSTGRES_USER', 'postgres')}:{os.getenv('POSTGRES_PASSWORD', 'postgres')}@{host}/{os.getenv('POSTGRES_DB', 'testdb')}?target_session_attrs=read-write"
+        dsn = f"postgresql://{os.getenv('POSTGRES_USER', 'postgres')}:{os.getenv('POSTGRES_PASSWORD', 'changeme')}@{host}/{os.getenv('POSTGRES_DB', 'testdb')}?target_session_attrs=read-write"
         return psycopg2.connect(dsn)
     else:
         return psycopg2.connect(
@@ -56,7 +56,7 @@ def get_db_connection():
             port=port,
             dbname=os.getenv("POSTGRES_DB", "testdb"),
             user=os.getenv("POSTGRES_USER", "postgres"),
-            password=os.getenv("POSTGRES_PASSWORD", "postgres"),
+            password=os.getenv("POSTGRES_PASSWORD", "changeme"),
         )
 
 
@@ -64,7 +64,7 @@ def get_rabbitmq_connection():
     host = os.getenv("RABBITMQ_HOST", "rabbitmq")
     port = int(os.getenv("RABBITMQ_PORT", "5672"))
     user = os.getenv("RABBITMQ_USER", "chaos")
-    password = os.getenv("RABBITMQ_PASSWORD", "password")
+    password = os.getenv("RABBITMQ_PASSWORD", "changeme")
     credentials = pika.PlainCredentials(user, password)
     parameters = pika.ConnectionParameters(host, port, "/", credentials)
     return pika.BlockingConnection(parameters)

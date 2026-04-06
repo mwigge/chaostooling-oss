@@ -230,7 +230,7 @@
           "host": "${activemq_host}",
           "port": "${activemq_port}",
           "user": "admin",
-          "password": "admin",
+          "password": "changeme",
           "queue": "chaos.test",
           "num_producers": 10,
           "messages_per_producer": 1000,

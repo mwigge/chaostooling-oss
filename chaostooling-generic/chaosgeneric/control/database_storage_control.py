@@ -131,8 +131,8 @@ def before_experiment_control(
         db_host = os.getenv("CHAOS_DB_HOST", "chaos-platform-db")
         db_port = int(os.getenv("CHAOS_DB_PORT", "5432"))
         db_name = os.getenv("CHAOS_DB_NAME", "chaos_platform")
-        db_user = os.getenv("CHAOS_DB_USER", "chaos_admin")
-        db_password = os.getenv("CHAOS_DB_PASSWORD", "chaos_admin_secure_password")
+        db_user = os.getenv("CHAOS_DB_USER", "changeme")
+        db_password = os.getenv("CHAOS_DB_PASSWORD", "changeme")
 
         db = ChaosDb(
             host=db_host,

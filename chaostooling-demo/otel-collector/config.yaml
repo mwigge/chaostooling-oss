@@ -57,8 +57,8 @@ receivers:
   postgresql:
     endpoint: postgres-primary-site-a:5432
     transport: tcp
-    username: postgres
-    password: postgres
+    username: ${env:POSTGRES_USER}
+    password: ${env:POSTGRES_PASSWORD}
     databases:
       - testdb
     collection_interval: 10s
@@ -70,8 +70,8 @@ receivers:
   postgresql/replica:
     endpoint: postgres-replica-site-a:5432
     transport: tcp
-    username: postgres
-    password: postgres
+    username: ${env:POSTGRES_USER}
+    password: ${env:POSTGRES_PASSWORD}
     databases:
       - testdb
     collection_interval: 10s
@@ -83,8 +83,8 @@ receivers:
   postgresql/chaos-platform:
     endpoint: chaos-platform-db:5432
     transport: tcp
-    username: chaos_admin
-    password: chaos_admin_secure_password
+    username: ${env:CHAOS_DB_USER}
+    password: ${env:CHAOS_DB_PASSWORD}
     databases:
       - chaos_platform
     collection_interval: 10s
@@ -95,8 +95,8 @@ receivers:
   # MySQL Receiver
   mysql:
     endpoint: mysql:3306
-    username: root
-    password: mysql
+    username: ${env:MYSQL_USER}
+    password: ${env:MYSQL_ROOT_PASSWORD}
     collection_interval: 10s
     initial_delay: 10s
 
@@ -104,8 +104,8 @@ receivers:
   sqlserver:
     server: mssql
     port: 1433
-    username: sa
-    password: Password123!
+    username: ${env:MSSQL_USER}
+    password: ${env:MSSQL_SA_PASSWORD}
     database: master
     collection_interval: 10s
     initial_delay: 10s
@@ -126,8 +126,8 @@ receivers:
   # RabbitMQ Receiver
   rabbitmq:
     endpoint: http://rabbitmq:15672
-    username: chaos
-    password: password
+    username: ${env:RABBITMQ_USER}
+    password: ${env:RABBITMQ_PASSWORD}
     collection_interval: 10s
     initial_delay: 10s
 

@@ -6,7 +6,7 @@ services:
     container_name: chaos_platform_db
     environment:
       - POSTGRES_USER=chaos_admin
-      - POSTGRES_PASSWORD=chaos_admin_secure_password
+      - POSTGRES_PASSWORD=${CHAOS_DB_PASSWORD:-changeme}
       - POSTGRES_DB=chaos_platform
     ports:
       - "5434:5432"  # Use 5434 for chaos platform database
@@ -143,7 +143,7 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DB=${POSTGRES_DB:-testdb}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
       - PAYMENT_SERVICE_URL=${SITE_A_PAYMENT_SERVICE_URL:-http://payment-service-site-a:5000}
       - ORDER_SERVICE_URL=${SITE_A_ORDER_SERVICE_URL:-http://order-service-site-a:5000}
       - INVENTORY_SERVICE_URL=${SITE_A_INVENTORY_SERVICE_URL:-http://inventory-service-site-a:5000}
@@ -151,7 +151,7 @@ services:
       - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
       - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
       - RABBITMQ_USER=${RABBITMQ_USER:-chaos}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-password}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-changeme}
       - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
@@ -185,7 +185,7 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DB=${POSTGRES_DB:-testdb}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
       - PAYMENT_SERVICE_URL=${SITE_A_PAYMENT_SERVICE_URL:-http://payment-service-site-a:5000}
       - ORDER_SERVICE_URL=${SITE_A_ORDER_SERVICE_URL:-http://order-service-site-a:5000}
       - INVENTORY_SERVICE_URL=${SITE_A_INVENTORY_SERVICE_URL:-http://inventory-service-site-a:5000}
@@ -193,7 +193,7 @@ services:
       - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
       - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
       - RABBITMQ_USER=${RABBITMQ_USER:-chaos}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-password}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-changeme}
       - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
@@ -232,12 +232,12 @@ services:
       - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
       - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
       - RABBITMQ_USER=${RABBITMQ_USER:-chaos}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-password}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-changeme}
       - POSTGRES_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DB=${POSTGRES_DB:-testdb}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
       - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
       # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
@@ -264,7 +264,7 @@ services:
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_DB=${MYSQL_DB:-testdb}
       - MYSQL_USER=${MYSQL_USER:-root}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mysql}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-changeme}
       # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
       - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
@@ -312,7 +312,7 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DB=${POSTGRES_DB:-testdb}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
       # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
       - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
@@ -345,10 +345,10 @@ services:
     image: postgres:15
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       POSTGRES_DB: ${POSTGRES_DB:-testdb}
       POSTGRES_REPLICATION_USER: ${POSTGRES_REPLICATION_USER:-replicator}
-      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD:-changeme}
     ports:
       - "5432:5432"
     volumes:
@@ -382,10 +382,10 @@ services:
     image: postgres:15
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       POSTGRES_DB: ${POSTGRES_DB:-testdb}
       PGUSER: ${POSTGRES_REPLICATION_USER:-replicator}
-      PGPASSWORD: ${POSTGRES_REPLICATION_PASSWORD:-replicator}
+      PGPASSWORD: ${POSTGRES_REPLICATION_PASSWORD:-changeme}
     ports:
       - "5433:5432"
     volumes:
@@ -403,7 +403,7 @@ services:
           echo "Waiting for primary to be ready..."
           sleep 2
         done
-        echo "primary_conninfo = 'host=postgres-primary-site-a port=5432 user=${POSTGRES_REPLICATION_USER:-replicator} password=${POSTGRES_REPLICATION_PASSWORD:-replicator}'" >> /var/lib/postgresql/data/postgresql.conf
+        echo "primary_conninfo = 'host=postgres-primary-site-a port=5432 user=${POSTGRES_REPLICATION_USER:-replicator} password=${POSTGRES_REPLICATION_PASSWORD:-changeme}'" >> /var/lib/postgresql/data/postgresql.conf
         touch /var/lib/postgresql/data/standby.signal
         chown -R postgres:postgres /var/lib/postgresql/data
         chmod 700 /var/lib/postgresql/data
@@ -414,7 +414,7 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme}
       MYSQL_DATABASE: testdb
     ports:
       - "3306:3306"
@@ -426,7 +426,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "Password123!"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-changeme}"
     ports:
       - "1433:1433"
 
@@ -497,8 +497,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: chaos
-      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-chaos}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-changeme}
 
   activemq:
     image: apache/activemq-classic:5.18.3
@@ -524,7 +524,7 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_DB=testdb
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
       - POSTGRES_SERVICE_NAME=postgres-primary-site-a
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - SPAN_GENERATOR_POLL_INTERVAL=5
@@ -604,7 +604,7 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_DB=testdb
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
 
       # Postgres Primary/Replica (for E2E experiments)
       - POSTGRES_PRIMARY_HOST=${POSTGRES_PRIMARY_HOST:-postgres-primary-site-a}
@@ -626,7 +626,7 @@ services:
       - MYSQL_PORT=3306
       - MYSQL_DB=testdb
       - MYSQL_USER=root
-      - MYSQL_PASSWORD=mysql
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-changeme}
 
       # MongoDB
       - MONGODB_URI=mongodb://mongodb:27017
@@ -648,14 +648,14 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_VHOST=/
-      - RABBITMQ_USER=chaos
-      - RABBITMQ_PASSWORD=password
+      - RABBITMQ_USER=${RABBITMQ_USER:-chaos}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-changeme}
 
       # ActiveMQ
       - ACTIVEMQ_HOST=activemq
       - ACTIVEMQ_PORT=61613
-      - ACTIVEMQ_USER=admin
-      - ACTIVEMQ_PASSWORD=admin
+      - ACTIVEMQ_USER=${ACTIVEMQ_USER:-admin}
+      - ACTIVEMQ_PASSWORD=${ACTIVEMQ_PASSWORD:-changeme}
 
       # E2E Application
       - API_URL=http://haproxy-site-a:80
@@ -664,8 +664,8 @@ services:
       - CHAOS_DB_HOST=chaos_platform_db
       - CHAOS_DB_PORT=5432
       - CHAOS_DB_NAME=chaos_platform
-      - CHAOS_DB_USER=chaos_admin
-      - CHAOS_DB_PASSWORD=chaos_admin_secure_password
+      - CHAOS_DB_USER=${CHAOS_DB_USER:-chaos_admin}
+      - CHAOS_DB_PASSWORD=${CHAOS_DB_PASSWORD:-changeme}
     working_dir: /experiments
     command: tail -f /dev/null
 
@@ -684,11 +684,11 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=chaos
-      - RABBITMQ_PASSWORD=password
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-changeme}
       - ACTIVEMQ_HOST=activemq
       - ACTIVEMQ_PORT=61616
-      - ACTIVEMQ_USER=admin
-      - ACTIVEMQ_PASSWORD=admin
+      - ACTIVEMQ_USER=${ACTIVEMQ_USER:-admin}
+      - ACTIVEMQ_PASSWORD=${ACTIVEMQ_PASSWORD:-changeme}
       # OpenTelemetry endpoints - metrics and logs use HTTP (port 4318), traces use gRPC (port 4317)
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
       - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
