@@ -27,7 +27,7 @@ def check_query_error_rate(
     port = port or int(os.getenv("POSTGRES_PORT", "5432"))
     database = database or os.getenv("POSTGRES_DB", "testdb")
     user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    password = password or os.getenv("POSTGRES_PASSWORD", "changeme")
 
     tracer = get_tracer()
     metrics = get_metrics_core()

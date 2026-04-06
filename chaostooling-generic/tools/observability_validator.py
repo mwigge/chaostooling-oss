@@ -165,7 +165,7 @@ class Phase1InstrumentationChecker:
         """Check Grafana data sources configured."""
         # Try to query Grafana API
         grafana_url = os.getenv("GRAFANA_URL", "http://localhost:3000")
-        grafana_token = os.getenv("GRAFANA_ADMIN_PASSWORD", "admin")
+        grafana_token = os.getenv("GRAFANA_ADMIN_PASSWORD", "changeme")
 
         required_datasources = ["Tempo", "Prometheus", "Loki"]
         found_datasources = []

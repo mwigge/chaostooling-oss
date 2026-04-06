@@ -159,7 +159,7 @@
     "mssql_password": {
       "type": "env",
       "key": "MSSQL_SA_PASSWORD",
-      "default": "Password123!"
+      "default": "changeme"
     },
     "cassandra_host": {
       "type": "env",
@@ -205,7 +205,7 @@
     "rabbitmq_password": {
       "type": "env",
       "key": "RABBITMQ_PASSWORD",
-      "default": "password"
+      "default": "changeme"
     },
     "activemq_host": {
       "type": "env",
@@ -956,7 +956,7 @@
         "host": "${activemq_host}",
         "port": "${activemq_port}",
         "user": "admin",
-        "password": "admin",
+        "password": "changeme",
         "queue": "chaos.test",
         "num_producers": 10,
         "messages_per_producer": 1000,

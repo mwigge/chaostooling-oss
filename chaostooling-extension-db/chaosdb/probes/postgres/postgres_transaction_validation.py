@@ -43,7 +43,7 @@ def probe_transaction_count(
 
     user = user or os.getenv("POSTGRES_USER", "postgres")
 
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    password = password or os.getenv("POSTGRES_PASSWORD", "changeme")
 
     # chaosotel is initialized via chaosotel.control - use directly
 
@@ -230,7 +230,7 @@ def probe_transaction_integrity(
 
     user = user or os.getenv("POSTGRES_USER", "postgres")
 
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    password = password or os.getenv("POSTGRES_PASSWORD", "changeme")
 
     # chaosotel is initialized via chaosotel.control - use directly
 

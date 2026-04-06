@@ -38,7 +38,7 @@ def get_db_connection():
         port=port,
         dbname=os.getenv("POSTGRES_DB", "testdb"),
         user=os.getenv("POSTGRES_USER", "postgres"),
-        password=os.getenv("POSTGRES_PASSWORD", "postgres"),
+        password=os.getenv("POSTGRES_PASSWORD", "changeme"),
     )
 
 
@@ -46,7 +46,7 @@ def get_rabbitmq_connection():
     host = os.getenv("RABBITMQ_HOST", "rabbitmq")
     port = int(os.getenv("RABBITMQ_PORT", "5672"))
     user = os.getenv("RABBITMQ_USER", "chaos")
-    password = os.getenv("RABBITMQ_PASSWORD", "password")
+    password = os.getenv("RABBITMQ_PASSWORD", "changeme")
     credentials = pika.PlainCredentials(user, password)
     parameters = pika.ConnectionParameters(host, port, "/", credentials)
     return pika.BlockingConnection(parameters)

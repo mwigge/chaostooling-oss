@@ -112,7 +112,7 @@ export CHAOS_DB_HOST=postgres-chaos-platform
 export CHAOS_DB_PORT=5432
 export CHAOS_DB_NAME=chaos_platform
 export CHAOS_DB_USER=chaos_admin
-export CHAOS_DB_PASSWORD=chaos_password
+export CHAOS_DB_PASSWORD=changeme
 
 # Observability Backends
 export PROMETHEUS_URL=http://prometheus:9090
@@ -160,7 +160,7 @@ chaos run postgres/mcp-test-postgres-pool-exhaustion.json
 
 **In Grafana Dashboard:**
 - Open http://localhost:3000
-- Credentials: admin/admin
+- Credentials: admin/changeme (set via GRAFANA_ADMIN_PASSWORD env var)
 - Dashboard: "Chaos Experiments"
 
 **From Database:**

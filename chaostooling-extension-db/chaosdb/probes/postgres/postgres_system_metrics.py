@@ -49,7 +49,7 @@ def collect_postgres_system_metrics(
     port = port or int(os.getenv("POSTGRES_PORT", "5432"))
     database = database or os.getenv("POSTGRES_DB", "testdb")
     user = user or os.getenv("POSTGRES_USER", "postgres")
-    password = password or os.getenv("POSTGRES_PASSWORD", "postgres")
+    password = password or os.getenv("POSTGRES_PASSWORD", "changeme")
 
     # chaosotel is initialized via chaosotel.control - use directly
     try:

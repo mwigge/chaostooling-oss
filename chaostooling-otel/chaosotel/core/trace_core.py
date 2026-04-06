@@ -1150,8 +1150,8 @@ def trace_activemq_send(
         try:
             conn = stomp.Connection([(host, port)])
             conn.connect(
-                os.getenv("ACTIVEMQ_USER", "admin"),
-                os.getenv("ACTIVEMQ_PASSWORD", "admin"),
+                os.getenv("ACTIVEMQ_USER", "changeme"),
+                os.getenv("ACTIVEMQ_PASSWORD", "changeme"),
                 wait=True,
             )
 

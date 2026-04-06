@@ -89,7 +89,7 @@ Connection variables:
 - `CHAOS_DB_PORT=5432`
 - `CHAOS_DB_NAME=chaos_platform`
 - `CHAOS_DB_USER=chaos_admin`
-- `CHAOS_DB_PASSWORD=chaos_admin_secure_password`
+- `CHAOS_DB_PASSWORD=changeme`
 
 ## Troubleshooting
 

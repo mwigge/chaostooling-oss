@@ -47,7 +47,7 @@ def get_db_connection():
         port=port,
         dbname=os.getenv("POSTGRES_DB", "testdb"),
         user=os.getenv("POSTGRES_USER", "postgres"),
-        password=os.getenv("POSTGRES_PASSWORD", "postgres"),
+        password=os.getenv("POSTGRES_PASSWORD", "changeme"),
     )
 
 

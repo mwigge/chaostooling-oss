@@ -42,7 +42,7 @@ def probe_activemq_connectivity(
 
     user = user or os.getenv("ACTIVEMQ_USER", "admin")
 
-    password = password or os.getenv("ACTIVEMQ_PASSWORD", "admin")
+    password = password or os.getenv("ACTIVEMQ_PASSWORD", "changeme")
 
     queue = queue or os.getenv("ACTIVEMQ_QUEUE", "chaos.test")
 

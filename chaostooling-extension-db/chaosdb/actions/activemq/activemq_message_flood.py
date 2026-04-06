@@ -51,7 +51,7 @@ def inject_message_flood(
     host = host or os.getenv("ACTIVEMQ_HOST", "localhost")
     port = port or int(os.getenv("ACTIVEMQ_PORT", "61613"))
     user = user or os.getenv("ACTIVEMQ_USER", "admin")
-    password = password or os.getenv("ACTIVEMQ_PASSWORD", "admin")
+    password = password or os.getenv("ACTIVEMQ_PASSWORD", "changeme")
     queue = queue or os.getenv("ACTIVEMQ_QUEUE", "chaos.test")
 
     ensure_initialized()

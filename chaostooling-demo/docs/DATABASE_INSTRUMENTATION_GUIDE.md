@@ -113,7 +113,7 @@ def generate_server_spans():
         port=5432,
         database="testdb",
         user="postgres",
-        password="postgres"
+        password="changeme"
     )
     cursor = conn.cursor()
 

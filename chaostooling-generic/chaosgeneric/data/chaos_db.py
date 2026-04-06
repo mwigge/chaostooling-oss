@@ -41,7 +41,7 @@ class ChaosDb:
         self,
         dbname: str = "chaos_platform",
         user: str = "chaos_app",
-        password: str = "chaos_app_secure_password",
+        password: str = "changeme",
         host: str = "localhost",
         port: int = 5434,  # Chaos platform database
         pool_size: int = 5,

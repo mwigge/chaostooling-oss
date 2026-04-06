@@ -163,7 +163,7 @@
     "chaos_db_password": {
       "type": "env",
       "key": "CHAOS_DB_PASSWORD",
-      "default": "chaos_admin_secure_password"
+      "default": "changeme"
     },
     "otel_service_name": {
       "type": "env",
